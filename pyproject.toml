@@ -1,7 +1,17 @@
 [project]
 name = "job-agent"
 version = "0.1.0"
-description = "Add your description here"
+description = "Agent de veille emploi : détecte les nouvelles offres au plus tôt, les filtre selon vos critères et suit vos candidatures."
 readme = "README.md"
-requires-python = ">=3.11"
+authors = [
+    { name = "noube-marc", email = "135634498+noube-marc@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
 dependencies = []
+
+[project.scripts]
+job-agent = "job_agent:main"
+
+[build-system]
+requires = ["uv_build>=0.11.17,<0.12.0"]
+build-backend = "uv_build"
