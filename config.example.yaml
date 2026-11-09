@@ -428,14 +428,23 @@ schedule:
 
 
 # ---------------------------------------------------------------------
+# STOCKAGE DES OFFRES
+# ---------------------------------------------------------------------
+storage:
+  # Base de données locale (SQLite) : mémoire des offres déjà vues et
+  # déjà notifiées, et texte complet de chaque offre. Dans private/.
+  database_path: "private/job_agent.db"
+
+
+# ---------------------------------------------------------------------
 # FICHIER DE SUIVI DES CANDIDATURES
 # ---------------------------------------------------------------------
 tracking:
   # Type de fichier :
-  #   google_sheets = feuille Google (fonctionne ordinateur éteint)
+  #   google_sheets = feuille Google (mode cloud, disponible plus tard)
   #   excel         = fichier Excel sur votre ordinateur
   #   csv           = fichier CSV sur votre ordinateur
-  backend: google_sheets
+  backend: excel
   google_sheets:
     # Identifiant de la feuille : la partie de son adresse située entre
     # "/d/" et "/edit".
@@ -460,12 +469,16 @@ notifications:
   # true = le tout premier passage remplit le fichier de suivi sans
   # envoyer de notification (évite des centaines de messages d'un coup).
   silent_first_run: true
+  # Nombre maximum de notifications par passage. Au-delà, un seul
+  # message récapitulatif est envoyé (évite les envois en masse).
+  max_per_run: 20
   # Informations affichées dans chaque message :
   #   title, company, location, contract, publication_date, url,
   #   experience_flag     (expérience non précisée),
   #   priority_flag       (secteur prioritaire),
   #   verification_status (vérifiée à la source, en attente,
-  #                        non vérifiable)
+  #                        non vérifiable),
+  #   match_score         (score de correspondance avec le CV)
   fields:
     - title
     - company
