@@ -221,3 +221,13 @@ __marimo__/
 
 #private folders
 private/
+
+# sensitive files personal configuration
+config.yaml
+.env.*
+!.env.example
+
+# credentials
+credentials.json
+token.json
+service_account*.json

@@ -1,0 +1,508 @@
+# =====================================================================
+# job-agent : fichier de configuration (EXEMPLE)
+#
+# Mode d'emploi :
+#   1. Copiez ce fichier et nommez la copie "config.yaml".
+#   2. Modifiez les valeurs de config.yaml selon vos critères.
+#   3. config.yaml est personnel : il n'est jamais envoyé sur GitHub.
+#
+# Règles d'écriture (format YAML) :
+#   - Indentation avec des ESPACES uniquement, jamais de tabulation.
+#   - Une liste s'écrit avec des lignes qui commencent par "- ".
+#   - Oui / non s'écrivent true / false (jamais yes / no).
+#   - Mettez un texte entre guillemets s'il contient ":" ou "#".
+#   - Les lignes qui commencent par "#" sont des commentaires.
+#
+# Les secrets (clés d'API, mots de passe) ne vont PAS ici :
+# ils vont dans le fichier .env (voir .env.example).
+# =====================================================================
+
+# Version du format de ce fichier. Ne pas modifier.
+config_version: 1
+
+# Nom libre de ce profil, utilisé dans les journaux et les tests.
+profile_name: "data-analyst-example"
+
+
+# ---------------------------------------------------------------------
+# POSTES RECHERCHÉS
+# ---------------------------------------------------------------------
+search:
+  # Intitulés recherchés. La comparaison ignore les majuscules, les
+  # accents et les mentions H/F ou F/H.
+  job_titles:
+    # Postes principaux.
+    core:
+      - "Data Analyst"
+      - "Data Engineer"
+      - "Analytics Engineer"
+      - "Ingénieur données"
+      - "Ingénieur data"
+      - "BI Analyst"
+      - "Développeur BI"
+      - "Ingénieur BI"
+      - "Business Analyst data"
+      - "Data Analyst Power BI"
+      - "Product Data Analyst"
+      - "Chargé d'études statistiques"
+      - "Coordinateur d'études statistiques"
+    # Postes de Data Scientist accessibles avec le profil.
+    data_science:
+      - "Data Scientist"
+      - "Data Scientist junior"
+      - "Data Analyst / Data Scientist"
+      - "Data Scientist prévision"
+      - "Data Scientist forecasting"
+      - "Data Scientist décisionnel"
+      - "Statisticien"
+      - "Chargé d'études data science"
+
+  # Une offre dont l'intitulé contient l'un de ces mots est écartée.
+  excluded_title_keywords:
+    - "consultant"
+
+  # Règle spéciale pour les postes de Business Analyst : ils ne sont
+  # gardés que si la description cite assez de compétences techniques.
+  business_analyst:
+    # Mots qui identifient un poste de Business Analyst dans l'intitulé.
+    title_keywords:
+      - "business analyst"
+    # Compétences techniques recherchées dans la description.
+    technical_skills:
+      - "SQL"
+      - "Python"
+      - "Power BI"
+      - "DAX"
+      - "modélisation de données"
+      - "ETL"
+    # Nombre minimum de ces compétences pour garder l'offre.
+    min_technical_skills: 2
+
+
+# ---------------------------------------------------------------------
+# LIEU
+# ---------------------------------------------------------------------
+location:
+  # Code du pays (deux lettres, entre guillemets).
+  country: "FR"
+  # Régions acceptées. Liste vide = tout le pays.
+  # Exemple : ["Île-de-France", "Auvergne-Rhône-Alpes"]
+  regions: []
+  # Modes de travail acceptés :
+  #   onsite      = sur site
+  #   hybrid      = hybride (une partie en télétravail)
+  #   full_remote = télétravail complet
+  work_modes:
+    - onsite
+    - hybrid
+    - full_remote
+
+
+# ---------------------------------------------------------------------
+# CONTRATS
+# ---------------------------------------------------------------------
+contracts:
+  # Types de contrat acceptés, parmi :
+  #   permanent      = CDI
+  #   fixed_term     = CDD
+  #   internship     = stage
+  #   apprenticeship = alternance
+  #   freelance      = freelance / indépendant
+  accepted:
+    - permanent
+    - fixed_term
+
+
+# ---------------------------------------------------------------------
+# EXPÉRIENCE DEMANDÉE
+# ---------------------------------------------------------------------
+experience:
+  # L'agent lit l'expérience MINIMUM demandée par l'offre
+  # ("3 à 5 ans" donne 3). L'offre est écartée si ce minimum est
+  # supérieur ou égal à cette valeur.
+  exclude_if_min_years_at_least: 5
+  # Offre sans expérience précisée : true = gardée, avec la mention
+  # "expérience non précisée" ; false = écartée.
+  keep_if_unspecified: true
+
+
+# ---------------------------------------------------------------------
+# FRAÎCHEUR DES OFFRES
+# ---------------------------------------------------------------------
+freshness:
+  # Âge maximum d'une offre, en jours. Au-delà, elle est écartée.
+  max_age_days: 7
+  # Date utilisée pour calculer l'âge, par ordre de préférence :
+  #   career_site = date de publication sur le site carrière
+  #   job_board   = date de publication sur le site d'emploi
+  #   first_seen  = date de première détection par l'agent
+  # La première date disponible est utilisée.
+  date_priority:
+    - career_site
+    - job_board
+    - first_seen
+  # Offre sans aucune date de publication connue : true = gardée,
+  # avec la mention "date estimée" ; false = écartée.
+  keep_if_date_unknown: true
+
+
+# ---------------------------------------------------------------------
+# TRI
+# ---------------------------------------------------------------------
+sorting:
+  # Les offres sont toujours triées de la plus récente à la plus
+  # ancienne. true = à date égale, les secteurs prioritaires passent
+  # en premier.
+  priority_sector_tiebreak: true
+
+
+# ---------------------------------------------------------------------
+# PROFIL TECHNIQUE (détection des postes trop avancés)
+# ---------------------------------------------------------------------
+technical_profile:
+  # Compétences maîtrisées (à adapter à votre CV).
+  mastered_skills:
+    - "SQL"
+    - "Python"
+    - "R"
+    - "Power BI"
+    - "DAX"
+    - "Power Query"
+    - "Azure Data Factory"
+    - "Synapse"
+    - "Microsoft Fabric"
+    - "Databricks"
+    - "dbt"
+    - "Airflow"
+    - "Git"
+    - "ETL"
+  # Technologies non maîtrisées qui rendent un poste trop avancé
+  # lorsqu'elles sont EXIGÉES.
+  blocking_technologies:
+    - "Scala"
+    - "Java"
+    - "Kafka"
+    - "Flink"
+    - "Spark Streaming"
+    - "Kubernetes"
+    - "Terraform"
+    - "Hadoop"
+    - "Hive"
+    - "Cassandra"
+    - "MongoDB"
+    - "AWS Glue"
+    - "Redshift"
+    - "EMR"
+  # Nombre de technologies bloquantes exigées à partir duquel l'offre
+  # est écartée comme "trop avancée".
+  too_advanced_threshold: 3
+  # Nombre à partir duquel l'offre est gardée mais signalée
+  # "écart technique" (doit être inférieur au seuil précédent).
+  technical_gap_threshold: 1
+  # Mots de l'intitulé qui signalent un poste trop avancé
+  # (l'offre est écartée). "Senior" seul n'en fait pas partie :
+  # c'est la règle d'expérience qui tranche.
+  advanced_title_keywords:
+    - "lead"
+    - "tech lead"
+    - "staff"
+    - "principal"
+    - "architecte"
+    - "architect"
+    - "head of"
+    - "manager"
+    - "responsable d'équipe"
+    - "expert"
+  # Expressions de la description qui signalent un rôle trop avancé.
+  advanced_mission_keywords:
+    - "encadrement d'équipe"
+    - "management d'équipe"
+    - "manager une équipe"
+    - "référent technique"
+    - "définir l'architecture"
+  # Expressions qui rendent une technologie FACULTATIVE quand elles
+  # l'accompagnent (elle ne compte alors pas comme exigée).
+  optional_markers:
+    - "un plus"
+    - "idéalement"
+    - "apprécié"
+    - "souhaité"
+    - "serait un atout"
+    - "nice to have"
+
+
+# ---------------------------------------------------------------------
+# ENTREPRISES SURVEILLÉES DIRECTEMENT (niveau 1)
+# ---------------------------------------------------------------------
+companies:
+  # Pour chaque entreprise :
+  #   name        = nom de l'entreprise
+  #   sector      = l'un des secteurs de "sectors" ci-dessous, ou other
+  #   careers_url = adresse du site carrière (rempli après l'inventaire)
+  #   ats         = outil de recrutement utilisé (rempli après l'inventaire)
+  #                 exemples : workday, smartrecruiters, greenhouse, lever
+  watchlist:
+    # Assurance
+    - { name: "AXA", sector: insurance, careers_url: "", ats: "" }
+    - { name: "Allianz", sector: insurance, careers_url: "", ats: "" }
+    - { name: "Generali", sector: insurance, careers_url: "", ats: "" }
+    - { name: "Groupama", sector: insurance, careers_url: "", ats: "" }
+    - { name: "Covéa", sector: insurance, careers_url: "", ats: "" }
+    - { name: "MAIF", sector: insurance, careers_url: "", ats: "" }
+    - { name: "Aéma Groupe", sector: insurance, careers_url: "", ats: "" }
+    - { name: "Matmut", sector: insurance, careers_url: "", ats: "" }
+    - { name: "CNP Assurances", sector: insurance, careers_url: "", ats: "" }
+    - { name: "AG2R La Mondiale", sector: insurance, careers_url: "", ats: "" }
+    - { name: "Malakoff Humanis", sector: insurance, careers_url: "", ats: "" }
+    - { name: "Crédit Agricole Assurances", sector: insurance, careers_url: "", ats: "" }
+    - { name: "BNP Paribas Cardif", sector: insurance, careers_url: "", ats: "" }
+    - { name: "Alan", sector: insurance, careers_url: "", ats: "" }
+    # Banque
+    - { name: "BNP Paribas", sector: banking, careers_url: "", ats: "" }
+    - { name: "Société Générale", sector: banking, careers_url: "", ats: "" }
+    - { name: "Crédit Agricole", sector: banking, careers_url: "", ats: "" }
+    - { name: "BPCE", sector: banking, careers_url: "", ats: "" }
+    - { name: "Crédit Mutuel", sector: banking, careers_url: "", ats: "" }
+    - { name: "La Banque Postale", sector: banking, careers_url: "", ats: "" }
+    - { name: "BoursoBank", sector: banking, careers_url: "", ats: "" }
+    - { name: "Qonto", sector: banking, careers_url: "", ats: "" }
+    # Agriculture et agro-industrie
+    - { name: "InVivo", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "Avril", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "Tereos", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "Limagrain", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "Lactalis", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "Danone", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "Bonduelle", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "Agrial", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "Savencia", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "Isagri", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    # Grande consommation
+    - { name: "Suntory Beverage & Food France", sector: consumer_goods, careers_url: "", ats: "" }
+    - { name: "Coca-Cola Europacific Partners", sector: consumer_goods, careers_url: "", ats: "" }
+    - { name: "Pernod Ricard", sector: consumer_goods, careers_url: "", ats: "" }
+    - { name: "Nestlé France", sector: consumer_goods, careers_url: "", ats: "" }
+    - { name: "Unilever France", sector: consumer_goods, careers_url: "", ats: "" }
+    - { name: "Heineken France", sector: consumer_goods, careers_url: "", ats: "" }
+    - { name: "Bel", sector: consumer_goods, careers_url: "", ats: "" }
+    # Distribution
+    - { name: "Carrefour", sector: retail, careers_url: "", ats: "" }
+    - { name: "Auchan", sector: retail, careers_url: "", ats: "" }
+    - { name: "Les Mousquetaires", sector: retail, careers_url: "", ats: "" }
+    - { name: "Lidl France", sector: retail, careers_url: "", ats: "" }
+    - { name: "Groupe Casino", sector: retail, careers_url: "", ats: "" }
+    - { name: "Système U", sector: retail, careers_url: "", ats: "" }
+    # Autres
+    - { name: "TotalEnergies", sector: other, careers_url: "", ats: "" }
+
+
+# ---------------------------------------------------------------------
+# SECTEURS PRIORITAIRES (niveau 2)
+# ---------------------------------------------------------------------
+sectors:
+  # Toute offre d'une entreprise de ces secteurs est mise en avant,
+  # même si l'entreprise n'est pas dans la liste ci-dessus. Valeurs :
+  #   insurance            = assurance
+  #   banking              = banque
+  #   agriculture_agrifood = agriculture et agro-industrie
+  #   consumer_goods       = grande consommation
+  #   retail               = distribution
+  priority:
+    - insurance
+    - banking
+    - agriculture_agrifood
+    - consumer_goods
+    - retail
+  # Fichier de référence (alias d'entreprises, codes NAF par secteur).
+  # Ne pas modifier sauf besoin avancé.
+  reference_file: "sectors.yaml"
+
+
+# ---------------------------------------------------------------------
+# SOURCES D'OFFRES
+# ---------------------------------------------------------------------
+sources:
+  # API officielle de France Travail (clés dans .env).
+  france_travail:
+    enabled: true
+
+  # API de l'agrégateur Adzuna (clés dans .env).
+  adzuna:
+    enabled: true
+
+  # Sites carrière des entreprises de la liste "companies".
+  career_pages:
+    enabled: true
+    # Pause entre deux requêtes vers un même site, en secondes
+    # (politesse envers les sites, à ne pas réduire).
+    request_delay_seconds: 2
+    # Délai maximum d'attente d'une réponse, en secondes.
+    timeout_seconds: 30
+
+  # Alertes e-mail des sites d'emploi, lues dans une boîte Gmail
+  # (accès en lecture seule, identifiants dans .env).
+  email_alerts:
+    enabled: true
+    # Seuls les e-mails portant ce libellé Gmail sont lus.
+    gmail_label: "Alertes-emploi"
+    # Seuls les e-mails reçus à partir de cette date sont lus
+    # (format AAAA-MM-JJ, entre guillemets).
+    start_date: "2026-11-09"
+    # Un bloc par site. Dans allowed_senders, indiquez les adresses
+    # exactes des expéditeurs relevées dans les alertes reçues :
+    # un e-mail d'un autre expéditeur n'est jamais lu.
+    providers:
+      linkedin:
+        enabled: true
+        allowed_senders: []
+      indeed:
+        enabled: true
+        allowed_senders: []
+      hellowork:
+        enabled: true
+        allowed_senders: []
+      welcome_to_the_jungle:
+        enabled: true
+        allowed_senders: []
+      apec:
+        enabled: true
+        allowed_senders: []
+      cadremploi:
+        enabled: true
+        allowed_senders: []
+      # Site généraliste avec beaucoup d'offres hors cible :
+      # désactivé par défaut.
+      meteojob:
+        enabled: false
+        allowed_senders: []
+
+
+# ---------------------------------------------------------------------
+# VÉRIFICATION À LA SOURCE
+# ---------------------------------------------------------------------
+source_verification:
+  # true = toute offre venant d'un site d'emploi est recherchée sur le
+  # site carrière de l'entreprise (si celle-ci est dans "companies").
+  enabled: true
+  # true = une offre absente du site carrière n'est pas gardée : elle
+  # est inscrite dans l'onglet des offres écartées, avec la raison.
+  exclude_if_missing_on_career_site: true
+  # Délai avant de conclure qu'une offre est absente du site carrière,
+  # en heures (un site carrière peut publier avec un peu de retard).
+  grace_period_hours: 24
+  # true = pendant ce délai, l'offre est quand même notifiée, avec la
+  # mention "vérification en attente" (la rapidité reste prioritaire).
+  notify_while_pending: true
+  # Score de ressemblance (de 0 à 1) à partir duquel deux annonces
+  # sont considérées comme la même offre.
+  match_threshold: 0.85
+  # Entre ce score et le précédent, les deux annonces sont rapprochées
+  # mais signalées "correspondance probable" pour contrôle manuel.
+  probable_match_threshold: 0.70
+  # true = les offres du fichier de suivi sont revérifiées
+  # régulièrement, et celles qui ont disparu en ligne sont signalées.
+  recheck_tracked_offers: true
+  # Intervalle entre deux revérifications, en heures.
+  recheck_interval_hours: 24
+
+
+# ---------------------------------------------------------------------
+# LANCEMENT AUTOMATIQUE
+# ---------------------------------------------------------------------
+schedule:
+  # Fuseau horaire des réglages ci-dessous.
+  timezone: "Europe/Paris"
+  # Jours de fonctionnement : mon, tue, wed, thu, fri, sat, sun.
+  days:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    - sat
+  # Heure du premier passage et heure limite (de 0 à 23).
+  start_hour: 8
+  end_hour: 20
+  # Intervalle entre deux passages, en heures.
+  interval_hours: 2
+
+
+# ---------------------------------------------------------------------
+# STOCKAGE DES OFFRES
+# ---------------------------------------------------------------------
+storage:
+  # Base de données locale (SQLite) : mémoire des offres déjà vues et
+  # déjà notifiées, et texte complet de chaque offre. Dans private/.
+  database_path: "private/job_agent.db"
+
+
+# ---------------------------------------------------------------------
+# FICHIER DE SUIVI DES CANDIDATURES
+# ---------------------------------------------------------------------
+tracking:
+  # Type de fichier :
+  #   google_sheets = feuille Google (mode cloud, disponible plus tard)
+  #   excel         = fichier Excel sur votre ordinateur
+  #   csv           = fichier CSV sur votre ordinateur
+  backend: excel
+  google_sheets:
+    # Identifiant de la feuille : la partie de son adresse située entre
+    # "/d/" et "/edit".
+    spreadsheet_id: ""
+  excel:
+    path: "private/job_tracking.xlsx"
+  csv:
+    path: "private/job_tracking.csv"
+  # true = les offres écartées (par un filtre ou par la vérification à
+  # la source) sont conservées dans un onglet séparé, avec la raison,
+  # pour contrôler que les règles ne se trompent pas.
+  keep_rejected: true
+
+
+# ---------------------------------------------------------------------
+# NOTIFICATIONS
+# ---------------------------------------------------------------------
+notifications:
+  # Canal : telegram, email ou none (aucune notification).
+  # Identifiants dans .env.
+  channel: telegram
+  # true = le tout premier passage remplit le fichier de suivi sans
+  # envoyer de notification (évite des centaines de messages d'un coup).
+  silent_first_run: true
+  # Nombre maximum de notifications par passage. Au-delà, un seul
+  # message récapitulatif est envoyé (évite les envois en masse).
+  max_per_run: 20
+  # Informations affichées dans chaque message :
+  #   title, company, location, contract, publication_date, url,
+  #   experience_flag     (expérience non précisée),
+  #   priority_flag       (secteur prioritaire),
+  #   verification_status (vérifiée à la source, en attente,
+  #                        non vérifiable),
+  #   match_score         (score de correspondance avec le CV)
+  fields:
+    - title
+    - company
+    - location
+    - contract
+    - publication_date
+    - url
+    - experience_flag
+    - priority_flag
+    - verification_status
+
+
+# ---------------------------------------------------------------------
+# INTELLIGENCE ARTIFICIELLE (lettre de motivation, CV)
+# ---------------------------------------------------------------------
+ai:
+  # Fournisseur d'IA. Valeur possible pour l'instant : gemini.
+  provider: gemini
+  # Modèle utilisé. Laisser vide : il sera choisi lors de la mise en
+  # place de l'IA (les modèles disponibles changent souvent).
+  model: ""
+  # CV SANS coordonnées (ni nom, ni téléphone, ni e-mail), dans le
+  # dossier private/. C'est le seul CV envoyé à l'IA.
+  anonymized_cv_path: "private/cv_anonymized.md"
+  # true = sécurité supplémentaire : tout e-mail ou numéro de téléphone
+  # restant est retiré automatiquement avant l'envoi à l'IA.
+  strip_contact_details: true
