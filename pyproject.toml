@@ -7,7 +7,9 @@ authors = [
     { name = "noube-marc", email = "135634498+noube-marc@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pyyaml>=6.0.3",
+]
 
 [project.scripts]
 job-agent = "job_agent:main"
