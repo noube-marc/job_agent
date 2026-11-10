@@ -127,6 +127,7 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 |---|---|---|
 | `talentsoft_rss` | Flux RSS public (20 dernières offres) | MAIF, Matmut, CNP Assurances, Malakoff Humanis, InVivo |
 | `ashby` | API publique documentée | Alan, Qonto |
+| `workday` | Interface du site carrière Workday (liste des offres en France, fiche détaillée seulement pour les nouvelles offres ciblées) | Aéma Groupe (Abeille Assurances), AG2R La Mondiale, Pernod Ricard, Unilever |
 
 Les autres entreprises de la liste n'ont pas encore de connecteur (le journal les signale « connecteur non disponible ») : leurs offres arriveront par les alertes e-mail, prévues dans une prochaine version. Les sites d'emploi (LinkedIn, Indeed, Hellowork, Welcome to the Jungle, Apec, Cadremploi, Meteojob) ne sont jamais lus directement.
 

@@ -73,6 +73,25 @@ def _check_title(offer: Offer, config: AppConfig, result: Evaluation) -> None:
         result.reject("intitulé hors cible")
 
 
+def title_is_candidate(title: str, config: AppConfig) -> bool:
+    """Quick check on the title alone, before fetching an offer's details.
+
+    False when the title is excluded, reveals an internship or work-study
+    position, or matches no searched title (Business Analyst titles stay
+    candidates: their rule needs the description).
+    """
+    search = config.search
+    title_tokens = tokens(title)
+    if any(contains_phrase(title_tokens, k) for k in search.excluded_title_keywords):
+        return False
+    if training_contract_hint(title, ""):
+        return False
+    if any(contains_phrase(title_tokens, k) for k in search.business_analyst.title_keywords):
+        return True
+    wanted = [*search.job_titles.core, *search.job_titles.data_science]
+    return any(set(tokens(t)) <= set(title_tokens) for t in wanted if tokens(t))
+
+
 _CLAUSE_SPLIT = re.compile(r"[.;\n!?•·()]+|, (?:et |ou )?")
 
 

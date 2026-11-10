@@ -21,10 +21,10 @@ def test_full_run_is_silent_first_then_notifies(config, tmp_path, monkeypatch) -
 
     batches = {"first": [make_offer(source_offer_id="1", published_at=utc_now())]}
 
-    def good(company, client):
+    def good(company, context):
         return batches["first"]
 
-    def broken(company, client):
+    def broken(company, context):
         raise SourceError("site injoignable (exemple.fr, ConnectError)")
 
     # Only fake connectors: the real ones would call real sites.

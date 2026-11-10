@@ -7,7 +7,12 @@ from datetime import datetime
 from job_agent.config.models import AppConfig
 from job_agent.offer import Offer
 from job_agent.processing.dedup import signature, similarity
-from job_agent.processing.extract import detect_contract, detect_department, detect_work_mode
+from job_agent.processing.extract import (
+    contract_from_description,
+    detect_contract,
+    detect_department,
+    detect_work_mode,
+)
 from job_agent.processing.filters import evaluate
 from job_agent.processing.sectors import SectorIndex
 from job_agent.storage import Storage
@@ -23,6 +28,9 @@ def complete_offer(offer: Offer) -> Offer:
         updates["work_mode"] = detect_work_mode(offer.location, offer.title, offer.description)
     if offer.contract_type is None:
         contract = detect_contract(offer.contract_type_raw)
+        if contract is None:
+            # The source gives no usable label: read "CDI" or "CDD" in the text.
+            contract = contract_from_description(offer.description)
         # "interim" is not an Offer contract type: kept in contract_type_raw,
         # the filters reject it from there.
         if contract and contract != "interim":

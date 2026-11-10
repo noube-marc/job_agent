@@ -5,10 +5,11 @@ the function that reads its offers. Companies whose tool has no
 connector are reported as "connecteur non disponible".
 """
 
-from job_agent.collectors import ashby, talentsoft
+from job_agent.collectors import ashby, talentsoft, workday
 from job_agent.collectors.base import Connector
 
 CONNECTORS: dict[str, Connector] = {
     "talentsoft_rss": talentsoft.collect,
     "ashby": ashby.collect,
+    "workday": workday.collect,
 }

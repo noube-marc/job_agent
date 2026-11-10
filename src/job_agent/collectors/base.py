@@ -12,13 +12,15 @@ import html
 import re
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Protocol
 from urllib.parse import urlsplit
 from urllib.robotparser import RobotFileParser
 
 import httpx
 
-from job_agent.config.models import WatchedCompany
+from job_agent.config.models import AppConfig, WatchedCompany
 from job_agent.offer import Offer
 
 USER_AGENT = "job-agent/0.1 (+https://github.com/noube-marc/job_agent)"
@@ -40,6 +42,10 @@ def html_to_text(fragment: str) -> str:
 
 class SourceError(Exception):
     """A source could not be read. The message is in French."""
+
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class PoliteClient:
@@ -128,7 +134,9 @@ class PoliteClient:
         except httpx.HTTPError as error:
             raise SourceError(f"site injoignable ({urlsplit(url).netloc}, {type(error).__name__})") from None
         if response.status_code >= 400:
-            raise SourceError(f"réponse HTTP {response.status_code} ({urlsplit(url).netloc})")
+            raise SourceError(
+                f"réponse HTTP {response.status_code} ({urlsplit(url).netloc})", response.status_code
+            )
         return response
 
     def get(self, url: str, **kwargs: Any) -> httpx.Response:
@@ -138,7 +146,19 @@ class PoliteClient:
         return self.request("POST", url, **kwargs)
 
 
+@dataclass
+class CollectContext:
+    """What a connector may use during a run."""
+
+    client: PoliteClient
+    config: AppConfig
+    now: datetime
+    # is_known(source_name, source_offer_id): offer already stored, so a
+    # connector can skip fetching its details again.
+    is_known: Callable[[str, str], bool] = lambda source_name, offer_id: False
+
+
 class Connector(Protocol):
     """Reads the public offers of one company on one recruiting tool."""
 
-    def __call__(self, company: WatchedCompany, client: PoliteClient) -> list[Offer]: ...
+    def __call__(self, company: WatchedCompany, context: CollectContext) -> list[Offer]: ...

@@ -7,7 +7,7 @@
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
-from job_agent.collectors.base import PoliteClient, SourceError, html_to_text
+from job_agent.collectors.base import CollectContext, SourceError, html_to_text
 from job_agent.config.models import WatchedCompany
 from job_agent.offer import Offer
 
@@ -82,10 +82,10 @@ def parse_board(data: dict, company: WatchedCompany, now: datetime) -> list[Offe
     return offers
 
 
-def collect(company: WatchedCompany, client: PoliteClient) -> list[Offer]:
-    response = client.get(API_URL.format(board=board_name(company.careers_url)))
+def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
+    response = context.client.get(API_URL.format(board=board_name(company.careers_url)))
     try:
         data = response.json()
     except ValueError:
         raise SourceError("réponse Ashby illisible (JSON attendu)") from None
-    return parse_board(data, company, datetime.now(timezone.utc))
+    return parse_board(data, company, context.now)
