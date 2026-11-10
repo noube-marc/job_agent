@@ -12,7 +12,7 @@ from job_agent.config.models import AppConfig
 from job_agent.notify.telegram import NotificationError, notify_pending, telegram_sender_from_env
 from job_agent.processing.pipeline import process_offers
 from job_agent.processing.sectors import SectorIndex
-from job_agent.scheduling import AlreadyRunning, in_schedule, run_lock
+from job_agent.scheduling import AlreadyRunning, in_schedule, internet_available, run_lock
 from job_agent.storage import Storage, utc_now
 from job_agent.tracking.excel import TrackingFileLocked, append_offers
 
@@ -221,6 +221,10 @@ def run(config: AppConfig, force: bool = False) -> int:
     now = utc_now()
     if not force and not in_schedule(config.schedule, now):
         log.info("Hors de la plage horaire de config.yaml (schedule) : aucun passage.")
+        return 0
+    if not internet_available():
+        # Nothing is recorded: sources are not counted as empty.
+        log.warning("Pas de connexion internet : passage reporté au prochain lancement.")
         return 0
     try:
         with run_lock(LOCK_FILE):
