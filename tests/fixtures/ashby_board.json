@@ -1,0 +1,33 @@
+{
+  "apiVersion": "1",
+  "jobs": [
+    {
+      "id": "aaaa-1111", "title": "Data Analyst", "employmentType": "FullTime",
+      "location": "Paris, France", "secondaryLocations": [], "isListed": true,
+      "workplaceType": "Hybrid", "publishedAt": "2026-11-09T10:00:00.000+00:00",
+      "address": {"postalAddress": {"addressCountry": "France"}},
+      "jobUrl": "https://jobs.ashbyhq.com/exemple/aaaa-1111",
+      "applyUrl": "https://jobs.ashbyhq.com/exemple/aaaa-1111/application",
+      "descriptionPlain": "Analyse produit avec SQL et Python. 2 ans d'expérience."
+    },
+    {
+      "id": "bbbb-2222", "title": "Data Analyst", "employmentType": "FullTime",
+      "location": "Madrid", "secondaryLocations": [], "isListed": true,
+      "workplaceType": "OnSite", "publishedAt": "2026-11-09T10:00:00.000+00:00",
+      "address": {"postalAddress": {"addressCountry": "Spain"}},
+      "jobUrl": "https://jobs.ashbyhq.com/exemple/bbbb-2222", "descriptionPlain": "Madrid office."
+    },
+    {
+      "id": "cccc-3333", "title": "Data Intern", "employmentType": "Intern",
+      "location": "Anywhere in France", "secondaryLocations": [], "isListed": true,
+      "workplaceType": "Remote", "publishedAt": "2026-11-08T10:00:00.000+00:00",
+      "address": null,
+      "jobUrl": "https://jobs.ashbyhq.com/exemple/cccc-3333", "descriptionHtml": "<p>Stage <b>data</b></p><ul><li>SQL</li></ul>"
+    },
+    {
+      "id": "dddd-4444", "title": "Hidden job", "employmentType": "FullTime",
+      "location": "Paris, France", "isListed": false,
+      "jobUrl": "https://jobs.ashbyhq.com/exemple/dddd-4444"
+    }
+  ]
+}
