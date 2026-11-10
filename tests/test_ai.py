@@ -101,13 +101,14 @@ def test_ai_warnings(config, tmp_path) -> None:
 
 
 def test_annotation_sheet_and_evaluation(config, tmp_path) -> None:
+    from job_agent.ai.evaluation import ai_answers_for, sheet_offer_ids
+
     storage = _stored(config, tmp_path, make_offer(source_offer_id="1", description=DESCRIPTION),
                       make_offer(source_offer_id="2", title="Data Engineer", description=DESCRIPTION))
-    extractor, _ = _extractor({"m1": GOOD})
     path = tmp_path / "annotation.xlsx"
-    assert write_sheet(storage, extractor, path, size=30) == 2
+    assert write_sheet(storage, path, size=30) == 2  # no AI call needed
     with pytest.raises(FileExistsError):
-        write_sheet(storage, extractor, path)
+        write_sheet(storage, path)
 
     workbook = load_workbook(path)
     sheet = workbook["À annoter"]
@@ -118,8 +119,47 @@ def test_annotation_sheet_and_evaluation(config, tmp_path) -> None:
         sheet.cell(row=row, column=8, value="hybride")
     workbook.save(path)
 
-    results = evaluate_sheet(path)
-    assert results["contract"] == {"annotated": 2, "rules": 1.0, "ai": 1.0}
+    # Only one AI answer available today (quota): the comparison uses that offer.
+    extractor, _ = _extractor({"m1": GOOD, "m2": ApiError(429)}, models=("m1",))
+    ids = sheet_offer_ids(path)
+    first_only = ai_answers_for(storage, ids[:1], extractor)
+    results = evaluate_sheet(path, first_only)
+    assert results["contract"] == {"annotated": 2, "compared": 1, "rules": 1.0, "ai": 1.0}
     assert results["experience"]["ai"] == 1.0
     assert results["level"]["annotated"] == 0
+    storage.close()
+
+
+class QuotaError(Exception):
+    code = 429
+
+    def __str__(self) -> str:
+        return ("429 RESOURCE_EXHAUSTED {'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', "
+                "'quotaValue': '20'}, {'retryDelay': '3600s'}")
+
+
+def test_daily_quota_pauses_the_model_until_reset(config, tmp_path) -> None:
+    storage = _stored(config, tmp_path, make_offer(source_offer_id="1", description=DESCRIPTION),
+                      make_offer(source_offer_id="2", title="Data Engineer", description=DESCRIPTION))
+    extractor, fake = _extractor({"m1": QuotaError(), "m2": GOOD})
+    counts = enrich_new_offers(storage, config, extractor)
+    assert counts["analysed"] == 2
+    assert fake.calls == ["m1", "m2", "m2"]  # m1 is not asked again in the run
+
+    extractor, fake = _extractor({"m1": GOOD, "m2": GOOD})
+    storage.connection.execute("DELETE FROM ai_extractions")
+    storage.connection.commit()
+    enrich_new_offers(storage, config, extractor)
+    assert "m1" not in fake.calls  # still out of quota at the next run
+    storage.close()
+
+
+def test_all_models_out_of_quota_skips_ai(config, tmp_path) -> None:
+    storage = _stored(config, tmp_path, make_offer(source_offer_id="1", description=DESCRIPTION))
+    extractor, _ = _extractor({"m1": QuotaError(), "m2": QuotaError()})
+    first = enrich_new_offers(storage, config, extractor)
+    assert first["unavailable"] == 1
+    extractor, fake = _extractor({"m1": GOOD, "m2": GOOD})
+    second = enrich_new_offers(storage, config, extractor)
+    assert second["quota"] == 1 and fake.calls == []
     storage.close()
