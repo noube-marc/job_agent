@@ -130,6 +130,25 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 | `workday` | Interface du site carrière Workday (liste des offres en France, fiche détaillée seulement pour les nouvelles offres ciblées) | Aéma Groupe (Abeille Assurances), AG2R La Mondiale, Pernod Ricard, Unilever |
 | `successfactors_search` | Page de recherche publique SAP SuccessFactors (fiche ouverte seulement pour les nouvelles offres ciblées) | Generali, Lactalis, Bonduelle, Suntory Beverage & Food France, Nestlé France |
 
+### Alertes e-mail (Gmail, lecture seule)
+
+Les alertes des sites d'emploi (LinkedIn, Indeed, Hellowork...) sont lues dans une boîte Gmail, avec la seule permission **lecture seule** : l'agent ne peut ni envoyer, ni modifier, ni supprimer un e-mail, et n'ouvre jamais les liens des alertes.
+
+Double verrou : seuls les e-mails portant le libellé `gmail_label`, reçus après `start_date` et envoyés par une adresse de `allowed_senders` sont lus. Les autres e-mails de la boîte (par exemple des réponses de recruteurs) ne sont jamais lus.
+
+Mise en place :
+1. Dans Gmail, créez le libellé (par défaut `Alertes-emploi`) et un filtre qui y range les alertes.
+2. Dans [Google Cloud](https://console.cloud.google.com), créez un projet, activez **Gmail API**, configurez l'écran de consentement (audience Externe, votre adresse comme utilisateur test) et créez un client **Application de bureau**. Copiez son identifiant et son secret dans `.env` (`GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`).
+3. Lancez `uv run job-agent gmail-setup` et acceptez l'accès en lecture seule (Google peut afficher « application non validée » : c'est normal pour votre propre application, cliquez sur « Paramètres avancés »).
+4. Lancez `uv run job-agent gmail-senders` pour voir les expéditeurs de vos alertes, ajoutez-les dans `allowed_senders`, puis mettez `email_alerts.enabled` à `true`.
+
+Tant que l'application Google reste en mode Test, l'accès expire au bout de 7 jours : l'agent vous prévient alors sur Telegram, et il suffit de relancer `uv run job-agent gmail-setup`.
+
+| Site | Lecture des alertes |
+|---|---|
+| LinkedIn | disponible |
+| Indeed, Hellowork, Apec, Cadremploi | dès réception des premières alertes |
+
 Les autres entreprises de la liste n'ont pas encore de connecteur (le journal les signale « connecteur non disponible ») : leurs offres arriveront par les alertes e-mail, prévues dans une prochaine version. Les sites d'emploi (LinkedIn, Indeed, Hellowork, Welcome to the Jungle, Apec, Cadremploi, Meteojob) ne sont jamais lus directement.
 
 ## Dépannage
@@ -140,6 +159,7 @@ Les autres entreprises de la liste n'ont pas encore de connecteur (le journal le
 | `Erreur de configuration` | Corrigez la clé indiquée dans `config.yaml`, puis relancez `uv run job-agent check-config` |
 | `Hors de la plage horaire` | Normal en dehors des heures de `schedule` ; utilisez `--force` pour un passage immédiat |
 | `Notifications Telegram impossibles` | Vérifiez `TELEGRAM_BOT_TOKEN` et `TELEGRAM_CHAT_ID` dans `.env` |
+| `l'accès Gmail a expiré` | Relancez `uv run job-agent gmail-setup` |
 | `Fichier de suivi ouvert dans Excel` | Fermez le fichier : les offres seront ajoutées au passage suivant |
 | `ne renvoie aucune offre depuis 3 passages` | Le site a peut-être changé : signalez-le dans une Issue GitHub |
 
