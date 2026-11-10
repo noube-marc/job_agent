@@ -323,12 +323,14 @@ sectors:
 # ---------------------------------------------------------------------
 sources:
   # API officielle de France Travail (clés dans .env).
+  # Désactivée : l'accès à l'API se fait désormais sur demande.
   france_travail:
-    enabled: true
+    enabled: false
 
   # API de l'agrégateur Adzuna (clés dans .env).
+  # Désactivée : le compte gratuit est limité à quelques appels de test.
   adzuna:
-    enabled: true
+    enabled: false
 
   # Sites carrière des entreprises de la liste "companies".
   career_pages:
@@ -341,8 +343,9 @@ sources:
 
   # Alertes e-mail des sites d'emploi, lues dans une boîte Gmail
   # (accès en lecture seule, identifiants dans .env).
+  # Désactivé tant que l'accès Gmail n'est pas configuré.
   email_alerts:
-    enabled: true
+    enabled: false
     # Seuls les e-mails portant ce libellé Gmail sont lus.
     gmail_label: "Alertes-emploi"
     # Seuls les e-mails reçus à partir de cette date sont lus
@@ -383,7 +386,8 @@ sources:
 source_verification:
   # true = toute offre venant d'un site d'emploi est recherchée sur le
   # site carrière de l'entreprise (si celle-ci est dans "companies").
-  enabled: true
+  # Fonction pas encore disponible : laisser à false.
+  enabled: false
   # true = une offre absente du site carrière n'est pas gardée : elle
   # est inscrite dans l'onglet des offres écartées, avec la raison.
   exclude_if_missing_on_career_site: true
