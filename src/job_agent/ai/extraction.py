@@ -8,12 +8,16 @@ next run.
 """
 
 import os
+import re
 import time
 from typing import Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
 DEFAULT_MODELS = ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"]
+# Free tier (checked on 11/11/2026): 20 requests per day and per model, and a
+# few requests per minute. Calls are spaced by this many seconds.
+DEFAULT_PAUSE_SECONDS = 7.0
 API_KEY_VARIABLE = "GEMINI_API_KEY"
 MAX_DESCRIPTION_CHARS = 8000
 
@@ -54,11 +58,31 @@ Entreprise : {company}
 
 
 class AIUnavailable(Exception):
-    """No model could answer now. Message in French, without any secret."""
+    """No model could answer now. Message in French, without any secret.
+
+    `retry_after` (seconds) is set when every model reached its daily quota.
+    """
+
+    def __init__(self, message: str, retry_after: float | None = None) -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+_RETRY_DELAY = re.compile(r"retry_?[Dd]elay['\"]?:\s*['\"]?(\d+)s")
+_DAILY_QUOTA = "PerDay"
+
+
+def _daily_quota_delay(error: Exception) -> float | None:
+    """Seconds before a daily quota resets, if the error is a daily quota."""
+    text = str(error)
+    if getattr(error, "code", None) != 429 or _DAILY_QUOTA not in text:
+        return None
+    match = _RETRY_DELAY.search(text)
+    return float(match.group(1)) if match else 3600.0
 
 
 class GeminiExtractor:
-    def __init__(self, api_key: str, models: list[str], pause_seconds: float = 4.0, client=None) -> None:
+    def __init__(self, api_key: str, models: list[str], pause_seconds: float = DEFAULT_PAUSE_SECONDS, client=None) -> None:
         if client is None:
             from google import genai
             from google.genai import types
@@ -66,6 +90,8 @@ class GeminiExtractor:
             client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=60_000))
         self._client = client
         self.models = models
+        # Models that reached their daily quota during this run: seconds before reset.
+        self.exhausted: dict[str, float] = {}
         self._pause = pause_seconds
         self._last_call = 0.0
 
@@ -95,6 +121,8 @@ class GeminiExtractor:
         )
         problems = []
         for model in self.models:
+            if model in self.exhausted:  # daily quota reached earlier in this run
+                continue
             self._wait_turn()
             try:
                 response = self._client.models.generate_content(model=model, contents=prompt, config=config)
@@ -103,7 +131,13 @@ class GeminiExtractor:
                 problems.append(f"{model} : réponse invalide")
             except Exception as error:  # 503 overloaded, 429 quota, network...
                 code = getattr(error, "code", None) or type(error).__name__
-                problems.append(f"{model} : {code}")
+                delay = _daily_quota_delay(error)
+                if delay is not None:
+                    self.exhausted[model] = delay
+                problems.append(f"{model} : {'quota du jour atteint' if delay is not None else code}")
                 if code in (400, 401, 403):  # key refused: other models will refuse too
                     break
-        raise AIUnavailable("aucun modèle Gemini disponible (" + ", ".join(problems) + ")")
+        # Every model out of daily quota: no point in trying again before the reset.
+        all_out = all(model in self.exhausted for model in self.models)
+        retry_after = min(self.exhausted.values()) if all_out else None
+        raise AIUnavailable("aucun modèle Gemini disponible (" + ", ".join(problems) + ")", retry_after)

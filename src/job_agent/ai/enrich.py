@@ -8,6 +8,7 @@ measured against the simple rules on offers annotated by the user
 import json
 import sqlite3
 from collections import Counter
+from datetime import datetime, timedelta, timezone
 
 from job_agent.ai.extraction import AIExtraction, AIUnavailable, GeminiExtractor
 from job_agent.config.models import AppConfig
@@ -16,6 +17,25 @@ from job_agent.storage import Storage
 from job_agent.text import contains_phrase, tokens
 
 MAX_PER_RUN = 20
+QUOTA_STATE_KEY = "ai_quota_until"
+
+
+def _load_quota(storage: Storage, now: datetime) -> dict[str, datetime]:
+    """Models still out of daily quota, with the time their quota resets."""
+    raw = json.loads(storage.get_state(QUOTA_STATE_KEY) or "{}")
+    until = {model: datetime.fromisoformat(value) for model, value in raw.items()}
+    return {model: time for model, time in until.items() if time > now}
+
+
+def _save_quota(storage: Storage, quota: dict[str, datetime]) -> None:
+    storage.set_state(QUOTA_STATE_KEY, json.dumps({m: t.isoformat() for m, t in quota.items()}))
+
+
+def available_models(storage: Storage, models: list[str], now: datetime) -> tuple[list[str], datetime | None]:
+    """Models not out of daily quota, and the earliest reset if none is left."""
+    quota = _load_quota(storage, now)
+    available = [model for model in models if model not in quota]
+    return available, (min(quota.values()) if not available and quota else None)
 
 
 def compare_with_rules(row: sqlite3.Row, ai: AIExtraction, config: AppConfig) -> list[str]:
@@ -54,6 +74,23 @@ def enrich_new_offers(
     storage: Storage, config: AppConfig, extractor: GeminiExtractor, limit: int = MAX_PER_RUN
 ) -> Counter[str]:
     counts: Counter[str] = Counter()
+    now = datetime.now(timezone.utc)
+    extractor.models, reset = available_models(storage, extractor.models, now)
+    if not extractor.models:
+        counts["quota"] += 1
+        storage.set_state("ai_last_error", f"quota gratuit du jour atteint, reprise après {reset:%H:%M} UTC")
+        return counts
+    try:
+        _enrich(storage, config, extractor, limit, counts)
+    finally:
+        quota = _load_quota(storage, now)
+        for model, seconds in extractor.exhausted.items():
+            quota[model] = now + timedelta(seconds=seconds)
+        _save_quota(storage, quota)
+    return counts
+
+
+def _enrich(storage: Storage, config: AppConfig, extractor: GeminiExtractor, limit: int, counts: Counter[str]) -> None:
     for row in storage.offers_needing_ai(limit):
         try:
             extraction, model = extractor.extract(row["title"], row["company"], row["description"])
@@ -66,4 +103,3 @@ def enrich_new_offers(
             storage.add_flag(row["id"], flag)
             counts["flags"] += 1
         counts["analysed"] += 1
-    return counts

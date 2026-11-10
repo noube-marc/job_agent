@@ -102,11 +102,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         from job_agent.ai.evaluation import ai_evaluate_command, ai_sheet_command
         from job_agent.storage import Storage
 
-        if args.command == "ai-evaluate":
-            return ai_evaluate_command(config.ai.model)
         storage = Storage(config.storage.database_path)
         try:
-            return ai_sheet_command(storage, config.ai.model)
+            if args.command == "ai-evaluate":
+                return ai_evaluate_command(storage, config.ai.model)
+            return ai_sheet_command(storage)
         finally:
             storage.close()
     return run(config, force=args.force)

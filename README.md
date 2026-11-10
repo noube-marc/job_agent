@@ -163,7 +163,7 @@ L'IA n'écarte rien d'elle-même : quand elle n'est pas d'accord avec les règle
 1. `uv run job-agent ai-sheet` prépare `private/annotation_ia.xlsx` : 30 offres, avec des colonnes vertes à remplir d'après le texte (contrat, expérience minimum, télétravail, niveau).
 2. `uv run job-agent ai-evaluate` compare ensuite les règles simples et l'IA à vos réponses, champ par champ, et écrit le résultat dans `reports/ai_evaluation.md`.
 
-Modèle utilisé par défaut : `gemini-3.5-flash`, avec d'autres modèles gratuits en secours quand il est saturé. L'offre gratuite de Google peut utiliser les données envoyées pour améliorer ses services : seul le texte public des offres est concerné.
+Modèle utilisé par défaut : `gemini-3.5-flash`, avec d'autres modèles gratuits en secours quand il est saturé. L'offre gratuite est limitée à 20 analyses par jour et par modèle : quand un modèle a atteint son quota, l'agent ne le sollicite plus avant la remise à zéro (vers 9 h), et les offres restantes sont analysées plus tard. `ai-sheet` n'utilise pas l'IA ; `ai-evaluate` compare règles et IA sur les offres déjà lues par l'IA, et peut être relancée les jours suivants pour compléter. L'offre gratuite de Google peut utiliser les données envoyées pour améliorer ses services : seul le texte public des offres est concerné.
 
 ## Dépannage
 
