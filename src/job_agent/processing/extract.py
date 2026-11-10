@@ -165,7 +165,7 @@ _JUNIOR = re.compile(r"\b(debutant accepte|debutants acceptes|premiere experienc
 
 def _prepare(text: str) -> str:
     """Plain text where "5+" becomes "5 +" and "3-5" becomes "3 a 5"."""
-    text = re.sub(r"(\d)\s*[-/]\s*(\d)", r"\1 a \2", text)
+    text = re.sub(r"(\d)\s*[-/\u2010-\u2015\u2212]\s*(\d)", r"\1 a \2", text)
     return re.sub(r"\s+", " ", plain(text).replace("+", " + ")).strip()
 
 

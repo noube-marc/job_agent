@@ -17,8 +17,14 @@ _STOP_WORDS = frozenset(
 _NON_ALNUM = re.compile(r"[^a-z0-9+#]+")
 
 
+# Unicode dashes (hyphen, non-breaking hyphen, figure, en and em dashes,
+# minus sign) become a plain "-" instead of disappearing: "1\u20133 ans"
+# must not turn into "13 ans".
+_DASHES = re.compile(r"[\u2010-\u2015\u2212]")
+
+
 def strip_accents(text: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", text)
+    decomposed = unicodedata.normalize("NFKD", _DASHES.sub("-", text))
     return decomposed.encode("ascii", "ignore").decode("ascii")
 
 

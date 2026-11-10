@@ -166,3 +166,8 @@ def test_same_offer_with_city_in_one_title(config) -> None:
     a = signature("MAIF", "Data Analyst - Niort F/H", "79", "permanent", "", None, "Niort")
     b = signature("MAIF", "Data Analyst", "79", "permanent", "", None, "Niort (79)")
     assert similarity(a, b) >= config.source_verification.match_threshold
+
+
+def test_experience_range_with_unicode_dash() -> None:
+    text = "AML experience: you have 1\u20133 years in transaction monitoring."
+    assert extract_min_experience(None, text) == 1
