@@ -36,6 +36,7 @@ def _build_parser() -> argparse.ArgumentParser:
     commands.add_parser("gmail-setup", help="autorise l'accès Gmail en lecture seule")
     commands.add_parser("ai-sheet", help="prépare 30 offres à annoter pour mesurer l'IA")
     commands.add_parser("ai-evaluate", help="compare l'IA et les règles sur les offres annotées")
+    commands.add_parser("label-sheet", help="ajoute les nouvelles offres à la feuille d'étiquetage")
     commands.add_parser(
         "gmail-senders", help="liste les expéditeurs des e-mails du libellé (pour allowed_senders)"
     )
@@ -98,6 +99,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _check_config(config, args.config)
     if args.command == "gmail-senders":
         return _gmail_senders(config)
+    if args.command == "label-sheet":
+        from job_agent.ai.labelling import label_sheet_command
+        from job_agent.storage import Storage
+
+        storage = Storage(config.storage.database_path)
+        try:
+            return label_sheet_command(storage)
+        finally:
+            storage.close()
     if args.command in ("ai-sheet", "ai-evaluate"):
         from job_agent.ai.evaluation import ai_evaluate_command, ai_sheet_command
         from job_agent.storage import Storage

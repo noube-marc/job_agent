@@ -249,6 +249,21 @@ def _score_offers(config: AppConfig, storage: Storage) -> Counter[str]:
     return Counter(scored=len(rows))
 
 
+def _update_labelling_sheet(storage: Storage) -> None:
+    """Add new offers to the labelling sheet, only if the user started it."""
+    from job_agent.ai.labelling import SHEET_PATH, update_sheet
+
+    if not SHEET_PATH.exists():
+        return
+    try:
+        added, _, labelled = update_sheet(storage)
+    except PermissionError:
+        log.info("Feuille d'étiquetage ouverte dans Excel : mise à jour au prochain passage.")
+        return
+    if added:
+        log.info("Feuille d'étiquetage : %d offre(s) ajoutée(s) (%d étiquetée(s) au total).", added, labelled)
+
+
 def _update_tracking(config: AppConfig, storage: Storage) -> None:
     if config.tracking.backend != "excel":
         log.warning("Suivi « %s » pas encore disponible : seul excel est géré.", config.tracking.backend)
@@ -330,6 +345,7 @@ def run(config: AppConfig, force: bool = False) -> int:
                 totals.update(_enrich_with_ai(config, storage))
                 totals.update(_score_offers(config, storage))
                 _update_tracking(config, storage)
+                _update_labelling_sheet(storage)
                 totals.update(_notify(config, storage, silent))
                 summary = dict(totals)
                 storage.finish_run(run_id, summary)
