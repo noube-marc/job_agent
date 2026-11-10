@@ -33,6 +33,10 @@ def _build_parser() -> argparse.ArgumentParser:
     commands.add_parser(
         "telegram-setup", help="aide à trouver TELEGRAM_CHAT_ID après la création du bot"
     )
+    commands.add_parser("gmail-setup", help="autorise l'accès Gmail en lecture seule")
+    commands.add_parser(
+        "gmail-senders", help="liste les expéditeurs des e-mails du libellé (pour allowed_senders)"
+    )
     return parser
 
 
@@ -42,6 +46,26 @@ def _check_config(config: AppConfig, path: str) -> int:
     print(f"  Profil : {config.profile_name}")
     print(f"  Sources activées : {', '.join(enabled) or 'aucune'}")
     print(f"  Entreprises surveillées : {len(config.companies.watchlist)}")
+    return 0
+
+
+def _gmail_senders(config: AppConfig) -> int:
+    from job_agent.gmail.auth import GmailAuthError
+    from job_agent.gmail.reader import GmailLockError, GmailReader, allowed_senders, build_service
+
+    settings = config.sources.email_alerts
+    try:
+        counts = GmailReader(build_service(), settings).sender_summary()
+    except (GmailAuthError, GmailLockError) as error:
+        print(f"Lecture Gmail impossible : {error}")
+        return 1
+    known = allowed_senders(settings)
+    print(f"Expéditeurs des e-mails du libellé « {settings.gmail_label} » depuis le {settings.start_date:%d/%m/%Y} :")
+    for sender, count in counts.most_common():
+        status = f"autorisé ({known[sender]})" if sender in known else "non autorisé"
+        print(f"  {sender} : {count} e-mail(s), {status}")
+    if not counts:
+        print("  aucun e-mail trouvé.")
     return 0
 
 
@@ -57,6 +81,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "telegram-setup":
         return telegram_setup()
+    if args.command == "gmail-setup":
+        from job_agent.gmail.auth import gmail_setup
+
+        return gmail_setup()
 
     try:
         config = load_config(args.config)
@@ -66,6 +94,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "check-config":
         return _check_config(config, args.config)
+    if args.command == "gmail-senders":
+        return _gmail_senders(config)
     return run(config, force=args.force)
 
 

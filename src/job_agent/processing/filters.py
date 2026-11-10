@@ -59,6 +59,10 @@ def _check_title(offer: Offer, config: AppConfig, result: Evaluation) -> None:
 
     if any(contains_phrase(title_tokens, k) for k in search.business_analyst.title_keywords):
         rule = search.business_analyst
+        if offer.description_is_partial or not offer.description.strip():
+            # E-mail alerts carry no description: the rule cannot be applied.
+            result.flags.append("Business Analyst : compétences techniques à vérifier")
+            return
         description_tokens = tokens(offer.description)
         found = [s for s in rule.technical_skills if contains_phrase(description_tokens, s)]
         if len(found) < rule.min_technical_skills:

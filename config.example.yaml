@@ -365,7 +365,7 @@ sources:
     providers:
       linkedin:
         enabled: true
-        allowed_senders: []
+        allowed_senders: ["jobalerts-noreply@linkedin.com"]
       indeed:
         enabled: true
         allowed_senders: []

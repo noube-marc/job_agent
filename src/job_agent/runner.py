@@ -25,10 +25,15 @@ log = logging.getLogger("job_agent")
 
 def setup_logging(log_dir: Path = LOG_DIR) -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
-    if log.handlers:
+    log_file = (log_dir / "job_agent.log").resolve()
+    current = [h for h in log.handlers if isinstance(h, RotatingFileHandler)]
+    if current and Path(current[0].baseFilename) == log_file:
         return
+    for handler in list(log.handlers):  # another folder: start again
+        log.removeHandler(handler)
+        handler.close()
     formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%d %H:%M:%S")
-    file_handler = RotatingFileHandler(log_dir / "job_agent.log", maxBytes=2_000_000, backupCount=5, encoding="utf-8")
+    file_handler = RotatingFileHandler(log_file, maxBytes=2_000_000, backupCount=5, encoding="utf-8")
     file_handler.setFormatter(formatter)
     console = logging.StreamHandler()
     console.setFormatter(logging.Formatter("%(message)s"))
@@ -81,6 +86,84 @@ def _collect_and_process(
     finally:
         client.close()
     return totals, unavailable
+
+
+GMAIL_WARNING_KEY = "gmail_auth_warning_date"
+NEWLINE = chr(10)
+
+
+def _warn_gmail_authorisation(config: AppConfig, storage: Storage, now: datetime) -> None:
+    """Telegram message, at most once a day, when the Gmail access expired."""
+    today = now.date().isoformat()
+    if config.notifications.channel != "telegram" or storage.get_state(GMAIL_WARNING_KEY) == today:
+        return
+    try:
+        telegram_sender_from_env()(
+            "⚠️ job-agent : l'accès Gmail a expiré (c'est normal chaque semaine tant que "
+            "l'application Google est en mode Test)." + NEWLINE
+            + "Pour le renouveler, lancez dans le dossier du projet :" + NEWLINE
+            + "uv run job-agent gmail-setup" + NEWLINE
+            + "Les sites carrière continuent d'être lus normalement."
+        )
+    except NotificationError as error:
+        log.warning("Avertissement Gmail non envoyé : %s", error)
+        return
+    storage.set_state(GMAIL_WARNING_KEY, today)
+
+
+def _collect_email_alerts(config: AppConfig, storage: Storage, run_id: int, now: datetime) -> Counter[str]:
+    """Read new alert e-mails (Gmail, read-only) and process their offers."""
+    totals: Counter[str] = Counter()
+    settings = config.sources.email_alerts
+    if not settings.enabled:
+        return totals
+
+    from job_agent.gmail.auth import GmailAuthError
+    from job_agent.gmail.parsers import PARSERS
+    from job_agent.gmail.reader import GmailLockError, GmailReader, build_service
+
+    try:
+        alerts = GmailReader(build_service(), settings).read_alerts(skip=storage.processed_emails())
+    except GmailAuthError as error:
+        log.warning("  Alertes e-mail : %s", error)
+        storage.record_source(run_id, "email", 0, str(error))
+        totals["source_errors"] += 1
+        _warn_gmail_authorisation(config, storage, now)
+        return totals
+    except GmailLockError as error:
+        log.warning("  Alertes e-mail : %s", error)
+        storage.record_source(run_id, "email", 0, str(error))
+        totals["source_errors"] += 1
+        return totals
+    except Exception as error:  # one source never stops the others
+        log.warning("  Alertes e-mail : erreur de lecture Gmail (%s)", type(error).__name__)
+        storage.record_source(run_id, "email", 0, type(error).__name__)
+        totals["source_errors"] += 1
+        return totals
+
+    sectors = SectorIndex.build(config)
+    per_provider: Counter[str] = Counter()
+    for alert in alerts:
+        parser = PARSERS.get(alert.provider)
+        if parser is None:
+            # Left unread: it will be processed once a reader exists.
+            log.info("  Alertes e-mail : lecteur pas encore disponible pour %s.", alert.provider)
+            continue
+        try:
+            offers = parser(alert)
+        except Exception as error:
+            log.warning("  Alertes e-mail : e-mail %s illisible (%s)", alert.provider, type(error).__name__)
+            continue
+        counts = process_offers(offers, config, storage, sectors, now)
+        totals.update(counts)
+        per_provider[alert.provider] += len(offers)
+        storage.mark_email_processed(alert.message_id, alert.provider, len(offers))
+    for provider, count in per_provider.items():
+        storage.record_source(run_id, f"email:{provider}", count, None)
+        log.info("  email:%s : %d offre(s) lue(s) dans les alertes", provider, count)
+    if not alerts:
+        log.info("  Alertes e-mail : aucun nouvel e-mail.")
+    return totals
 
 
 def _update_tracking(config: AppConfig, storage: Storage) -> None:
@@ -155,6 +238,7 @@ def run(config: AppConfig, force: bool = False) -> int:
                 if unavailable:
                     log.info("Connecteur non disponible pour %d entreprise(s) : %s",
                              len(unavailable), ", ".join(unavailable))
+                totals.update(_collect_email_alerts(config, storage, run_id, now))
                 _update_tracking(config, storage)
                 totals.update(_notify(config, storage, silent))
                 summary = dict(totals)
