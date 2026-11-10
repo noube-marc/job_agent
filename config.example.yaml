@@ -229,6 +229,15 @@ technical_profile:
     - "souhaité"
     - "serait un atout"
     - "nice to have"
+  # Mots de l'intitulé qui signalent un poste ouvert aux débutants : l'offre
+  # n'est jamais écartée comme "trop avancée" (les mentions restent
+  # signalées) et passe en premier parmi les offres du même jour.
+  junior_title_keywords:
+    - "junior"
+    - "débutant"
+    - "débutante"
+    - "jeune diplômé"
+    - "jeune diplômée"
 
 
 # ---------------------------------------------------------------------

@@ -84,6 +84,8 @@ def format_offer(main: sqlite3.Row, members: list[sqlite3.Row], config: AppConfi
 
     if "title" in fields:
         lines.append(f"<b>{e(main['title'])}</b>")
+    if main["junior"]:
+        lines.append("🎯 Poste junior")
     if "company" in fields and (main["company"] or main["company_key"]):
         lines.append(f"🏢 {e(main['company'] or main['company_key'])}")
     details = []
@@ -103,7 +105,8 @@ def format_offer(main: sqlite3.Row, members: list[sqlite3.Row], config: AppConfi
         remarks.append("⭐ secteur prioritaire")
     if "experience_flag" in fields and FLAG_EXPERIENCE_UNSPECIFIED in flags:
         remarks.append("expérience non précisée")
-    remarks += [flag for flag in flags if flag.startswith(("écart technique", "expérience incohérente", "doublon probable"))]
+    remarks += [flag for flag in flags if flag.startswith(("écart technique", "expérience incohérente", "doublon probable"))
+                or flag.endswith("(non bloquant : poste junior)")]
     if remarks:
         lines.append("ℹ️ " + e(" · ".join(remarks)))
     if "url" in fields:
