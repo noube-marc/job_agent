@@ -1,8 +1,9 @@
 """Process collected offers: normalise, deduplicate, filter, store."""
 
+import json
 from collections import Counter
 from collections.abc import Iterable
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from job_agent.config.models import AppConfig
 from job_agent.offer import Offer
@@ -13,7 +14,7 @@ from job_agent.processing.extract import (
     detect_department,
     detect_work_mode,
 )
-from job_agent.processing.filters import evaluate
+from job_agent.processing.filters import FLAG_DATE_ESTIMATED, evaluate
 from job_agent.processing.sectors import SectorIndex
 from job_agent.storage import Storage
 from job_agent.text import plain
@@ -115,4 +116,44 @@ def process_offers(
         storage.insert_offer(values, group_id=group_id)
         if group_id is None:
             counts["kept" if result.kept else "rejected"] += 1
+        elif offer.source == "career_page" and offer.published_at is not None and result.effective_date:
+            if _apply_career_date(storage, group_id, offer, result.effective_date, config, now):
+                counts["date_corrections"] += 1
     return counts
+
+
+FLAG_CAREER_DATE = "date du site carrière"
+
+
+def _apply_career_date(
+    storage: Storage, group_id: int, offer: Offer, career_date: datetime, config: AppConfig, now: datetime
+) -> bool:
+    """The career site date replaces the date of an offer first seen elsewhere.
+
+    If the offer turns out to be older than `freshness.max_age_days`, it is
+    rejected when not notified yet, or a warning is queued for Telegram.
+    Returns True when the group date was changed.
+    """
+    main = storage.get_offer(group_id)
+    if main is None or main["source"] == "career_page":
+        return False
+    flags = [flag for flag in json.loads(main["flags"]) if flag != FLAG_DATE_ESTIMATED]
+    if FLAG_CAREER_DATE not in flags:
+        flags.append(FLAG_CAREER_DATE)
+    storage.update_offer_date(group_id, offer.published_at, career_date, flags)
+
+    max_age = config.freshness.max_age_days
+    age = now - career_date
+    if not main["kept"] or age <= timedelta(days=max_age):
+        return True
+    reason = f"offre trop ancienne selon le site carrière ({age.days} jours, maximum {max_age})"
+    if storage.is_notified(group_id):
+        company = main["company"] or main["company_key"]
+        storage.add_to_outbox(
+            f"date:{group_id}",
+            f"⏳ Offre déjà signalée mais publiée il y a {age.days} jours sur le site carrière "
+            f"(plus de {max_age} jours) : {main['title']} ({company}).",
+        )
+    else:
+        storage.reject_offer(group_id, reason)
+    return True

@@ -142,6 +142,10 @@ Mise en place :
 3. Lancez `uv run job-agent gmail-setup` et acceptez l'accès en lecture seule (Google peut afficher « application non validée » : c'est normal pour votre propre application, cliquez sur « Paramètres avancés »).
 4. Lancez `uv run job-agent gmail-senders` pour voir les expéditeurs de vos alertes, ajoutez-les dans `allowed_senders`, puis mettez `email_alerts.enabled` à `true`.
 
+Un e-mail d'alerte ne montre qu'une partie des offres. L'agent n'ouvre jamais le lien « Voir toutes les offres » (ce serait de la collecte automatisée, interdite par les sites) : il vous l'envoie sur Telegram, nettoyé de tout code de suivi, pour que vous l'ouvriez vous-même.
+
+Les alertes ne donnent pas la date de publication des offres : elles sont marquées **« date estimée »** (date de réception de l'e-mail). Quand la même offre est trouvée sur le site carrière de l'entreprise, la date de ce site la remplace ; si l'offre a alors plus de `max_age_days` jours, elle est écartée, ou vous êtes prévenu sur Telegram si elle vous avait déjà été signalée.
+
 Tant que l'application Google reste en mode Test, l'accès expire au bout de 7 jours : l'agent vous prévient alors sur Telegram, et il suffit de relancer `uv run job-agent gmail-setup`.
 
 | Site | Lecture des alertes |

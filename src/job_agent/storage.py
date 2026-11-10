@@ -85,6 +85,14 @@ CREATE TABLE IF NOT EXISTS email_messages (
     processed_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS outbox (
+    id INTEGER PRIMARY KEY,
+    key TEXT NOT NULL UNIQUE,
+    message TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    sent INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS app_state (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -272,3 +280,41 @@ class Storage:
     def set_state(self, key: str, value: str) -> None:
         with self.transaction() as db:
             db.execute("INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)", (key, value))
+
+    # --- date corrections ---------------------------------------------
+    def get_offer(self, offer_id: int) -> sqlite3.Row:
+        return self.connection.execute("SELECT * FROM offers WHERE id = ?", (offer_id,)).fetchone()
+
+    def update_offer_date(
+        self, offer_id: int, published_at: datetime, effective_date: datetime, flags: list[str]
+    ) -> None:
+        with self.transaction() as db:
+            db.execute(
+                "UPDATE offers SET published_at = ?, effective_date = ?, flags = ? WHERE id = ?",
+                (_iso(published_at), _iso(effective_date), json.dumps(flags, ensure_ascii=False), offer_id),
+            )
+
+    def reject_offer(self, offer_id: int, reason: str) -> None:
+        row = self.get_offer(offer_id)
+        reasons = json.loads(row["reasons"]) + [reason]
+        with self.transaction() as db:
+            db.execute(
+                "UPDATE offers SET kept = 0, reasons = ? WHERE id = ?",
+                (json.dumps(reasons, ensure_ascii=False), offer_id),
+            )
+
+    # --- messages waiting to be sent (warnings, links) ------------------
+    def add_to_outbox(self, key: str, message: str) -> None:
+        """Queue a Telegram message; a key is only ever queued once."""
+        with self.transaction() as db:
+            db.execute(
+                "INSERT OR IGNORE INTO outbox (key, message, created_at) VALUES (?, ?, ?)",
+                (key, message, _iso(utc_now())),
+            )
+
+    def pending_outbox(self) -> list[sqlite3.Row]:
+        return self.connection.execute("SELECT id, key, message FROM outbox WHERE sent = 0 ORDER BY id").fetchall()
+
+    def mark_outbox_sent(self, message_id: int) -> None:
+        with self.transaction() as db:
+            db.execute("UPDATE outbox SET sent = 1 WHERE id = ?", (message_id,))
