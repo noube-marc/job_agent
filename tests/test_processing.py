@@ -171,3 +171,25 @@ def test_same_offer_with_city_in_one_title(config) -> None:
 def test_experience_range_with_unicode_dash() -> None:
     text = "AML experience: you have 1\u20133 years in transaction monitoring."
     assert extract_min_experience(None, text) == 1
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [("Poste en CDI basé à Paris.", "permanent"), ("CDD de 6 mois.", "fixed_term"),
+     ("CDI ou CDD selon profil.", None), ("Rejoignez-nous !", None)],
+)
+def test_contract_from_description(text, expected) -> None:
+    from job_agent.processing.extract import contract_from_description
+
+    assert contract_from_description(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [("Data Analyst Marketing F/H", True), ("Business Analyst", True), ("Comptable", False),
+     ("Stage Data Analyst", False), ("Consultant Data Engineer", False)],
+)
+def test_title_is_candidate(config, title, expected) -> None:
+    from job_agent.processing.filters import title_is_candidate
+
+    assert title_is_candidate(title, config) is expected

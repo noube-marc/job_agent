@@ -39,6 +39,23 @@ def detect_contract(raw: str | None) -> str | None:
     return None
 
 
+_CDI_IN_TEXT = re.compile(r"\b(cdi|contrat a duree indeterminee)\b")
+_CDD_IN_TEXT = re.compile(r"\b(cdd|contrat a duree determinee)\b")
+
+
+def contract_from_description(description: str | None) -> str | None:
+    """"permanent" or "fixed_term" when the text names only one of them."""
+    if not description:
+        return None
+    text = plain(description)
+    has_cdi, has_cdd = bool(_CDI_IN_TEXT.search(text)), bool(_CDD_IN_TEXT.search(text))
+    if has_cdi and not has_cdd:
+        return "permanent"
+    if has_cdd and not has_cdi:
+        return "fixed_term"
+    return None
+
+
 # Phrases showing that an offer is really an internship or a work-study
 # position, whatever contract type its source announces.
 _TRAINING_IN_TITLE = re.compile(
