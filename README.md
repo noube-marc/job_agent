@@ -165,6 +165,14 @@ L'IA n'écarte rien d'elle-même : quand elle n'est pas d'accord avec les règle
 
 Modèle utilisé par défaut : `gemini-3.5-flash`, avec d'autres modèles gratuits en secours quand il est saturé. L'offre gratuite est limitée à 20 analyses par jour et par modèle : quand un modèle a atteint son quota, l'agent ne le sollicite plus avant la remise à zéro (vers 9 h), et les offres restantes sont analysées plus tard. `ai-sheet` n'utilise pas l'IA ; `ai-evaluate` compare règles et IA sur les offres déjà lues par l'IA, et peut être relancée les jours suivants pour compléter. L'offre gratuite de Google peut utiliser les données envoyées pour améliorer ses services : seul le texte public des offres est concerné.
 
+## Score de correspondance avec votre CV
+
+Chaque nouvelle offre retenue reçoit un score de 0 à 100, affiché dans le fichier de suivi et sur Telegram. Il est calculé **sur votre ordinateur** (rien n'est envoyé) à partir de `private/cv_anonymized.md` (votre CV sans nom, e-mail, téléphone ni adresse ; les coordonnées restantes sont retirées automatiquement) :
+- 70 % : proximité de sens entre votre CV et l'offre, avec le modèle léger et multilingue `intfloat/multilingual-e5-small` (environ 470 Mo, téléchargé une seule fois) ;
+- 30 % : nombre de vos compétences maîtrisées (`technical_profile.mastered_skills`) citées dans l'offre.
+
+Pour les offres venant d'alertes e-mail, sans description, le score est estimé sur l'intitulé seul (mention « score estimé sur l'intitulé »). Le score aide à comparer les offres ; le tri reste par date de publication.
+
 ## Dépannage
 
 | Message | Que faire |

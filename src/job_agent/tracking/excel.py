@@ -140,7 +140,8 @@ def _tracking_row(main: sqlite3.Row, members: list[sqlite3.Row], timezone: ZoneI
         main["id"], main["company"] or main["company_key"], main["title"], main["location"],
         CONTRACT_LABELS.get(main["contract_type"] or "", ""), SECTOR_LABELS.get(main["sector"] or "", ""),
         main["source_name"], sources[0], ", ".join(sources), published, collected, delay,
-        main_link, "\n".join(other_links), "", "; ".join(flags), None,
+        main_link, "\n".join(other_links), "", "; ".join(flags),
+        main["match_score"] if "match_score" in main.keys() else None,
     ]
 
 

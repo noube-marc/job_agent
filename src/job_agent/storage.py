@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS offers (
     sector TEXT,
     priority_sector INTEGER NOT NULL DEFAULT 0,
     junior INTEGER NOT NULL DEFAULT 0,
+    match_score INTEGER,
     title TEXT NOT NULL,
     location TEXT,
     department_code TEXT,
@@ -137,6 +138,8 @@ class Storage:
         with self.transaction() as db:
             if "junior" not in columns:
                 db.execute("ALTER TABLE offers ADD COLUMN junior INTEGER NOT NULL DEFAULT 0")
+            if "match_score" not in columns:
+                db.execute("ALTER TABLE offers ADD COLUMN match_score INTEGER")
 
     def close(self) -> None:
         self.connection.close()
@@ -360,3 +363,18 @@ class Storage:
                 "INSERT OR REPLACE INTO ai_extractions (offer_id, model, result, created_at) VALUES (?, ?, ?, ?)",
                 (offer_id, model, result_json, _iso(utc_now())),
             )
+
+    # --- offer / CV match score ---------------------------------------
+    def offers_needing_score(self, limit: int = 200) -> list[sqlite3.Row]:
+        """Kept offers without a score, not yet written to the tracking file."""
+        return self.connection.execute(
+            """SELECT o.* FROM offers o
+               LEFT JOIN tracking t ON t.offer_id = o.id
+               WHERE o.id = o.group_id AND o.kept = 1 AND o.match_score IS NULL AND t.offer_id IS NULL
+               ORDER BY o.id LIMIT ?""",
+            (limit,),
+        ).fetchall()
+
+    def set_match_score(self, offer_id: int, score: int) -> None:
+        with self.transaction() as db:
+            db.execute("UPDATE offers SET match_score = ? WHERE id = ?", (score, offer_id))

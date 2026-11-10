@@ -100,6 +100,8 @@ def format_offer(main: sqlite3.Row, members: list[sqlite3.Row], config: AppConfi
         estimated = " (date estimée)" if FLAG_DATE_ESTIMATED in flags else ""
         lines.append(f"🗓 Publiée le {local:%d/%m à %H:%M}{estimated}")
 
+    if "match_score" in fields and "match_score" in main.keys() and main["match_score"] is not None:
+        lines.append(f"📊 Correspondance avec votre CV : {main['match_score']}/100")
     remarks = []
     if "priority_flag" in fields and main["priority_sector"]:
         remarks.append("⭐ secteur prioritaire")

@@ -220,6 +220,35 @@ def _enrich_with_ai(config: AppConfig, storage: Storage) -> Counter[str]:
     return Counter(ai_analysed=counts["analysed"])
 
 
+FLAG_TITLE_ONLY_SCORE = "score estimé sur l'intitulé"
+
+
+def _score_offers(config: AppConfig, storage: Storage) -> Counter[str]:
+    """Offer / CV match score of new kept offers (local model)."""
+    rows = storage.offers_needing_score()
+    if not rows:
+        return Counter()
+    from job_agent.ai.matching import CVMatcher, MatchingUnavailable
+
+    try:
+        matcher = CVMatcher.from_files(
+            config.ai.anonymized_cv_path, config.technical_profile.mastered_skills, config.ai.strip_contact_details
+        )
+    except MatchingUnavailable as error:
+        log.info("Score de correspondance désactivé : %s.", error)
+        return Counter()
+    except Exception as error:  # model missing and no internet, for example
+        log.warning("Score de correspondance indisponible (%s) : réessai au prochain passage.", type(error).__name__)
+        return Counter()
+    scores = matcher.scores([(row["title"], row["description"] or "") for row in rows])
+    for row, score in zip(rows, scores):
+        storage.set_match_score(row["id"], score)
+        if not (row["description"] or "").strip():
+            storage.add_flag(row["id"], FLAG_TITLE_ONLY_SCORE)
+    log.info("Score de correspondance calculé pour %d offre(s).", len(rows))
+    return Counter(scored=len(rows))
+
+
 def _update_tracking(config: AppConfig, storage: Storage) -> None:
     if config.tracking.backend != "excel":
         log.warning("Suivi « %s » pas encore disponible : seul excel est géré.", config.tracking.backend)
@@ -299,6 +328,7 @@ def run(config: AppConfig, force: bool = False) -> int:
                              len(unavailable), ", ".join(unavailable))
                 totals.update(_collect_email_alerts(config, storage, run_id, now))
                 totals.update(_enrich_with_ai(config, storage))
+                totals.update(_score_offers(config, storage))
                 _update_tracking(config, storage)
                 totals.update(_notify(config, storage, silent))
                 summary = dict(totals)

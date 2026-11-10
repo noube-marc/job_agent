@@ -510,6 +510,7 @@ notifications:
     - experience_flag
     - priority_flag
     - verification_status
+    - match_score
 
 
 # ---------------------------------------------------------------------
