@@ -244,6 +244,7 @@ companies:
   #                   talentsoft_rss  = flux RSS public Talentsoft (Cegid)
   #                   ashby           = API publique Ashby
   #                   workday         = site carrière Workday
+  #                   successfactors_search = page de recherche SAP SuccessFactors
   #                 Toute autre valeur = connecteur non disponible : les
   #                 offres arrivent alors par les alertes e-mail.
   # Le commentaire en fin de ligne résume le type d'accès (inventaire du
@@ -252,7 +253,7 @@ companies:
     # Assurance
     - { name: "AXA", sector: insurance, careers_url: "https://recrutement.axa.fr", ats: "avature" }  # JSON interne Radancy, connecteur non disponible
     - { name: "Allianz", sector: insurance, careers_url: "https://careers.allianz.com/global/en/search-results?qcountry=France", ats: "successfactors" }  # front Phenom, JSON dans la page
-    - { name: "Generali", sector: insurance, careers_url: "https://carrieres.generali.fr", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Generali", sector: insurance, careers_url: "https://carrieres.generali.fr", ats: "successfactors_search" }  # page de recherche HTML
     - { name: "Groupama", sector: insurance, careers_url: "https://www.groupama-gan-recrute.com/nos-offres", ats: "talentsoft" }  # flux RSS interdit par robots.txt
     - { name: "Covéa", sector: insurance, careers_url: "https://recrutement.covea.com/jobs", ats: "smartrecruiters" }  # API interdite aux robots par robots.txt ; site carrière HTML possible
     - { name: "MAIF", sector: insurance, careers_url: "https://recrutement.maif.fr", ats: "talentsoft_rss" }  # flux RSS public
@@ -278,17 +279,17 @@ companies:
     - { name: "Avril", sector: agriculture_agrifood, careers_url: "https://groupeavril.csod.com/ux/ats/careersite/2/home?c=groupeavril&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
     - { name: "Tereos", sector: agriculture_agrifood, careers_url: "https://tereos.csod.com/ux/ats/careersite/1/home?c=tereos&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
     - { name: "Limagrain", sector: agriculture_agrifood, careers_url: "https://jobs.limagrain.com", ats: "successfactors" }  # plan du site autorisé, JSON interdit
-    - { name: "Lactalis", sector: agriculture_agrifood, careers_url: "https://jobs.lactalisexperience.fr", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Lactalis", sector: agriculture_agrifood, careers_url: "https://jobs.lactalisexperience.fr", ats: "successfactors_search" }  # page de recherche HTML
     - { name: "Danone", sector: agriculture_agrifood, careers_url: "https://careers.danone.com/en-global/jobs.html", ats: "icims" }  # HTML ; JSON interdit par robots.txt
-    - { name: "Bonduelle", sector: agriculture_agrifood, careers_url: "https://jobs.bonduelle.com", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Bonduelle", sector: agriculture_agrifood, careers_url: "https://jobs.bonduelle.com", ats: "successfactors_search" }  # page de recherche HTML
     - { name: "Agrial", sector: agriculture_agrifood, careers_url: "https://agrial.csod.com/ux/ats/careersite/8/home?c=agrial&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
     - { name: "Savencia", sector: agriculture_agrifood, careers_url: "https://eoct.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/fr/sites/careers/jobs", ats: "oracle" }  # JSON interne Oracle
     - { name: "Isagri", sector: agriculture_agrifood, careers_url: "https://emploi.isagri.fr/offre", ats: "beetween" }  # données dans la page HTML
     # Grande consommation
-    - { name: "Suntory Beverage & Food France", sector: consumer_goods, careers_url: "https://careers.suntorybeverageandfood.com", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Suntory Beverage & Food France", sector: consumer_goods, careers_url: "https://careers.suntorybeverageandfood.com/search/?locationsearch=France", ats: "successfactors_search" }  # page de recherche HTML, offres en France
     - { name: "Coca-Cola Europacific Partners", sector: consumer_goods, careers_url: "https://www.ccep.jobs/fr/france-jobs", ats: "eightfold" }  # JSON Eightfold autorisé par robots.txt
     - { name: "Pernod Ricard", sector: consumer_goods, careers_url: "https://pernodricard.wd3.myworkdayjobs.com/pernod-ricard", ats: "workday" }  # liste et fiches Workday
-    - { name: "Nestlé France", sector: consumer_goods, careers_url: "https://jobdetails.nestle.com/search/?q=&locationsearch=France", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Nestlé France", sector: consumer_goods, careers_url: "https://jobdetails.nestle.com/search/?q=&locationsearch=France", ats: "successfactors_search" }  # page de recherche HTML, offres en France
     - { name: "Unilever France", sector: consumer_goods, careers_url: "https://unilever.wd3.myworkdayjobs.com/Unilever_Experienced_Professionals", ats: "workday" }  # liste et fiches Workday
     - { name: "Heineken France", sector: consumer_goods, careers_url: "https://careers.theheinekencompany.com/Francais/HEINEKEN-France", ats: "successfactors" }  # HTML, Crawl-delay 5 s
     - { name: "Bel", sector: consumer_goods, careers_url: "https://jobs.groupe-bel.com/?locale=fr_FR", ats: "successfactors" }  # plan du site autorisé, JSON interdit

@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from conftest import NOW
-from job_agent.collectors import CONNECTORS, ashby, talentsoft, workday
+from job_agent.collectors import CONNECTORS, ashby, successfactors, talentsoft, workday
 from job_agent.collectors.base import CollectContext, PoliteClient, SourceError, html_to_text
 from job_agent.config.models import WatchedCompany
 
@@ -28,7 +28,7 @@ def _context(config, routes: dict[str, httpx.Response]) -> CollectContext:
 
 
 def test_registry() -> None:
-    assert set(CONNECTORS) == {"talentsoft_rss", "ashby", "workday"}
+    assert set(CONNECTORS) == {"talentsoft_rss", "ashby", "workday", "successfactors_search"}
 
 
 def test_talentsoft_feed(config) -> None:
@@ -179,3 +179,91 @@ def test_workday_without_country_filter_reads_everything(config) -> None:
     company = WatchedCompany(name="Exemple", sector="other", careers_url=WD_SITE, ats="workday")
     offers = workday.collect(company, _workday_context(config, fake))
     assert [o.source_offer_id for o in offers] == ["/job/Lille/Comptable_REQ-020"]
+
+
+# --- SuccessFactors (HTML search page) -------------------------------------
+SF_SITE = "https://emplois.exemple.fr"
+
+
+def _sf_row(offer_id: str, title: str, location: str = "PARIS, FR, 75008") -> str:
+    return (f'<tr class="data-row"><td class="colTitle"><span class="jobTitle hidden-phone">'
+            f'<a class="jobTitle-link" href="/job/PARIS-{offer_id}/{offer_id}/">{title}</a></span></td>'
+            f'<td class="colLocation"><span class="jobLocation"> {location} </span></td></tr>')
+
+
+def _sf_page(rows: list[str]) -> str:
+    return f"<html><body><table>{''.join(rows)}</table></body></html>"
+
+
+SF_OFFER = """<html><body>
+<span data-careersite-propertyid="title">Data Analyst H/F</span>
+<span data-careersite-propertyid="adcode">4242</span>
+<span data-careersite-propertyid="customfield2">CDI DUREE INDETERMINEE</span>
+<span data-careersite-propertyid="location">PARIS, FR, 75008</span>
+<meta itemprop="datePosted" content="Mon Nov 09 02:00:00 UTC 2026"/>
+<span itemprop="description"><p>Analyse des ventes avec <b>SQL</b>.</p><ul><li>Power BI</li></ul></span>
+</body></html>"""
+
+
+class SuccessFactorsFake:
+    def __init__(self, pages: list[list[str]]) -> None:
+        self.pages = pages
+        self.requests: list[str] = []
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/robots.txt":
+            return httpx.Response(404)
+        self.requests.append(str(request.url))
+        if request.url.path == "/search/":
+            assert request.url.params["sortColumn"] == "referencedate"
+            start = int(request.url.params["startrow"])
+            index = start // 2  # two offers per fake page
+            rows = self.pages[index] if index < len(self.pages) else []
+            return httpx.Response(200, text=_sf_page(rows))
+        return httpx.Response(200, text=SF_OFFER)
+
+
+def _sf_context(config, fake, known=frozenset()) -> CollectContext:
+    client = PoliteClient(0, 5, transport=httpx.MockTransport(fake), sleep=lambda s: None)
+    return CollectContext(client, config, NOW, lambda source, offer_id: offer_id in known)
+
+
+def test_successfactors_parses_offer_page() -> None:
+    details = successfactors.parse_offer_page(SF_OFFER)
+    assert details["description"] == "Analyse des ventes avec SQL.\n- Power BI"
+    assert details["contract"] == "CDI DUREE INDETERMINEE" and details["reference"] == "4242"
+    assert details["published_at"] == datetime(2026, 11, 9, 2, 0, tzinfo=timezone.utc)
+
+
+def test_successfactors_collect(config) -> None:
+    fake = SuccessFactorsFake([
+        [_sf_row("1000001", "Data Analyst H/F"), _sf_row("1000002", "Comptable H/F")],
+        [_sf_row("1000003", "Data Engineer H/F", "LONDON, GB, SW1"), _sf_row("1000004", "Data Scientist")],
+        [_sf_row("1000005", "Data Analyst Senior")],
+    ])
+    company = WatchedCompany(name="Exemple", sector="other", careers_url=SF_SITE, ats="successfactors_search")
+    offers = successfactors.collect(company, _sf_context(config, fake))
+
+    ids = [o.source_offer_id for o in offers]
+    assert ids == ["1000001", "1000002", "1000004", "1000005"]  # London offer skipped
+    detail_requests = [r for r in fake.requests if "/job/" in r]
+    assert len(detail_requests) == 3  # Comptable is not opened
+    analyst = offers[0]
+    assert analyst.contract_type_raw == "CDI DUREE INDETERMINEE" and not analyst.description_is_partial
+    assert offers[1].description_is_partial
+
+
+def test_successfactors_stops_on_known_page(config) -> None:
+    fake = SuccessFactorsFake([
+        [_sf_row("2000001", "Comptable"), _sf_row("2000002", "Comptable")],
+        [_sf_row("2000003", "Comptable"), _sf_row("2000004", "Comptable")],
+    ])
+    company = WatchedCompany(name="Exemple", sector="other", careers_url=SF_SITE, ats="successfactors_search")
+    offers = successfactors.collect(company, _sf_context(config, fake, known={"2000001", "2000002"}))
+    assert len(offers) == 2 and len(fake.requests) == 1
+
+
+def test_successfactors_search_url_keeps_site_filters() -> None:
+    url = successfactors.search_url("https://jobs.exemple.com/search/?q=&locationsearch=France", 40)
+    assert url.startswith("https://jobs.exemple.com/search/?")
+    assert "locationsearch=France" in url and "startrow=40" in url and "sortDirection=desc" in url
