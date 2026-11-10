@@ -238,62 +238,69 @@ companies:
   # Pour chaque entreprise :
   #   name        = nom de l'entreprise
   #   sector      = l'un des secteurs de "sectors" ci-dessous, ou other
-  #   careers_url = adresse du site carrière (rempli après l'inventaire)
-  #   ats         = outil de recrutement utilisé (rempli après l'inventaire)
-  #                 exemples : workday, smartrecruiters, greenhouse, lever
+  #   careers_url = adresse du site carrière (ou de la page de l'outil de
+  #                 recrutement, utilisée par le connecteur)
+  #   ats         = outil de recrutement. Valeurs lues automatiquement :
+  #                   talentsoft_rss  = flux RSS public Talentsoft (Cegid)
+  #                   smartrecruiters = API publique SmartRecruiters
+  #                   ashby           = API publique Ashby
+  #                 Toute autre valeur = connecteur non disponible : les
+  #                 offres arrivent alors par les alertes e-mail.
+  # Le commentaire en fin de ligne résume le type d'accès (inventaire du
+  # 10/11/2026).
   watchlist:
     # Assurance
-    - { name: "AXA", sector: insurance, careers_url: "", ats: "" }
-    - { name: "Allianz", sector: insurance, careers_url: "", ats: "" }
-    - { name: "Generali", sector: insurance, careers_url: "", ats: "" }
-    - { name: "Groupama", sector: insurance, careers_url: "", ats: "" }
-    - { name: "Covéa", sector: insurance, careers_url: "", ats: "" }
-    - { name: "MAIF", sector: insurance, careers_url: "", ats: "" }
-    - { name: "Aéma Groupe", sector: insurance, careers_url: "", ats: "" }
-    - { name: "Matmut", sector: insurance, careers_url: "", ats: "" }
-    - { name: "CNP Assurances", sector: insurance, careers_url: "", ats: "" }
-    - { name: "AG2R La Mondiale", sector: insurance, careers_url: "", ats: "" }
-    - { name: "Malakoff Humanis", sector: insurance, careers_url: "", ats: "" }
-    - { name: "Crédit Agricole Assurances", sector: insurance, careers_url: "", ats: "" }
-    - { name: "BNP Paribas Cardif", sector: insurance, careers_url: "", ats: "" }
-    - { name: "Alan", sector: insurance, careers_url: "", ats: "" }
+    - { name: "AXA", sector: insurance, careers_url: "https://recrutement.axa.fr", ats: "avature" }  # JSON interne Radancy, connecteur non disponible
+    - { name: "Allianz", sector: insurance, careers_url: "https://careers.allianz.com/global/en/search-results?qcountry=France", ats: "successfactors" }  # front Phenom, JSON dans la page
+    - { name: "Generali", sector: insurance, careers_url: "https://carrieres.generali.fr", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Groupama", sector: insurance, careers_url: "https://www.groupama-gan-recrute.com/nos-offres", ats: "talentsoft" }  # flux RSS interdit par robots.txt
+    - { name: "Covéa", sector: insurance, careers_url: "https://jobs.smartrecruiters.com/COVEA1", ats: "smartrecruiters" }  # API publique documentée
+    - { name: "MAIF", sector: insurance, careers_url: "https://recrutement.maif.fr", ats: "talentsoft_rss" }  # flux RSS public
+    - { name: "Aéma Groupe", sector: insurance, careers_url: "https://abeilleassurances.wd103.myworkdayjobs.com/External", ats: "workday" }  # JSON interne Workday ; Macif bloque les robots
+    - { name: "Matmut", sector: insurance, careers_url: "https://recrutement.matmut.fr", ats: "talentsoft_rss" }  # flux RSS public
+    - { name: "CNP Assurances", sector: insurance, careers_url: "https://cnp-recrute.talent-soft.com", ats: "talentsoft_rss" }  # flux RSS public
+    - { name: "AG2R La Mondiale", sector: insurance, careers_url: "https://ag2rlamondiale.wd3.myworkdayjobs.com/Candidats", ats: "workday" }  # JSON interne Workday
+    - { name: "Malakoff Humanis", sector: insurance, careers_url: "https://carrieres.malakoffhumanis.com", ats: "talentsoft_rss" }  # flux RSS public
+    - { name: "Crédit Agricole Assurances", sector: insurance, careers_url: "https://groupecreditagricole.jobs/fr/nos-marques/credit-agricole-assurances/nos-offres/", ats: "talentsoft" }  # flux RSS interdit par robots.txt ; HTML possible
+    - { name: "BNP Paribas Cardif", sector: insurance, careers_url: "https://group.bnpparibas/emploi-carriere/toutes-offres-emploi/bnp-paribas-cardif", ats: "own" }  # site protégé contre les robots
+    - { name: "Alan", sector: insurance, careers_url: "https://jobs.ashbyhq.com/alan", ats: "ashby" }  # API publique documentée
     # Banque
-    - { name: "BNP Paribas", sector: banking, careers_url: "", ats: "" }
-    - { name: "Société Générale", sector: banking, careers_url: "", ats: "" }
-    - { name: "Crédit Agricole", sector: banking, careers_url: "", ats: "" }
-    - { name: "BPCE", sector: banking, careers_url: "", ats: "" }
-    - { name: "Crédit Mutuel", sector: banking, careers_url: "", ats: "" }
-    - { name: "La Banque Postale", sector: banking, careers_url: "", ats: "" }
-    - { name: "BoursoBank", sector: banking, careers_url: "", ats: "" }
-    - { name: "Qonto", sector: banking, careers_url: "", ats: "" }
+    - { name: "BNP Paribas", sector: banking, careers_url: "https://group.bnpparibas/emploi-carriere/toutes-offres-emploi", ats: "own" }  # site protégé contre les robots
+    - { name: "Société Générale", sector: banking, careers_url: "https://careers.societegenerale.com/rechercher", ats: "taleo" }  # plan du site et pages HTML
+    - { name: "Crédit Agricole", sector: banking, careers_url: "https://groupecreditagricole.jobs/fr/nos-offres/", ats: "own" }  # HTML, Crawl-delay 3 s
+    - { name: "BPCE", sector: banking, careers_url: "https://recrutement.bpce.fr/offres-emploi", ats: "own" }  # JSON interne partiel, recherche interdite par robots.txt
+    - { name: "Crédit Mutuel", sector: banking, careers_url: "https://recrutement.creditmutuel.fr/fr/nos_offres.html", ats: "own" }  # plan du site et pages HTML
+    - { name: "La Banque Postale", sector: banking, careers_url: "https://www.labanquepostale.com/candidats/offres-d-emploi/nos-offres-d-emploi.html", ats: "successfactors" }  # HTML
+    - { name: "BoursoBank", sector: banking, careers_url: "https://www.boursobank-group.com/fr/carrieres-emplois/consulter-nos-offres", ats: "taleo" }  # offres publiées sur le site Société Générale
+    - { name: "Qonto", sector: banking, careers_url: "https://jobs.ashbyhq.com/qonto", ats: "ashby" }  # API publique documentée
     # Agriculture et agro-industrie
-    - { name: "InVivo", sector: agriculture_agrifood, careers_url: "", ats: "" }
-    - { name: "Avril", sector: agriculture_agrifood, careers_url: "", ats: "" }
-    - { name: "Tereos", sector: agriculture_agrifood, careers_url: "", ats: "" }
-    - { name: "Limagrain", sector: agriculture_agrifood, careers_url: "", ats: "" }
-    - { name: "Lactalis", sector: agriculture_agrifood, careers_url: "", ats: "" }
-    - { name: "Danone", sector: agriculture_agrifood, careers_url: "", ats: "" }
-    - { name: "Bonduelle", sector: agriculture_agrifood, careers_url: "", ats: "" }
-    - { name: "Agrial", sector: agriculture_agrifood, careers_url: "", ats: "" }
-    - { name: "Savencia", sector: agriculture_agrifood, careers_url: "", ats: "" }
-    - { name: "Isagri", sector: agriculture_agrifood, careers_url: "", ats: "" }
+    - { name: "InVivo", sector: agriculture_agrifood, careers_url: "https://invivo-recrute.talent-soft.com", ats: "talentsoft_rss" }  # flux RSS public
+    - { name: "Avril", sector: agriculture_agrifood, careers_url: "https://groupeavril.csod.com/ux/ats/careersite/2/home?c=groupeavril&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
+    - { name: "Tereos", sector: agriculture_agrifood, careers_url: "https://tereos.csod.com/ux/ats/careersite/1/home?c=tereos&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
+    - { name: "Limagrain", sector: agriculture_agrifood, careers_url: "https://jobs.limagrain.com", ats: "successfactors" }  # plan du site autorisé, JSON interdit
+    - { name: "Lactalis", sector: agriculture_agrifood, careers_url: "https://jobs.lactalisexperience.fr", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Danone", sector: agriculture_agrifood, careers_url: "https://careers.danone.com/en-global/jobs.html", ats: "icims" }  # HTML ; JSON interdit par robots.txt
+    - { name: "Bonduelle", sector: agriculture_agrifood, careers_url: "https://jobs.bonduelle.com", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Agrial", sector: agriculture_agrifood, careers_url: "https://agrial.csod.com/ux/ats/careersite/8/home?c=agrial&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
+    - { name: "Savencia", sector: agriculture_agrifood, careers_url: "https://eoct.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/fr/sites/careers/jobs", ats: "oracle" }  # JSON interne Oracle
+    - { name: "Isagri", sector: agriculture_agrifood, careers_url: "https://emploi.isagri.fr/offre", ats: "beetween" }  # données dans la page HTML
     # Grande consommation
-    - { name: "Suntory Beverage & Food France", sector: consumer_goods, careers_url: "", ats: "" }
-    - { name: "Coca-Cola Europacific Partners", sector: consumer_goods, careers_url: "", ats: "" }
-    - { name: "Pernod Ricard", sector: consumer_goods, careers_url: "", ats: "" }
-    - { name: "Nestlé France", sector: consumer_goods, careers_url: "", ats: "" }
-    - { name: "Unilever France", sector: consumer_goods, careers_url: "", ats: "" }
-    - { name: "Heineken France", sector: consumer_goods, careers_url: "", ats: "" }
-    - { name: "Bel", sector: consumer_goods, careers_url: "", ats: "" }
+    - { name: "Suntory Beverage & Food France", sector: consumer_goods, careers_url: "https://careers.suntorybeverageandfood.com", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Coca-Cola Europacific Partners", sector: consumer_goods, careers_url: "https://www.ccep.jobs/fr/france-jobs", ats: "eightfold" }  # JSON Eightfold autorisé par robots.txt
+    - { name: "Pernod Ricard", sector: consumer_goods, careers_url: "https://pernodricard.wd3.myworkdayjobs.com/pernod-ricard", ats: "workday" }  # JSON interne Workday
+    - { name: "Nestlé France", sector: consumer_goods, careers_url: "https://jobdetails.nestle.com/search/?q=&locationsearch=France", ats: "successfactors" }  # HTML /search/ autorisé
+    - { name: "Unilever France", sector: consumer_goods, careers_url: "https://unilever.wd3.myworkdayjobs.com/Unilever_Experienced_Professionals", ats: "workday" }  # JSON interne Workday
+    - { name: "Heineken France", sector: consumer_goods, careers_url: "https://careers.theheinekencompany.com/Francais/HEINEKEN-France", ats: "successfactors" }  # HTML, Crawl-delay 5 s
+    - { name: "Bel", sector: consumer_goods, careers_url: "https://jobs.groupe-bel.com/?locale=fr_FR", ats: "successfactors" }  # plan du site autorisé, JSON interdit
     # Distribution
-    - { name: "Carrefour", sector: retail, careers_url: "", ats: "" }
-    - { name: "Auchan", sector: retail, careers_url: "", ats: "" }
-    - { name: "Les Mousquetaires", sector: retail, careers_url: "", ats: "" }
-    - { name: "Lidl France", sector: retail, careers_url: "", ats: "" }
-    - { name: "Groupe Casino", sector: retail, careers_url: "", ats: "" }
-    - { name: "Système U", sector: retail, careers_url: "", ats: "" }
+    - { name: "Carrefour", sector: retail, careers_url: "https://recrute.carrefour.fr/offres/", ats: "icims" }  # HTML iCIMS
+    - { name: "Auchan", sector: retail, careers_url: "https://www.auchan-recrute.fr/jobs/", ats: "meteojob" }  # plateforme Meteojob : jamais de collecte directe
+    - { name: "Les Mousquetaires", sector: retail, careers_url: "https://jobs.smartrecruiters.com/GroupementMousquetaires", ats: "smartrecruiters" }  # API publique documentée
+    - { name: "Lidl France", sector: retail, careers_url: "https://emplois.lidl.fr/offres-d-emploi", ats: "successfactors" }  # JSON du site autorisé par robots.txt
+    - { name: "Groupe Casino", sector: retail, careers_url: "https://recrute.groupe-casino.fr/fr/annonces", ats: "digitalrecruiters" }  # JSON interne, Crawl-delay 10 s
+    - { name: "Système U", sector: retail, careers_url: "https://u-emploi.com/offres-emploi", ats: "digitalrecruiters" }  # site protégé contre les robots
     # Autres
-    - { name: "TotalEnergies", sector: other, careers_url: "", ats: "" }
+    - { name: "TotalEnergies", sector: other, careers_url: "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/", ats: "avature" }  # HTML
 
 
 # ---------------------------------------------------------------------
