@@ -8,6 +8,8 @@ Rules applied to every request (CLAUDE.md, section 5):
 - a generic User-Agent without any personal data.
 """
 
+import html
+import re
 import time
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -20,6 +22,20 @@ from job_agent.config.models import WatchedCompany
 from job_agent.offer import Offer
 
 USER_AGENT = "job-agent/0.1 (+https://github.com/noube-marc/job_agent)"
+
+
+_BLOCK_TAGS = re.compile(r"<\s*(br|/p|/div|/h\d|/tr|/ul|/ol)\b[^>]*>", re.IGNORECASE)
+_LIST_ITEM = re.compile(r"<\s*li\b[^>]*>", re.IGNORECASE)
+_TAGS = re.compile(r"<[^>]+>")
+
+
+def html_to_text(fragment: str) -> str:
+    """Readable plain text from an HTML fragment (line breaks kept)."""
+    text = _LIST_ITEM.sub("\n- ", _BLOCK_TAGS.sub("\n", fragment))
+    text = html.unescape(_TAGS.sub(" ", text)).replace("\xa0", " ")
+    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in text.splitlines()]
+    text = re.sub(r"\n{2,}(?=- )", "\n", "\n".join(lines))  # no blank line before list items
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 class SourceError(Exception):

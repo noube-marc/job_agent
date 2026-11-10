@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 
 from job_agent.config import AppConfig, load_config
@@ -12,6 +13,16 @@ from job_agent.offer import Offer
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE_CONFIG = ROOT / "config.example.yaml"
 NOW = datetime(2026, 11, 10, 12, 0, tzinfo=timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def no_network(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests never reach a real site: only httpx.MockTransport is allowed."""
+
+    def blocked(self, request):
+        raise RuntimeError(f"Appel réseau interdit pendant les tests : {request.url.host}")
+
+    monkeypatch.setattr(httpx.HTTPTransport, "handle_request", blocked)
 
 
 @pytest.fixture
