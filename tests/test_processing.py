@@ -193,3 +193,51 @@ def test_title_is_candidate(config, title, expected) -> None:
     from job_agent.processing.filters import title_is_candidate
 
     assert title_is_candidate(title, config) is expected
+
+
+@pytest.mark.parametrize(
+    "title", ["Data Engineer / Architecte Data Junior F/H", "Lead Data Analyst débutant", "Data Engineer Junior"]
+)
+def test_junior_titles_are_never_too_advanced(config, title) -> None:
+    offer = make_offer(title=title, description="Stack : Kafka, Scala et Kubernetes. Encadrement d'équipe. 2 ans d'expérience.")
+    result = evaluate(offer, config, NOW)
+    assert result.kept and result.junior
+    assert "poste junior" in result.flags
+    assert any("non bloquant" in flag for flag in result.flags)
+
+
+def test_junior_still_follows_experience_rule(config) -> None:
+    result = evaluate(make_offer(title="Data Analyst Junior", experience_raw="5 ans minimum"), config, NOW)
+    assert not result.kept
+
+
+def test_junior_offers_come_first_on_the_same_day(config, tmp_path) -> None:
+    from datetime import timedelta
+
+    storage = Storage(tmp_path / "t.db")
+    sectors = SectorIndex.build(config, ROOT / "sectors.yaml")
+    day = NOW - timedelta(hours=10)
+    offers = [
+        make_offer(source_offer_id="1", title="Data Analyst", company="Inconnue", published_at=day + timedelta(hours=3)),
+        make_offer(source_offer_id="2", title="Data Engineer Junior", company="Autre", published_at=day),
+        make_offer(source_offer_id="3", title="Data Scientist", company="Société X", published_at=NOW - timedelta(days=2)),
+    ]
+    process_offers(offers, config, storage, sectors, NOW)
+    titles = [row["title"] for row in storage.pending_notifications()]
+    storage.close()
+    assert titles == ["Data Engineer Junior", "Data Analyst", "Data Scientist"]
+
+
+def test_existing_database_gets_the_junior_column(tmp_path) -> None:
+    import sqlite3
+
+    from job_agent.storage import SCHEMA
+
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.executescript(SCHEMA.replace("    junior INTEGER NOT NULL DEFAULT 0,\n", ""))  # previous version
+    old.close()
+    storage = Storage(path)
+    columns = {row[1] for row in storage.connection.execute("PRAGMA table_info(offers)")}
+    storage.close()
+    assert "junior" in columns

@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS offers (
     company TEXT,
     sector TEXT,
     priority_sector INTEGER NOT NULL DEFAULT 0,
+    junior INTEGER NOT NULL DEFAULT 0,
     title TEXT NOT NULL,
     location TEXT,
     department_code TEXT,
@@ -128,6 +129,14 @@ class Storage:
         self.connection.row_factory = sqlite3.Row
         self.connection.execute("PRAGMA foreign_keys = ON")
         self.connection.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Add the columns created after the first version of the database."""
+        columns = {row[1] for row in self.connection.execute("PRAGMA table_info(offers)")}
+        with self.transaction() as db:
+            if "junior" not in columns:
+                db.execute("ALTER TABLE offers ADD COLUMN junior INTEGER NOT NULL DEFAULT 0")
 
     def close(self) -> None:
         self.connection.close()
@@ -160,6 +169,7 @@ class Storage:
                 row[key] = _iso(row[key])
         row["kept"] = int(bool(row["kept"]))
         row["priority_sector"] = int(bool(row.get("priority_sector")))
+        row["junior"] = int(bool(row.get("junior")))
         row["group_id"] = group_id if group_id is not None else -1
 
         columns = ", ".join(row)
@@ -194,7 +204,8 @@ class Storage:
             """SELECT o.* FROM offers o
                LEFT JOIN notifications n ON n.group_id = o.group_id
                WHERE o.id = o.group_id AND o.kept = 1 AND n.group_id IS NULL
-               ORDER BY o.effective_date DESC, o.priority_sector DESC, o.id"""
+               ORDER BY substr(o.effective_date, 1, 10) DESC, o.junior DESC, o.priority_sector DESC,
+                        o.effective_date DESC, o.id"""
         ).fetchall()
 
     def mark_notified(self, group_ids: list[int], channel: str) -> None:
@@ -218,7 +229,8 @@ class Storage:
             """SELECT o.* FROM offers o
                LEFT JOIN tracking t ON t.offer_id = o.id
                WHERE o.id = o.group_id AND t.offer_id IS NULL
-               ORDER BY o.effective_date DESC, o.priority_sector DESC, o.id"""
+               ORDER BY substr(o.effective_date, 1, 10) DESC, o.junior DESC, o.priority_sector DESC,
+                        o.effective_date DESC, o.id"""
         ).fetchall()
 
     def mark_tracked(self, offer_ids: list[int]) -> None:

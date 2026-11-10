@@ -30,6 +30,7 @@ CONTRACT_LABELS = {
 FLAG_EXPERIENCE_UNSPECIFIED = "expérience non précisée"
 FLAG_DATE_ESTIMATED = "date estimée"
 FLAG_CONTRACT_UNSPECIFIED = "contrat non précisé"
+FLAG_JUNIOR = "poste junior"
 
 
 @dataclass
@@ -39,6 +40,7 @@ class Evaluation:
     flags: list[str] = field(default_factory=list)
     effective_date: datetime | None = None
     min_experience_years: int | None = None
+    junior: bool = False
 
     def reject(self, reason: str) -> None:
         self.kept = False
@@ -120,20 +122,33 @@ def _required_technologies(description: str, config: AppConfig) -> list[str]:
 def _check_seniority(offer: Offer, config: AppConfig, result: Evaluation) -> None:
     profile = config.technical_profile
     title_tokens = tokens(offer.title)
+    result.junior = any(contains_phrase(title_tokens, k) for k in profile.junior_title_keywords)
+    if result.junior:
+        result.flags.append(FLAG_JUNIOR)
+
+    def too_advanced(reason: str) -> None:
+        # A junior position is never rejected as too advanced: the hint is kept.
+        if result.junior:
+            result.flags.append(f"{reason} (non bloquant : poste junior)")
+        else:
+            result.reject(f"poste trop avancé ({reason})")
+
     for keyword in profile.advanced_title_keywords:
         if contains_phrase(title_tokens, keyword):
-            result.reject(f"poste trop avancé (intitulé : « {keyword} »)")
-            return
+            too_advanced(f"intitulé : « {keyword} »")
+            if not result.junior:
+                return
 
     description_tokens = tokens(offer.description)
     for keyword in profile.advanced_mission_keywords:
         if contains_phrase(description_tokens, keyword):
-            result.reject(f"poste trop avancé (mission : « {keyword} »)")
-            return
+            too_advanced(f"mission : « {keyword} »")
+            if not result.junior:
+                return
 
     required = _required_technologies(offer.description, config)
     if len(required) >= profile.too_advanced_threshold:
-        result.reject(f"poste trop avancé ({len(required)} technologies non maîtrisées exigées : {', '.join(required)})")
+        too_advanced(f"{len(required)} technologies non maîtrisées exigées : {', '.join(required)}")
     elif len(required) >= profile.technical_gap_threshold:
         result.flags.append(f"écart technique ({', '.join(required)})")
 

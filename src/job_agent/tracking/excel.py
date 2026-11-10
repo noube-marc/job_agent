@@ -53,6 +53,7 @@ _HEADER_FONT = Font(bold=True, color="FFFFFF")
 _AGENT_FILL = PatternFill("solid", fgColor="1F4E78")
 _USER_FILL = PatternFill("solid", fgColor="548235")
 _PRIORITY_FILL = PatternFill("solid", fgColor="FFF2CC")
+_JUNIOR_FILL = PatternFill("solid", fgColor="E2EFDA")
 _LINK_FONT = Font(color="0563C1", underline="single")
 _MAX_VALIDATED_ROWS = 20000
 
@@ -191,6 +192,8 @@ def append_offers(
             row = _append(tracking, _tracking_row(main, members, timezone), link_columns=(13,))
             if main["priority_sector"]:
                 tracking.cell(row=row, column=6).fill = _PRIORITY_FILL
+            if main["junior"]:
+                tracking.cell(row=row, column=3).fill = _JUNIOR_FILL
             _append(descriptions, [main["id"], main["company"], main["title"], main["description"]])
             kept += 1
         elif keep_rejected:

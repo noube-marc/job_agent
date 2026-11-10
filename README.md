@@ -52,7 +52,7 @@ Ouvrez `config.yaml` avec un éditeur de texte. Chaque réglage est expliqué en
 | Section | Rôle |
 |---|---|
 | `search` | Intitulés recherchés, mots exclus, règle Business Analyst |
-| `technical_profile` | Vos compétences et les technologies qui rendent un poste trop avancé |
+| `technical_profile` | Vos compétences, les technologies qui rendent un poste trop avancé, et les mots « junior » ou « débutant » qui font passer une offre en priorité (jamais écartée comme trop avancée) |
 | `experience` | Seuil d'expérience minimum demandée (5 ans par défaut) |
 | `contracts`, `location` | Contrats acceptés, régions, télétravail |
 | `freshness` | Âge maximum d'une offre (7 jours par défaut) |

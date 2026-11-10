@@ -104,6 +104,11 @@ class TechnicalProfileConfig(StrictModel):
     advanced_title_keywords: list[str] = Field(default_factory=list)
     advanced_mission_keywords: list[str] = Field(default_factory=list)
     optional_markers: list[str] = Field(default_factory=list)
+    # Title words of positions open to beginners: such offers are never
+    # rejected as "too advanced", and come first among offers of the same day.
+    junior_title_keywords: list[str] = Field(
+        default_factory=lambda: ["junior", "débutant", "débutante", "jeune diplômé", "jeune diplômée"]
+    )
 
 
 # ---------------------------------------------------------------------

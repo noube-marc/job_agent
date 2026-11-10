@@ -95,6 +95,7 @@ def process_offers(
             "company": offer.company,
             "sector": sector,
             "priority_sector": sector in priority,
+            "junior": result.junior,
             "title": offer.title,
             "location": offer.location,
             "department_code": offer.department_code,
