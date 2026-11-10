@@ -1,2 +1,1 @@
-def main() -> str:
-    return "Hello from job-agent!"
+"""job-agent: job offer monitoring agent."""
