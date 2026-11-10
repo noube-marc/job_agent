@@ -1,0 +1,67 @@
+"""The HTTP client respects robots.txt, delays and identifies itself generically."""
+
+import httpx
+import pytest
+
+from job_agent.collectors.base import USER_AGENT, PoliteClient, SourceError
+
+ROBOTS = "User-agent: *\nDisallow: /private/\nCrawl-delay: 5\n"
+
+
+class FakeClock:
+    def __init__(self) -> None:
+        self.now = 0.0
+        self.slept: list[float] = []
+
+    def time(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.slept.append(round(seconds, 2))
+        self.now += seconds
+
+
+def _client(handler, clock: FakeClock, delay: float = 2) -> PoliteClient:
+    return PoliteClient(delay, 10, transport=httpx.MockTransport(handler), sleep=clock.sleep, clock=clock.time)
+
+
+def test_robots_delay_and_user_agent() -> None:
+    seen_agents: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_agents.append(request.headers["User-Agent"])
+        if request.url.path == "/robots.txt":
+            return httpx.Response(200, text=ROBOTS)
+        return httpx.Response(200, json={"ok": True})
+
+    clock = FakeClock()
+    client = _client(handler, clock)
+    client.get("https://site.example/jobs")
+    client.get("https://site.example/jobs?page=2")
+    with pytest.raises(SourceError, match="robots.txt"):
+        client.get("https://site.example/private/x")
+
+    assert set(seen_agents) == {USER_AGENT}
+    assert "@" not in USER_AGENT  # no personal e-mail
+    # Crawl-delay (5 s) is longer than the configured delay (2 s): it wins.
+    assert clock.slept and max(clock.slept) == 5
+
+
+def test_http_errors_become_source_errors() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/robots.txt":
+            return httpx.Response(404)
+        return httpx.Response(503)
+
+    client = _client(handler, FakeClock())
+    with pytest.raises(SourceError, match="HTTP 503"):
+        client.get("https://down.example/jobs")
+
+
+def test_robots_server_error_forbids_everything() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500 if request.url.path == "/robots.txt" else 200)
+
+    client = _client(handler, FakeClock())
+    with pytest.raises(SourceError, match="robots.txt"):
+        client.get("https://flaky.example/jobs")

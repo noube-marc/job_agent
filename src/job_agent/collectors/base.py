@@ -59,11 +59,13 @@ class PoliteClient:
             parser: RobotFileParser | None = RobotFileParser()
             try:
                 response = self._raw("GET", f"{host}/robots.txt")
+                # RFC 9309: a 4xx answer means "no rules" (everything is
+                # allowed); a 5xx answer means "assume everything is forbidden".
                 if response.status_code == 200:
                     parser.parse(response.text.splitlines())
-                elif response.status_code in (401, 403):
+                elif response.status_code >= 500:
                     parser.disallow_all = True
-                else:  # no robots.txt: everything is allowed
+                else:
                     parser = None
             except httpx.HTTPError:
                 parser = None
