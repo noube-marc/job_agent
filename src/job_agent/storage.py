@@ -77,6 +77,18 @@ CREATE TABLE IF NOT EXISTS source_runs (
     error TEXT,
     PRIMARY KEY (run_id, source_name)
 );
+
+CREATE TABLE IF NOT EXISTS email_messages (
+    message_id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    offers INTEGER NOT NULL,
+    processed_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS app_state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 """
 
 
@@ -240,3 +252,23 @@ class Storage:
                 break
             streak += 1
         return streak
+
+    # --- e-mail alerts ------------------------------------------------
+    def processed_emails(self) -> set[str]:
+        return {row[0] for row in self.connection.execute("SELECT message_id FROM email_messages")}
+
+    def mark_email_processed(self, message_id: str, provider: str, offers: int) -> None:
+        with self.transaction() as db:
+            db.execute(
+                "INSERT OR REPLACE INTO email_messages (message_id, provider, offers, processed_at) VALUES (?, ?, ?, ?)",
+                (message_id, provider, offers, _iso(utc_now())),
+            )
+
+    # --- small persistent values --------------------------------------
+    def get_state(self, key: str) -> str | None:
+        row = self.connection.execute("SELECT value FROM app_state WHERE key = ?", (key,)).fetchone()
+        return row[0] if row else None
+
+    def set_state(self, key: str, value: str) -> None:
+        with self.transaction() as db:
+            db.execute("INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)", (key, value))

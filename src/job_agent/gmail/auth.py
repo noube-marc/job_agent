@@ -70,7 +70,9 @@ def gmail_setup(env_path: str | Path = ".env") -> int:
     )
     print("Une page Google va s'ouvrir : connectez-vous avec la boîte qui reçoit les alertes,")
     print("puis acceptez l'accès en LECTURE SEULE.")
-    credentials = flow.run_local_server(port=0, open_browser=True, prompt="consent", access_type="offline")
+    credentials = flow.run_local_server(
+        port=0, open_browser=True, prompt="consent", access_type="offline", authorization_prompt_message=""
+    )
     granted = set(credentials.scopes or [])
     if granted != set(SCOPES):
         print(f"Permissions inattendues ({', '.join(sorted(granted))}) : rien n'est enregistré.")
