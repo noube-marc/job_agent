@@ -109,7 +109,7 @@ Créer la tâche planifiée Windows (toutes les 2 heures de 8 h à 20 h, du lund
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install_task.ps1
 ```
-La tâche tourne sans fenêtre, quand votre session Windows est ouverte. Un passage manqué (ordinateur éteint) est rattrapé au démarrage. Si vous changez les heures, utilisez les mêmes valeurs dans `config.yaml` (section `schedule`) et dans le script, par exemple :
+La tâche tourne sans fenêtre, quand votre session Windows est ouverte et qu'une connexion réseau est disponible. Un passage manqué (ordinateur éteint) est rattrapé au démarrage. Avant chaque passage, l'agent vérifie aussi l'accès à internet : sans connexion, le passage est simplement reporté. Si vous changez les heures, utilisez les mêmes valeurs dans `config.yaml` (section `schedule`) et dans le script, par exemple :
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install_task.ps1 -StartHour 7 -EndHour 21
 ```
@@ -140,6 +140,7 @@ Les autres entreprises de la liste n'ont pas encore de connecteur (le journal le
 | `Erreur de configuration` | Corrigez la clé indiquée dans `config.yaml`, puis relancez `uv run job-agent check-config` |
 | `Hors de la plage horaire` | Normal en dehors des heures de `schedule` ; utilisez `--force` pour un passage immédiat |
 | `Notifications Telegram impossibles` | Vérifiez `TELEGRAM_BOT_TOKEN` et `TELEGRAM_CHAT_ID` dans `.env` |
+| `Pas de connexion internet` | Normal si le PC est hors ligne : le passage suivant se fera dès le retour de la connexion |
 | `Fichier de suivi ouvert dans Excel` | Fermez le fichier : les offres seront ajoutées au passage suivant |
 | `ne renvoie aucune offre depuis 3 passages` | Le site a peut-être changé : signalez-le dans une Issue GitHub |
 

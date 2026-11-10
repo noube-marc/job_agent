@@ -18,6 +18,7 @@ def test_full_run_is_silent_first_then_notifies(config, tmp_path, monkeypatch) -
 
     sent: list[str] = []
     monkeypatch.setattr(runner, "telegram_sender_from_env", lambda: sent.append)
+    monkeypatch.setattr(runner, "internet_available", lambda: True)
 
     batches = {"first": [make_offer(source_offer_id="1", published_at=utc_now())]}
 
@@ -48,3 +49,14 @@ def test_full_run_is_silent_first_then_notifies(config, tmp_path, monkeypatch) -
     assert errors == 2  # the broken source failed twice, without stopping the run
     log_text = (tmp_path / "private" / "logs" / "job_agent.log").read_text(encoding="utf-8")
     assert "test-token" not in log_text
+
+
+def test_no_internet_postpones_the_run(config, tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(runner, "internet_available", lambda: False)
+    called = []
+    monkeypatch.setattr(runner, "_collect_and_process", lambda *args: called.append(args))
+
+    assert runner.run(config, force=True) == 0
+    assert called == []
+    assert not (tmp_path / "private" / "job_agent.db").exists()  # nothing recorded
