@@ -5,7 +5,7 @@ import shutil
 from openpyxl import load_workbook
 
 from conftest import ROOT, make_offer
-from job_agent import collectors, runner
+from job_agent import runner
 from job_agent.collectors.base import SourceError
 from job_agent.storage import Storage, utc_now
 
@@ -27,8 +27,8 @@ def test_full_run_is_silent_first_then_notifies(config, tmp_path, monkeypatch) -
     def broken(company, client):
         raise SourceError("site injoignable (exemple.fr, ConnectError)")
 
-    monkeypatch.setitem(collectors.CONNECTORS, "fake", good)
-    monkeypatch.setitem(collectors.CONNECTORS, "broken", broken)
+    # Only fake connectors: the real ones would call real sites.
+    monkeypatch.setattr(runner, "CONNECTORS", {"fake": good, "broken": broken})
     watchlist = config.companies.watchlist
     watchlist[0] = watchlist[0].model_copy(update={"ats": "broken", "careers_url": "https://exemple.fr"})
     watchlist[1] = watchlist[1].model_copy(update={"ats": "fake", "careers_url": "https://exemple.org"})
