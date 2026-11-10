@@ -106,7 +106,7 @@ def test_blocking_technologies(config) -> None:
 
 # --- 5. deduplication ----------------------------------------------------
 def _sig(title: str, location: str) -> object:
-    return signature("AXA", title, detect_department(location), "permanent", "", None)
+    return signature("AXA", title, detect_department(location), "permanent", "", None, location)
 
 
 def test_same_offer_from_two_sources(config) -> None:
@@ -136,3 +136,33 @@ def test_pipeline_groups_duplicates(config, tmp_path) -> None:
     row = storage.pending_notifications()[0]
     assert row["sector"] == "insurance" and row["priority_sector"] == 1
     storage.close()
+
+
+# Real false matches seen on the first real run (10/11/2026).
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        (("Conseiller commercial F/H", "Clermont-Ferrand", "fixed_term", None),
+         ("Conseiller Commercial - LAON F/H", "LAON", "fixed_term", None)),
+        (("Gestionnaire indemnisation CDD - Rouen F/H", "rouen", "fixed_term", None),
+         ("Gestionnaire Indemnisation CDD - Montauban F/H", "montauban", "fixed_term", None)),
+        (("Juriste Conseil - CDI - Rouen F/H", "Rouen", "permanent", None),
+         ("Juriste Conseil - CDD 6 mois - Rouen F/H", "Rouen", "fixed_term", None)),
+        (("CEO Founder Associate", "Paris, France", None, None),
+         ("CTO Founder Associate", "Paris, France", None, None)),
+        (("Conseiller commercial", "Lyon", "permanent", "2026-1"),
+         ("Conseiller commercial", "Lyon", "permanent", "2026-2")),
+    ],
+)
+def test_different_offers_are_not_merged(config, first, second) -> None:
+    def sig(values):
+        title, location, contract, reference = values
+        return signature("MAIF", title, detect_department(location), contract, "", reference, location)
+
+    assert similarity(sig(first), sig(second)) < config.source_verification.probable_match_threshold
+
+
+def test_same_offer_with_city_in_one_title(config) -> None:
+    a = signature("MAIF", "Data Analyst - Niort F/H", "79", "permanent", "", None, "Niort")
+    b = signature("MAIF", "Data Analyst", "79", "permanent", "", None, "Niort (79)")
+    assert similarity(a, b) >= config.source_verification.match_threshold

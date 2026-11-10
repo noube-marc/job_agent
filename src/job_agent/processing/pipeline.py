@@ -33,7 +33,7 @@ def complete_offer(offer: Offer) -> Offer:
 def _signature_of_row(row) -> object:
     return signature(
         row["company_key"], row["title"], row["department_code"], row["contract_type"],
-        row["description"], row["reference"],
+        row["description"], row["reference"], row["location"],
     )
 
 
@@ -63,7 +63,7 @@ def process_offers(
 
         new_signature = signature(
             company_key, offer.title, offer.department_code, offer.contract_type,
-            offer.description, offer.reference,
+            offer.description, offer.reference, offer.location,
         )
         best_score, best_group = 0.0, None
         for row in storage.offers_of_company(company_key):
