@@ -6,8 +6,10 @@
 # Par défaut : toutes les 2 heures de 8 h à 20 h, du lundi au samedi.
 # Ces valeurs doivent correspondre à la section "schedule" de config.yaml :
 # l'agent vérifie de toute façon lui-même la plage horaire à chaque lancement.
-# La tâche tourne avec votre compte, seulement quand votre session est ouverte,
-# sans fenêtre visible. Aucun droit administrateur n'est nécessaire.
+# La tâche tourne avec votre compte, seulement quand votre session est ouverte
+# et qu'une connexion réseau est disponible, sans fenêtre visible. Un passage
+# manqué (ordinateur éteint) est lancé dès que possible. Aucun droit
+# administrateur n'est nécessaire.
 
 param(
     [string]$TaskName = "job-agent",
@@ -38,6 +40,7 @@ $Trigger.Repetition = $Repeat.Repetition
 
 $Settings = New-ScheduledTaskSettingsSet `
     -StartWhenAvailable `
+    -RunOnlyIfNetworkAvailable `
     -MultipleInstances IgnoreNew `
     -ExecutionTimeLimit (New-TimeSpan -Hours 1) `
     -AllowStartIfOnBatteries `

@@ -42,3 +42,22 @@ def test_stale_lock_is_replaced(tmp_path) -> None:
     os.utime(lock, (old, old))
     with run_lock(lock):
         assert "pid=" in lock.read_text()
+
+
+def test_internet_available(monkeypatch) -> None:
+    import httpx
+
+    from job_agent import scheduling
+
+    monkeypatch.setattr(scheduling.httpx, "get", lambda url, **kw: httpx.Response(200, text="Microsoft Connect Test"))
+    assert scheduling.internet_available()
+
+    def offline(url, **kw):
+        raise httpx.ConnectError("no route to host")
+
+    monkeypatch.setattr(scheduling.httpx, "get", offline)
+    assert not scheduling.internet_available()
+
+    # A Wi-Fi login page answers with a redirect: not a working internet.
+    monkeypatch.setattr(scheduling.httpx, "get", lambda url, **kw: httpx.Response(302))
+    assert not scheduling.internet_available()

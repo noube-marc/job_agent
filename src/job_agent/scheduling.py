@@ -12,6 +12,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import httpx
+
 from job_agent.config.models import ScheduleConfig
 
 WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -21,6 +23,19 @@ STALE_LOCK_AFTER = timedelta(hours=3)
 
 class AlreadyRunning(Exception):
     """Another run holds the lock."""
+
+
+# Address Windows itself uses to detect a working internet connection.
+CONNECTIVITY_URL = "http://www.msftconnecttest.com/connecttest.txt"
+
+
+def internet_available(url: str = CONNECTIVITY_URL, timeout: float = 10) -> bool:
+    """True if the internet can be reached (one small request)."""
+    try:
+        response = httpx.get(url, timeout=timeout, follow_redirects=False)
+    except httpx.HTTPError:
+        return False
+    return response.status_code == 200
 
 
 def in_schedule(schedule: ScheduleConfig, now: datetime) -> bool:
