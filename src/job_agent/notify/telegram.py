@@ -105,7 +105,8 @@ def format_offer(main: sqlite3.Row, members: list[sqlite3.Row], config: AppConfi
         remarks.append("⭐ secteur prioritaire")
     if "experience_flag" in fields and FLAG_EXPERIENCE_UNSPECIFIED in flags:
         remarks.append("expérience non précisée")
-    remarks += [flag for flag in flags if flag.startswith(("écart technique", "expérience incohérente", "doublon probable"))
+    remarks += [flag for flag in flags
+                if flag.startswith(("écart technique", "expérience incohérente", "doublon probable", "IA :"))
                 or flag.endswith("(non bloquant : poste junior)")]
     if remarks:
         lines.append("ℹ️ " + e(" · ".join(remarks)))

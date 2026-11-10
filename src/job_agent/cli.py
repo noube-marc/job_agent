@@ -34,6 +34,8 @@ def _build_parser() -> argparse.ArgumentParser:
         "telegram-setup", help="aide à trouver TELEGRAM_CHAT_ID après la création du bot"
     )
     commands.add_parser("gmail-setup", help="autorise l'accès Gmail en lecture seule")
+    commands.add_parser("ai-sheet", help="prépare 30 offres à annoter pour mesurer l'IA")
+    commands.add_parser("ai-evaluate", help="compare l'IA et les règles sur les offres annotées")
     commands.add_parser(
         "gmail-senders", help="liste les expéditeurs des e-mails du libellé (pour allowed_senders)"
     )
@@ -96,6 +98,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _check_config(config, args.config)
     if args.command == "gmail-senders":
         return _gmail_senders(config)
+    if args.command in ("ai-sheet", "ai-evaluate"):
+        from job_agent.ai.evaluation import ai_evaluate_command, ai_sheet_command
+        from job_agent.storage import Storage
+
+        if args.command == "ai-evaluate":
+            return ai_evaluate_command(config.ai.model)
+        storage = Storage(config.storage.database_path)
+        try:
+            return ai_sheet_command(storage, config.ai.model)
+        finally:
+            storage.close()
     return run(config, force=args.force)
 
 

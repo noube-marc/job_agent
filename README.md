@@ -155,6 +155,16 @@ Tant que l'application Google reste en mode Test, l'accès expire au bout de 7 j
 
 Les autres entreprises de la liste n'ont pas encore de connecteur (le journal les signale « connecteur non disponible ») : leurs offres arriveront par les alertes e-mail, prévues dans une prochaine version. Les sites d'emploi (LinkedIn, Indeed, Hellowork, Welcome to the Jungle, Apec, Cadremploi, Meteojob) ne sont jamais lus directement.
 
+## Analyse par IA (Gemini, gratuit)
+
+Avec une clé `GEMINI_API_KEY` dans `.env` (créée gratuitement sur [Google AI Studio](https://aistudio.google.com), sans carte bancaire), chaque nouvelle offre retenue est lue par Gemini avant l'envoi de la notification : vrai type de contrat, expérience minimale, compétences exigées et facultatives, télétravail, niveau. Seul le texte public de l'offre est envoyé, et jamais deux fois la même offre (résultats gardés en mémoire).
+
+L'IA n'écarte rien d'elle-même : quand elle n'est pas d'accord avec les règles simples, elle ajoute une remarque « IA : ... (à vérifier) » dans le fichier de suivi et sur Telegram. Pour mesurer sa fiabilité :
+1. `uv run job-agent ai-sheet` prépare `private/annotation_ia.xlsx` : 30 offres, avec des colonnes vertes à remplir d'après le texte (contrat, expérience minimum, télétravail, niveau).
+2. `uv run job-agent ai-evaluate` compare ensuite les règles simples et l'IA à vos réponses, champ par champ, et écrit le résultat dans `reports/ai_evaluation.md`.
+
+Modèle utilisé par défaut : `gemini-3.5-flash`, avec d'autres modèles gratuits en secours quand il est saturé. L'offre gratuite de Google peut utiliser les données envoyées pour améliorer ses services : seul le texte public des offres est concerné.
+
 ## Dépannage
 
 | Message | Que faire |
@@ -165,6 +175,7 @@ Les autres entreprises de la liste n'ont pas encore de connecteur (le journal le
 | `Notifications Telegram impossibles` | Vérifiez `TELEGRAM_BOT_TOKEN` et `TELEGRAM_CHAT_ID` dans `.env` |
 | `l'accès Gmail a expiré` | Relancez `uv run job-agent gmail-setup` |
 | `Pas de connexion internet` | Normal si le PC est hors ligne : le passage suivant se fera dès le retour de la connexion |
+| `IA indisponible pour l'instant` | Modèles gratuits saturés : les offres sont analysées au passage suivant |
 | `Fichier de suivi ouvert dans Excel` | Fermez le fichier : les offres seront ajoutées au passage suivant |
 | `ne renvoie aucune offre depuis 3 passages` | Le site a peut-être changé : signalez-le dans une Issue GitHub |
 
