@@ -509,8 +509,9 @@ notifications:
 ai:
   # Fournisseur d'IA. Valeur possible pour l'instant : gemini.
   provider: gemini
-  # Modèle utilisé. Laisser vide : il sera choisi lors de la mise en
-  # place de l'IA (les modèles disponibles changent souvent).
+  # Modèle utilisé. Laisser vide = gemini-3.5-flash (niveau gratuit),
+  # avec d'autres modèles gratuits en secours quand il est saturé.
+  # Seul le texte public des offres est envoyé, jamais votre CV ici.
   model: ""
   # CV SANS coordonnées (ni nom, ni téléphone, ni e-mail), dans le
   # dossier private/. C'est le seul CV envoyé à l'IA.

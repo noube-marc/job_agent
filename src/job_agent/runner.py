@@ -199,6 +199,27 @@ def _send_outbox(storage: Storage, sender) -> int:
     return sent
 
 
+def _enrich_with_ai(config: AppConfig, storage: Storage) -> Counter[str]:
+    """AI reading of new kept offers (before Excel and Telegram)."""
+    from job_agent.ai.enrich import enrich_new_offers
+    from job_agent.ai.extraction import AIUnavailable, GeminiExtractor
+
+    if config.ai.provider != "gemini":
+        return Counter()
+    try:
+        extractor = GeminiExtractor.from_env(config.ai.model)
+    except AIUnavailable as error:
+        log.info("Analyse par IA désactivée : %s.", error)
+        return Counter()
+    counts = enrich_new_offers(storage, config, extractor)
+    if counts["analysed"]:
+        log.info("IA : %d offre(s) analysée(s), %d remarque(s) ajoutée(s).", counts["analysed"], counts["flags"])
+    if counts["unavailable"]:
+        log.warning("IA indisponible pour l'instant (%s) : réessai au prochain passage.",
+                    storage.get_state("ai_last_error"))
+    return Counter(ai_analysed=counts["analysed"])
+
+
 def _update_tracking(config: AppConfig, storage: Storage) -> None:
     if config.tracking.backend != "excel":
         log.warning("Suivi « %s » pas encore disponible : seul excel est géré.", config.tracking.backend)
@@ -277,6 +298,7 @@ def run(config: AppConfig, force: bool = False) -> int:
                     log.info("Connecteur non disponible pour %d entreprise(s) : %s",
                              len(unavailable), ", ".join(unavailable))
                 totals.update(_collect_email_alerts(config, storage, run_id, now))
+                totals.update(_enrich_with_ai(config, storage))
                 _update_tracking(config, storage)
                 totals.update(_notify(config, storage, silent))
                 summary = dict(totals)

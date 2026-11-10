@@ -93,6 +93,13 @@ CREATE TABLE IF NOT EXISTS outbox (
     sent INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS ai_extractions (
+    offer_id INTEGER PRIMARY KEY,
+    model TEXT NOT NULL,
+    result TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS app_state (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -318,3 +325,26 @@ class Storage:
     def mark_outbox_sent(self, message_id: int) -> None:
         with self.transaction() as db:
             db.execute("UPDATE outbox SET sent = 1 WHERE id = ?", (message_id,))
+
+    # --- AI extraction cache ------------------------------------------
+    def offers_needing_ai(self, limit: int, min_description: int = 200) -> list[sqlite3.Row]:
+        """Kept offers with a real description, not analysed, not notified yet."""
+        return self.connection.execute(
+            """SELECT o.* FROM offers o
+               LEFT JOIN ai_extractions a ON a.offer_id = o.id
+               LEFT JOIN notifications n ON n.group_id = o.group_id
+               WHERE o.id = o.group_id AND o.kept = 1 AND a.offer_id IS NULL AND n.group_id IS NULL
+                 AND length(o.description) >= ?
+               ORDER BY o.effective_date DESC LIMIT ?""",
+            (min_description, limit),
+        ).fetchall()
+
+    def ai_result(self, offer_id: int) -> sqlite3.Row | None:
+        return self.connection.execute("SELECT * FROM ai_extractions WHERE offer_id = ?", (offer_id,)).fetchone()
+
+    def save_ai_result(self, offer_id: int, model: str, result_json: str) -> None:
+        with self.transaction() as db:
+            db.execute(
+                "INSERT OR REPLACE INTO ai_extractions (offer_id, model, result, created_at) VALUES (?, ?, ?, ?)",
+                (offer_id, model, result_json, _iso(utc_now())),
+            )
