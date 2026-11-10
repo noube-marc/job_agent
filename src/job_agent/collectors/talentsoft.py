@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from urllib.parse import parse_qs, urlsplit
 
-from job_agent.collectors.base import PoliteClient, SourceError, html_to_text
+from job_agent.collectors.base import CollectContext, SourceError, html_to_text
 from job_agent.config.models import WatchedCompany
 from job_agent.offer import Offer
 
@@ -85,6 +85,6 @@ def parse_feed(xml_text: str, company: WatchedCompany, now: datetime) -> list[Of
     return offers
 
 
-def collect(company: WatchedCompany, client: PoliteClient) -> list[Offer]:
-    response = client.get(feed_url(company.careers_url))
-    return parse_feed(response.text, company, datetime.now(timezone.utc))
+def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
+    response = context.client.get(feed_url(company.careers_url))
+    return parse_feed(response.text, company, context.now)

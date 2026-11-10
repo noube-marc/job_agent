@@ -7,7 +7,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from job_agent.collectors import CONNECTORS
-from job_agent.collectors.base import PoliteClient
+from job_agent.collectors.base import CollectContext, PoliteClient
 from job_agent.config.models import AppConfig
 from job_agent.notify.telegram import NotificationError, notify_pending, telegram_sender_from_env
 from job_agent.processing.pipeline import process_offers
@@ -53,6 +53,7 @@ def _collect_and_process(
     sectors = SectorIndex.build(config)
     settings = config.sources.career_pages
     client = PoliteClient(settings.request_delay_seconds, settings.timeout_seconds)
+    context = CollectContext(client, config, now, storage.has_offer)
     try:
         for company in config.companies.watchlist:
             connector = CONNECTORS.get(company.ats)
@@ -61,7 +62,7 @@ def _collect_and_process(
                 continue
             source_name = f"{company.ats}:{company.name}"
             try:
-                offers = connector(company, client)
+                offers = connector(company, context)
             except Exception as error:  # one source never stops the others
                 log.warning("  %s : erreur, %s", source_name, error)
                 storage.record_source(run_id, source_name, 0, str(error))
