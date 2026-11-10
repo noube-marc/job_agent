@@ -5,8 +5,10 @@ opened (that would be collecting from the site in disguise). An offer
 read from an e-mail has a partial description (title, company, place).
 """
 
+import html
 import re
 from collections.abc import Callable
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from job_agent.collectors.base import html_to_text
 from job_agent.gmail.reader import AlertEmail
@@ -61,10 +63,11 @@ def parse_linkedin(alert: AlertEmail) -> list[Offer]:
                 description="",
                 description_is_partial=True,
                 contract_type_raw=title if detect_contract(title) else None,
-                # The alert e-mail gives no publication date: its reception
-                # time is the job board date (the offer is at most that old).
-                published_at=alert.received_at,
-                published_at_source="job_board",
+                # The alert e-mail gives no publication date. The offer is
+                # dated by the e-mail reception and flagged "date estimée";
+                # a career-site date replaces it when the same offer is found.
+                published_at=None,
+                published_at_source=None,
                 first_seen_at=alert.received_at,
                 raw_payload={"message_id": alert.message_id, "block": block.strip()[:2000]},
             )
@@ -72,6 +75,31 @@ def parse_linkedin(alert: AlertEmail) -> list[Offer]:
     return offers
 
 
+# Only these search parameters are kept in a "see all offers" link: the
+# others are tracking codes or one-click sign-in tokens tied to the account.
+_LINKEDIN_SEARCH_PARAMS = {"keywords", "location", "geoId", "distance", "f_TPR", "f_E", "f_JT", "f_WT", "sortBy"}
+_LINKEDIN_SEE_ALL = re.compile(r"(https://www\.linkedin\.com/(?:comm/)?jobs/search[^\s>\"']*)")
+
+
+def linkedin_more_offers_link(alert: AlertEmail) -> str | None:
+    """Clean "see all offers" link of a LinkedIn alert, or None.
+
+    The agent never opens it: it is only sent to the user on Telegram.
+    """
+    text = alert.text or html_to_text(alert.html)
+    match = _LINKEDIN_SEE_ALL.search(text) or _LINKEDIN_SEE_ALL.search(alert.html or "")
+    if not match:
+        return None
+    parts = urlsplit(html.unescape(match.group(1)))
+    params = [(key, value) for key, value in parse_qsl(parts.query) if key in _LINKEDIN_SEARCH_PARAMS]
+    if not params:
+        return None
+    return urlunsplit(("https", "www.linkedin.com", "/jobs/search/", urlencode(params), ""))
+
+
 PARSERS: dict[str, Callable[[AlertEmail], list[Offer]]] = {
     "linkedin": parse_linkedin,
+}
+MORE_OFFERS_LINKS: dict[str, Callable[[AlertEmail], str | None]] = {
+    "linkedin": linkedin_more_offers_link,
 }

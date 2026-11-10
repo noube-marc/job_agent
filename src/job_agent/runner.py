@@ -1,5 +1,6 @@
 """One run of the agent: collect, process, track, notify, report."""
 
+import html
 import logging
 from collections import Counter
 from datetime import datetime
@@ -157,6 +158,7 @@ def _collect_email_alerts(config: AppConfig, storage: Storage, run_id: int, now:
         counts = process_offers(offers, config, storage, sectors, now)
         totals.update(counts)
         per_provider[alert.provider] += len(offers)
+        _queue_more_offers_link(storage, alert)
         storage.mark_email_processed(alert.message_id, alert.provider, len(offers))
     for provider, count in per_provider.items():
         storage.record_source(run_id, f"email:{provider}", count, None)
@@ -164,6 +166,37 @@ def _collect_email_alerts(config: AppConfig, storage: Storage, run_id: int, now:
     if not alerts:
         log.info("  Alertes e-mail : aucun nouvel e-mail.")
     return totals
+
+
+def _queue_more_offers_link(storage: Storage, alert) -> None:
+    """Queue the "see all offers" link of an alert, for the user to open."""
+    from job_agent.gmail.parsers import MORE_OFFERS_LINKS
+
+    extract = MORE_OFFERS_LINKS.get(alert.provider)
+    link = extract(alert) if extract else None
+    if not link:
+        return
+    subject = alert.subject.split(" : ", 1)[-1] if " : " in alert.subject else alert.subject
+    storage.add_to_outbox(
+        f"more:{alert.message_id}",
+        f"🔎 Alerte {alert.provider.capitalize()} : l'e-mail n'affiche qu'une partie des offres "
+        f"({html.escape(subject[:120])})." + NEWLINE
+        + f'<a href="{html.escape(link, quote=True)}">Voir toutes les offres</a> '
+        "(lien à ouvrir vous-même : l'agent ne l'ouvre jamais).",
+    )
+
+
+def _send_outbox(storage: Storage, sender) -> int:
+    sent = 0
+    for row in storage.pending_outbox():
+        try:
+            sender(row["message"])
+        except NotificationError as error:
+            log.warning("Telegram : %s. Messages restants envoyés au prochain passage.", error)
+            break
+        storage.mark_outbox_sent(row["id"])
+        sent += 1
+    return sent
 
 
 def _update_tracking(config: AppConfig, storage: Storage) -> None:
@@ -194,6 +227,7 @@ def _notify(config: AppConfig, storage: Storage, silent: bool) -> Counter[str]:
         return counts
     if silent:
         result = notify_pending(storage, config, lambda text: None, silent=True)
+        _send_outbox(storage, lambda text: None)  # first run: nothing is sent
         counts["silenced"] = result.silenced
         log.info("Premier passage : %d offre(s) enregistrées sans notification.", result.silenced)
         return counts
@@ -213,6 +247,10 @@ def _notify(config: AppConfig, storage: Storage, silent: bool) -> Counter[str]:
         log.info("Telegram : %d offre(s) notifiée(s).", result.sent)
     if result.error:
         log.warning("Telegram : %s. Les offres restantes seront envoyées au prochain passage.", result.error)
+        return counts
+    extra = _send_outbox(storage, sender)
+    if extra:
+        log.info("Telegram : %d message(s) d'information envoyé(s) (liens, dates corrigées).", extra)
     return counts
 
 

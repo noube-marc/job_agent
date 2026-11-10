@@ -52,7 +52,7 @@ Voir l’offre d’emploi : https://www.linkedin.com/comm/jobs/view/1000000003?a
 
 ---------------------------------------------------------
 
-Voir toutes les offres d’emploi : https://www.linkedin.com/comm/jobs/search-results/?keywords=Data
+Voir toutes les offres d’emploi : https://www.linkedin.com/comm/jobs/search-results/?keywords=Data&geoId=105015875&f_TPR=a1793710661-&midToken=SECRET-TOKEN&midSig=SECRET-SIG&trk=eml-alert&lipi=urn%3Ali%3Apage
 
 
 
