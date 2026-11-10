@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-job-agent = "job_agent:main"
+job-agent = "job_agent.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.11.17,<0.12.0"]
