@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Offres d'emploi</title>
+    <item>
+      <link>https://recrutement.exemple.fr/Pages/Offre/detailoffre.aspx?idOffre=101&amp;idOrigine=502&amp;LCID=1036&amp;offerReference=2026-101</link>
+      <category>DATA/DATA ANALYST - EXEMPLE</category>
+      <category>Contrat à durée indéterminée</category>
+      <category>NIORT</category>
+      <title>2026-101 - Data Analyst F/H</title>
+      <description>&lt;b&gt;Fonctions : &lt;/b&gt;DATA/DATA ANALYST&lt;br /&gt;  &lt;b&gt;Type de contrat : &lt;/b&gt;Contrat à durée indéterminée&lt;br /&gt;  &lt;b&gt;Description du poste : &lt;/b&gt;&lt;br /&gt;Vous construisez des tableaux de bord Power BI et des requêtes SQL.&lt;br /&gt;&lt;br /&gt;Vous avez 2 ans d'expérience.&lt;br /&gt; &lt;b&gt;Lieu : &lt;/b&gt;Niort (79)&lt;br /&gt; </description>
+      <pubDate>Tue, 10 Nov 2026 09:30:00 Z</pubDate>
+    </item>
+    <item>
+      <link>https://recrutement.exemple.fr/Pages/Offre/detailoffre.aspx?idOffre=102&amp;idOrigine=502&amp;LCID=1036&amp;offerReference=2026-102</link>
+      <category>RESEAU/CONSEILLER - EXEMPLE</category>
+      <category>Contrat à durée déterminée</category>
+      <category>LYON</category>
+      <title>2026-102 - Conseiller commercial F/H</title>
+      <description>&lt;b&gt;Type de contrat : &lt;/b&gt;Contrat à durée déterminée&lt;br /&gt;Accueil des clients.&lt;br /&gt;</description>
+      <pubDate>Mon, 09 Nov 2026 16:00:00 Z</pubDate>
+    </item>
+  </channel>
+</rss>

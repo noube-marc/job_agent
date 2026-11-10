@@ -8,6 +8,8 @@ from collections.abc import Sequence
 from dotenv import load_dotenv
 
 from job_agent.config import AppConfig, ConfigError, load_config
+from job_agent.notify.telegram import telegram_setup
+from job_agent.runner import run
 
 DEFAULT_CONFIG_PATH = "config.yaml"
 
@@ -24,7 +26,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     commands = parser.add_subparsers(dest="command", required=True, metavar="commande")
     commands.add_parser("check-config", help="vérifie le fichier de configuration")
-    commands.add_parser("run", help="lance un passage de collecte")
+    run_parser = commands.add_parser("run", help="lance un passage de collecte")
+    run_parser.add_argument(
+        "--force", action="store_true", help="lance le passage même hors de la plage horaire"
+    )
+    commands.add_parser(
+        "telegram-setup", help="aide à trouver TELEGRAM_CHAT_ID après la création du bot"
+    )
     return parser
 
 
@@ -34,12 +42,6 @@ def _check_config(config: AppConfig, path: str) -> int:
     print(f"  Profil : {config.profile_name}")
     print(f"  Sources activées : {', '.join(enabled) or 'aucune'}")
     print(f"  Entreprises surveillées : {len(config.companies.watchlist)}")
-    return 0
-
-
-def _run(config: AppConfig) -> int:
-    print(f"Profil : {config.profile_name}")
-    print("La collecte n'est pas encore disponible dans cette version.")
     return 0
 
 
@@ -53,6 +55,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     load_dotenv(override=False)
 
+    if args.command == "telegram-setup":
+        return telegram_setup()
+
     try:
         config = load_config(args.config)
     except ConfigError as error:
@@ -61,7 +66,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "check-config":
         return _check_config(config, args.config)
-    return _run(config)
+    return run(config, force=args.force)
 
 
 if __name__ == "__main__":

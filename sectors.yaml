@@ -1,0 +1,197 @@
+# =====================================================================
+# job-agent : fichier de référence des secteurs
+# =====================================================================
+# Sert à reconnaître le secteur d'une entreprise à partir de son nom,
+# même quand l'offre est publiée sous une marque ou une filiale.
+#
+# Fichier partagé entre tous les utilisateurs : il ne contient aucune
+# donnée personnelle. Les secteurs mis en avant pour vous se choisissent
+# dans config.yaml (sectors.priority).
+#
+# Pour chaque entreprise :
+#   name    = nom affiché dans le suivi
+#   aliases = autres noms possibles (marques, filiales, anciennes
+#             dénominations). La comparaison ignore les majuscules,
+#             les accents et la ponctuation.
+# =====================================================================
+
+version: 1
+
+sectors:
+  insurance:
+    label: "Assurance"
+    companies:
+      - name: "AXA"
+        aliases: ["AXA France", "AXA Group Operations", "AXA Climate", "AXA Partners", "AXA XL"]
+      - name: "Allianz"
+        aliases: ["Allianz France", "Allianz Trade", "Allianz Partners", "Euler Hermes"]
+      - name: "Generali"
+        aliases: ["Generali France", "Generali Vie"]
+      - name: "Groupama"
+        aliases: ["Groupama Assurances Mutuelles", "Gan Assurances", "Groupama Gan Vie", "Amaline"]
+      - name: "Covéa"
+        aliases: ["Covea", "MMA", "MAAF", "GMF", "Covéa Tech"]
+      - name: "MAIF"
+        aliases: ["Altima"]
+      - name: "Aéma Groupe"
+        aliases: ["Aema Groupe", "Macif", "Abeille Assurances", "Aviva France", "Ofi Invest"]
+      - name: "Matmut"
+        aliases: []
+      - name: "MACSF"
+        aliases: []
+      - name: "CNP Assurances"
+        aliases: ["CNP"]
+      - name: "AG2R La Mondiale"
+        aliases: ["AG2R", "La Mondiale"]
+      - name: "Swiss Life"
+        aliases: ["Swiss Life France", "SwissLife"]
+      - name: "Malakoff Humanis"
+        aliases: ["Malakoff Médéric", "Humanis"]
+      - name: "Harmonie Mutuelle"
+        aliases: ["VYV", "Groupe VYV"]
+      - name: "Crédit Agricole Assurances"
+        aliases: ["Predica", "Pacifica", "CA Assurances"]
+      - name: "BNP Paribas Cardif"
+        aliases: ["Cardif"]
+      - name: "SCOR"
+        aliases: []
+      - name: "Alan"
+        aliases: []
+      - name: "Cocoon"
+        aliases: []
+      - name: "Acheel"
+        aliases: []
+      - name: "Leocare"
+        aliases: []
+      - name: "Lovys"
+        aliases: []
+      - name: "Ornikar Assurance"
+        aliases: ["Ornikar"]
+      - name: "Direct Assurance"
+        aliases: []
+      - name: "L'olivier Assurance"
+        aliases: ["Olivier Assurance"]
+      - name: "April"
+        aliases: ["April Group", "April International"]
+
+  banking:
+    label: "Banque"
+    companies:
+      - name: "BNP Paribas"
+        aliases: ["BNP", "BNP Paribas Personal Finance", "Cetelem", "Hello bank!", "BNP Paribas Real Estate"]
+      - name: "Société Générale"
+        aliases: ["Societe Generale", "SG", "Crédit du Nord", "SG Groupe"]
+      - name: "Crédit Agricole"
+        aliases: ["Credit Agricole", "Crédit Agricole CIB", "Crédit Agricole S.A.", "Amundi", "CA-GIP"]
+      - name: "LCL"
+        aliases: ["Le Crédit Lyonnais"]
+      - name: "BPCE"
+        aliases: ["Groupe BPCE", "Banque Populaire", "Caisse d'Épargne", "Caisse d'Epargne", "Natixis", "Oney"]
+      - name: "Crédit Mutuel"
+        aliases: ["Credit Mutuel", "Crédit Mutuel Arkéa", "Euro-Information", "Arkéa", "Fortuneo"]
+      - name: "CIC"
+        aliases: []
+      - name: "La Banque Postale"
+        aliases: ["Banque Postale", "LBP"]
+      - name: "BoursoBank"
+        aliases: ["Boursorama Banque"]
+      - name: "Qonto"
+        aliases: []
+      - name: "Shine"
+        aliases: []
+      - name: "Nickel"
+        aliases: []
+      - name: "Revolut"
+        aliases: []
+
+  agriculture_agrifood:
+    label: "Agriculture et agro-industrie"
+    companies:
+      - name: "InVivo"
+        aliases: ["InVivo Group", "Gamm vert", "Jardiland", "Soufflet"]
+      - name: "Avril"
+        aliases: ["Groupe Avril", "Lesieur", "Saipol", "Puget"]
+      - name: "Tereos"
+        aliases: ["Béghin Say"]
+      - name: "Limagrain"
+        aliases: ["Vilmorin", "Jacquet Brossard"]
+      - name: "Lactalis"
+        aliases: ["Groupe Lactalis", "Président", "Lactel"]
+      - name: "Danone"
+        aliases: ["Danone France", "Blédina", "Evian", "Volvic", "Alpro"]
+      - name: "Bonduelle"
+        aliases: []
+      - name: "Terrena"
+        aliases: []
+      - name: "Sodiaal"
+        aliases: ["Candia", "Yoplait"]
+      - name: "Agrial"
+        aliases: ["Florette", "Loïc Raison", "Eurial"]
+      - name: "Axéréal"
+        aliases: ["Axereal"]
+      - name: "Vivescia"
+        aliases: ["Malteurop", "Cérélia"]
+      - name: "Savencia"
+        aliases: ["Savencia Fromage & Dairy"]
+      - name: "Roquette"
+        aliases: ["Roquette Frères"]
+      - name: "Lesaffre"
+        aliases: []
+      - name: "Euralis"
+        aliases: []
+      - name: "Isagri"
+        aliases: ["Groupe Isagri"]
+
+  consumer_goods:
+    label: "Grande consommation"
+    companies:
+      - name: "Suntory Beverage & Food France"
+        aliases: ["Suntory", "Orangina Suntory France", "SBF France", "Schweppes"]
+      - name: "Coca-Cola Europacific Partners"
+        aliases: ["CCEP", "Coca-Cola"]
+      - name: "Pernod Ricard"
+        aliases: ["Pernod Ricard France", "Ricard", "Pernod"]
+      - name: "Nestlé France"
+        aliases: ["Nestle", "Nestlé", "Nespresso", "Purina", "Nestlé Waters"]
+      - name: "Unilever France"
+        aliases: ["Unilever"]
+      - name: "Heineken France"
+        aliases: ["Heineken"]
+      - name: "Bel"
+        aliases: ["Groupe Bel", "Fromageries Bel"]
+      - name: "L'Oréal"
+        aliases: ["L'Oreal", "L'Oréal France"]
+      - name: "Procter & Gamble France"
+        aliases: ["Procter & Gamble", "P&G"]
+      - name: "Mars France"
+        aliases: ["Mars Wrigley", "Mars"]
+      - name: "Ferrero France"
+        aliases: ["Ferrero"]
+
+  retail:
+    label: "Distribution"
+    companies:
+      - name: "Carrefour"
+        aliases: ["Carrefour France", "Carrefour Market", "Carrefour Hypermarchés"]
+      - name: "Auchan"
+        aliases: ["Auchan Retail", "Auchan France"]
+      - name: "E.Leclerc"
+        aliases: ["Leclerc", "E Leclerc", "Galec"]
+      - name: "Les Mousquetaires"
+        aliases: ["Intermarché", "Intermarche", "Netto", "Bricomarché", "Groupement Les Mousquetaires"]
+      - name: "Lidl France"
+        aliases: ["Lidl"]
+      - name: "Groupe Casino"
+        aliases: ["Casino", "Monoprix", "Franprix"]
+      - name: "Système U"
+        aliases: ["Systeme U", "Coopérative U", "Coopérative U Enseigne", "Hyper U", "Super U", "U Enseigne"]
+      - name: "Aldi France"
+        aliases: ["Aldi"]
+      - name: "Picard"
+        aliases: ["Picard Surgelés"]
+
+  other:
+    label: "Autres"
+    companies:
+      - name: "TotalEnergies"
+        aliases: ["Total", "TotalEnergies SE", "TotalEnergies Marketing France"]
