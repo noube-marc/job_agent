@@ -173,6 +173,10 @@ Chaque nouvelle offre retenue reçoit un score de 0 à 100, affiché dans le fic
 
 Pour les offres venant d'alertes e-mail, sans description, le score est estimé sur l'intitulé seul (mention « score estimé sur l'intitulé »). Le score aide à comparer les offres ; le tri reste par date de publication.
 
+## Étiquetage des offres (futur modèle « offre pertinente pour moi »)
+
+`uv run job-agent label-sheet` crée `private/etiquetage.xlsx`. Indiquez « oui » ou « non » dans la colonne verte « Pertinente pour moi ? » (une offre à laquelle vous auriez envie de postuler). Ensuite, chaque passage ajoute automatiquement les nouvelles offres en bas de la feuille, sans toucher à vos réponses (sauf si le fichier est ouvert dans Excel : ce sera au passage suivant). Avec 150 à 200 offres étiquetées, un modèle pourra apprendre vos préférences.
+
 ## Dépannage
 
 | Message | Que faire |
