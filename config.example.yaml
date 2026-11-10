@@ -242,7 +242,6 @@ companies:
   #                 recrutement, utilisée par le connecteur)
   #   ats         = outil de recrutement. Valeurs lues automatiquement :
   #                   talentsoft_rss  = flux RSS public Talentsoft (Cegid)
-  #                   smartrecruiters = API publique SmartRecruiters
   #                   ashby           = API publique Ashby
   #                 Toute autre valeur = connecteur non disponible : les
   #                 offres arrivent alors par les alertes e-mail.
@@ -254,7 +253,7 @@ companies:
     - { name: "Allianz", sector: insurance, careers_url: "https://careers.allianz.com/global/en/search-results?qcountry=France", ats: "successfactors" }  # front Phenom, JSON dans la page
     - { name: "Generali", sector: insurance, careers_url: "https://carrieres.generali.fr", ats: "successfactors" }  # HTML /search/ autorisé
     - { name: "Groupama", sector: insurance, careers_url: "https://www.groupama-gan-recrute.com/nos-offres", ats: "talentsoft" }  # flux RSS interdit par robots.txt
-    - { name: "Covéa", sector: insurance, careers_url: "https://jobs.smartrecruiters.com/COVEA1", ats: "smartrecruiters" }  # API publique documentée
+    - { name: "Covéa", sector: insurance, careers_url: "https://recrutement.covea.com/jobs", ats: "smartrecruiters" }  # API interdite aux robots par robots.txt ; site carrière HTML possible
     - { name: "MAIF", sector: insurance, careers_url: "https://recrutement.maif.fr", ats: "talentsoft_rss" }  # flux RSS public
     - { name: "Aéma Groupe", sector: insurance, careers_url: "https://abeilleassurances.wd103.myworkdayjobs.com/External", ats: "workday" }  # JSON interne Workday ; Macif bloque les robots
     - { name: "Matmut", sector: insurance, careers_url: "https://recrutement.matmut.fr", ats: "talentsoft_rss" }  # flux RSS public
@@ -295,7 +294,7 @@ companies:
     # Distribution
     - { name: "Carrefour", sector: retail, careers_url: "https://recrute.carrefour.fr/offres/", ats: "icims" }  # HTML iCIMS
     - { name: "Auchan", sector: retail, careers_url: "https://www.auchan-recrute.fr/jobs/", ats: "meteojob" }  # plateforme Meteojob : jamais de collecte directe
-    - { name: "Les Mousquetaires", sector: retail, careers_url: "https://jobs.smartrecruiters.com/GroupementMousquetaires", ats: "smartrecruiters" }  # API publique documentée
+    - { name: "Les Mousquetaires", sector: retail, careers_url: "https://www.carrieres-mousquetaires.com/nos-offres/", ats: "smartrecruiters" }  # API interdite aux robots par robots.txt ; site carrière HTML possible
     - { name: "Lidl France", sector: retail, careers_url: "https://emplois.lidl.fr/offres-d-emploi", ats: "successfactors" }  # JSON du site autorisé par robots.txt
     - { name: "Groupe Casino", sector: retail, careers_url: "https://recrute.groupe-casino.fr/fr/annonces", ats: "digitalrecruiters" }  # JSON interne, Crawl-delay 10 s
     - { name: "Système U", sector: retail, careers_url: "https://u-emploi.com/offres-emploi", ats: "digitalrecruiters" }  # site protégé contre les robots
