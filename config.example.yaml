@@ -61,6 +61,92 @@ search:
   excluded_title_keywords:
     - "consultant"
 
+  # Employeurs écartés : ESN, cabinets de recrutement, agences d'intérim
+  # et sites d'emploi qui republient des offres. Un nom ou un mot du nom
+  # de l'entreprise suffit ("consulting" écarte "Klint Consulting").
+  excluded_companies:
+    # Mots génériques
+    - "consulting"
+    - "interim"
+    - "recrutement"
+    - "recruitment"
+    - "staffing"
+    - "portage salarial"
+    # ESN et sociétés de conseil
+    - "Accenture"
+    - "Capgemini"
+    - "Sopra Steria"
+    - "Alten"
+    - "Akkodis"
+    - "Altran"
+    - "Inetum"
+    - "Atos"
+    - "CGI"
+    - "Devoteam"
+    - "Wavestone"
+    - "Onepoint"
+    - "Talan"
+    - "Micropole"
+    - "Keyrus"
+    - "Business & Decision"
+    - "Converteo"
+    - "Actinvision"
+    - "Niji"
+    - "Nexton"
+    - "Segula"
+    - "Smile Group"
+    - "Groupe Open"
+    - "Decideom"
+    - "Hedon Technologies"
+    - "Nowbrains"
+    - "Collective Works"
+    - "Kaizen Solutions"
+    - "Sinbad conseil"
+    - "Selescope"
+    - "Extia"
+    - "Davidson"
+    - "Aubay"
+    - "Expleo"
+    - "Ausy"
+    - "Umanis"
+    - "Jems"
+    - "Klanik"
+    - "Infotel"
+    - "Astek"
+    # Cabinets de recrutement et intérim
+    - "Externatic"
+    - "Hays"
+    - "Michael Page"
+    - "Page Personnel"
+    - "Robert Half"
+    - "Robert Walters"
+    - "Expectra"
+    - "Adecco"
+    - "Randstad"
+    - "Manpower"
+    - "Fed Human"
+    - "Fed IT"
+    - "Fed Finance"
+    - "Capsearch"
+    - "Hiring Partners"
+    - "Silkhom"
+    # Sites d'emploi qui republient des offres
+    - "Talents Handicap"
+    - "Lasecurecrute"
+
+  # Expressions de la description qui trahissent un intermédiaire.
+  # Pas appliquées aux offres lues sur un site carrière d'entreprise.
+  intermediary_phrases:
+    - "notre client"
+    - "pour le compte de notre client"
+    - "pour l'un de nos clients"
+    - "cabinet de recrutement"
+    - "cabinet de conseil en recrutement"
+    - "entreprise de services du numérique"
+    - "entreprise de services numériques"
+    - "nous sommes une esn"
+    - "notre esn"
+
   # Règle spéciale pour les postes de Business Analyst : ils ne sont
   # gardés que si la description cite assez de compétences techniques.
   business_analyst:

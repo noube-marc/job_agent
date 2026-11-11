@@ -62,6 +62,12 @@ class BusinessAnalystRule(StrictModel):
 class SearchConfig(StrictModel):
     job_titles: JobTitles
     excluded_title_keywords: list[str] = Field(default_factory=list)
+    # Employers excluded (ESN, recruitment agencies, job sites): a name or
+    # a word of the company name ("consulting", "interim").
+    excluded_companies: list[str] = Field(default_factory=list)
+    # Phrases of the description that reveal an intermediary ("notre
+    # client"). Not applied to offers read on a career site.
+    intermediary_phrases: list[str] = Field(default_factory=list)
     business_analyst: BusinessAnalystRule
 
 
