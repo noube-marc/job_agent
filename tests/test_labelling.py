@@ -79,9 +79,9 @@ def test_obvious_negatives_are_prefilled(config, tmp_path) -> None:
 def test_off_target_title_with_data_words_is_left_to_the_user() -> None:
     from job_agent.ai.labelling import obvious_no
 
-    row = {"reasons": '["intitulé hors cible"]', "title": "Chargé d'analyse de données"}
+    row = {"reasons": '["intitulé hors cible"]', "title": "Chargé d'analyse de données", "company": "X"}
     assert obvious_no(row) is None
-    assert obvious_no({"reasons": '["intitulé hors cible"]', "title": "Infirmier"}) == "poste non data"
+    assert obvious_no({"reasons": '["intitulé hors cible"]', "title": "Infirmier", "company": "X"}) == "poste non data"
 
 
 def test_user_answer_is_never_replaced(config, tmp_path) -> None:
@@ -103,3 +103,16 @@ def test_user_answer_is_never_replaced(config, tmp_path) -> None:
     update_sheet(storage, path)
     assert _answers(path)["Infirmier"] == ("oui", "ma note")
     storage.close()
+
+
+def test_consulting_firms_are_answered_no(config) -> None:
+    from job_agent.ai.labelling import CONSULTING, obvious_no
+
+    firms = config.labelling.not_relevant_companies
+    kept = '[]'
+    assert obvious_no({"reasons": kept, "title": "Data Analyst", "company": "PwC France et Maghreb"}, firms) == CONSULTING
+    assert obvious_no({"reasons": kept, "title": "Data Analyst", "company": "EY Consulting"}, firms) == CONSULTING
+    assert obvious_no({"reasons": '["employeur exclu (« Nexton »)"]', "title": "Data Analyst", "company": "Nexton"}) == CONSULTING
+    assert obvious_no({"reasons": '["intitulé exclu (« consultant »)"]', "title": "Consultant Data", "company": "X"}) == CONSULTING
+    for company in ("AXA France", "Conseil régional Exemple", "Lasecurecrute.fr"):
+        assert obvious_no({"reasons": kept, "title": "Data Analyst", "company": company}, firms) is None

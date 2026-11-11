@@ -105,7 +105,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         storage = Storage(config.storage.database_path)
         try:
-            return label_sheet_command(storage)
+            return label_sheet_command(storage, [*config.labelling.not_relevant_companies, *config.search.excluded_companies])
         finally:
             storage.close()
     if args.command in ("ai-sheet", "ai-evaluate"):
