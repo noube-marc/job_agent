@@ -256,12 +256,13 @@ def _update_labelling_sheet(storage: Storage) -> None:
     if not SHEET_PATH.exists():
         return
     try:
-        added, _, labelled = update_sheet(storage)
+        added, _, labelled, prefilled = update_sheet(storage)
     except PermissionError:
         log.info("Feuille d'étiquetage ouverte dans Excel : mise à jour au prochain passage.")
         return
-    if added:
-        log.info("Feuille d'étiquetage : %d offre(s) ajoutée(s) (%d étiquetée(s) au total).", added, labelled)
+    if added or prefilled:
+        log.info("Feuille d'étiquetage : %d offre(s) ajoutée(s), %d « non » évident(s) mis par l'agent "
+                 "(%d étiquetée(s) au total).", added, prefilled, labelled)
 
 
 def _update_tracking(config: AppConfig, storage: Storage) -> None:

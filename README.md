@@ -181,7 +181,7 @@ Seules les offres qui respectent vos critères reçoivent un score. L'expérienc
 
 ## Étiquetage des offres (futur modèle « offre pertinente pour moi »)
 
-`uv run job-agent label-sheet` crée `private/etiquetage.xlsx`. Indiquez « oui » ou « non » dans la colonne verte « Pertinente pour moi ? » (une offre à laquelle vous auriez envie de postuler). Ensuite, chaque passage ajoute automatiquement les nouvelles offres en bas de la feuille, sans toucher à vos réponses (sauf si le fichier est ouvert dans Excel : ce sera au passage suivant). Avec 150 à 200 offres étiquetées, un modèle pourra apprendre vos préférences.
+`uv run job-agent label-sheet` crée `private/etiquetage.xlsx`. Indiquez « oui » ou « non » dans la colonne verte « Pertinente pour moi ? » (une offre à laquelle vous auriez envie de postuler). Ensuite, chaque passage ajoute automatiquement les nouvelles offres en bas de la feuille, sans toucher à vos réponses (sauf si le fichier est ouvert dans Excel : ce sera au passage suivant). Avec 150 à 200 offres étiquetées, un modèle pourra apprendre vos préférences. Les « non » évidents sont mis par l'agent, uniquement dans les cases vides et avec la raison en commentaire : contrat ni CDI ni CDD, 5 ans d'expérience ou plus, intitulé hors cible sans aucun mot data ou statistique. Vous pouvez les corriger : l'agent ne remplace jamais une réponse.
 
 ## Dépannage
 
