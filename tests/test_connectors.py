@@ -28,7 +28,7 @@ def _context(config, routes: dict[str, httpx.Response]) -> CollectContext:
 
 
 def test_registry() -> None:
-    assert set(CONNECTORS) == {"talentsoft_rss", "ashby", "workday", "successfactors_search", "avature", "phenom", "credit_agricole_jobs", "cornerstone", "digitalrecruiters", "successfactors_sitemap", "jobposting", "danone"}
+    assert set(CONNECTORS) == {"talentsoft_rss", "ashby", "workday", "successfactors_search", "avature", "phenom", "credit_agricole_jobs", "cornerstone", "digitalrecruiters", "successfactors_sitemap", "jobposting", "danone", "heineken", "oracle"}
 
 
 def test_talentsoft_feed(config) -> None:
