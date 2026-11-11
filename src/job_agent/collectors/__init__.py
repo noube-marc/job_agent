@@ -5,7 +5,16 @@ the function that reads its offers. Companies whose tool has no
 connector are reported as "connecteur non disponible".
 """
 
-from job_agent.collectors import ashby, avature, credit_agricole, phenom, successfactors, talentsoft, workday
+from job_agent.collectors import (
+    ashby,
+    avature,
+    cornerstone,
+    credit_agricole,
+    phenom,
+    successfactors,
+    talentsoft,
+    workday,
+)
 from job_agent.collectors.base import Connector
 
 CONNECTORS: dict[str, Connector] = {
@@ -16,4 +25,5 @@ CONNECTORS: dict[str, Connector] = {
     "avature": avature.collect,
     "phenom": phenom.collect,
     "credit_agricole_jobs": credit_agricole.collect,
+    "cornerstone": cornerstone.collect,
 }

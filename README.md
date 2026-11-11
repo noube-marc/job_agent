@@ -146,6 +146,7 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 | `avature` | Page de recherche publique Avature (offres du groupe dans tous les pays, filtrées sur la France ; fiche ouverte seulement pour les nouvelles offres ciblées) | TotalEnergies |
 | `phenom` | Service JSON appelé par la page de recherche publique Phenom (toutes les offres du pays ; fiche ouverte seulement pour les nouvelles offres ciblées) | Allianz |
 | `credit_agricole_jobs` | Pages HTML publiques du site emploi du groupe Crédit Agricole, pour une marque (toutes ses offres ; fiche ouverte seulement pour les nouvelles offres ciblées, avec la vraie date de publication) | Crédit Agricole Assurances |
+| `cornerstone` | Service de recherche appelé par le site carrière Cornerstone, avec le jeton anonyme que la page donne à chaque visiteur (toutes les offres, description complète, pause de 10 s demandée par le site) | Avril, Tereos, Agrial |
 
 ### Alertes e-mail (Gmail, lecture seule)
 
