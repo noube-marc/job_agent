@@ -200,9 +200,9 @@ technical_profile:
   # "écart technique" (doit être inférieur au seuil précédent).
   technical_gap_threshold: 1
   # Mots de l'intitulé qui signalent un poste trop avancé
-  # (l'offre est écartée). "Senior" seul n'en fait pas partie :
-  # c'est la règle d'expérience qui tranche.
+  # (l'offre est écartée). "senior" couvre aussi "sénior".
   advanced_title_keywords:
+    - "senior"
     - "lead"
     - "tech lead"
     - "staff"
