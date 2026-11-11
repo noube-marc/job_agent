@@ -52,7 +52,7 @@ LABELS = {
 CAREER_SITE_LABEL = "site carrière"
 
 # Connectors that read every new offer at each run.
-CATCHES_EVERY_NEW_OFFER = {"ashby", "workday", "successfactors_search", "avature", "phenom", "credit_agricole_jobs", "cornerstone", "digitalrecruiters", "successfactors_sitemap", "jobposting"}
+CATCHES_EVERY_NEW_OFFER = {"ashby", "workday", "successfactors_search", "avature", "phenom", "credit_agricole_jobs", "cornerstone", "digitalrecruiters", "successfactors_sitemap", "jobposting", "danone"}
 # Title closeness (0 to 100) for a probable match on the title alone.
 LOOSE_TITLE_MATCH = 85
 RECHECK_STATE_KEY = "verification_last_recheck"

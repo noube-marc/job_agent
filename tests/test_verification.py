@@ -57,7 +57,7 @@ def test_initial_status(vconfig, tmp_path) -> None:
     storage = Storage(tmp_path / "t.db")
     _process(vconfig, storage, [
         _alert(),  # Alan: watched, with a connector
-        _alert(source_offer_id="a2", company="AXA France", title="Data Engineer"),  # watched, no connector
+        _alert(source_offer_id="a2", company="BNP Paribas", title="Data Engineer"),  # watched, no connector
         _alert(source_offer_id="a3", company="Société Inconnue", title="Data Scientist"),  # not watched
     ])
     statuses = [row["verification"] for row in storage.connection.execute("SELECT * FROM offers ORDER BY id")]

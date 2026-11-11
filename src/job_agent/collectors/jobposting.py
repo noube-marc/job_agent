@@ -17,6 +17,7 @@ import json
 import re
 from datetime import datetime
 from urllib.parse import unquote, urlsplit
+from zoneinfo import ZoneInfo
 
 from job_agent.collectors.base import CollectContext, SourceError, html_to_text
 from job_agent.config.models import WatchedCompany
@@ -26,15 +27,44 @@ from job_agent.processing.filters import title_is_candidate
 _URL_BLOCK = re.compile(r"<(url|sitemap)>(.*?)</\1>", re.S)
 _LOC = re.compile(r"<loc>\s*([^<]+?)\s*</loc>")
 _LD_JSON = re.compile(r"<script[^>]+application/ld\+json[^>]*>(.*?)</script>", re.S | re.I)
-_TRAILING_ID = re.compile(r"[-_/]?(\d{4,})/?$")
+_ID_SEGMENT = re.compile(r"^\d{4,}$")
+_EDGE_ID = re.compile(r"^(\d{4,})-|-(\d{4,})$")
 COUNTRY_CODES = {"FR": {"fr", "fra", "france"}, "BE": {"be", "bel", "belgique", "belgium"}}
 CONTRACTS = {"FULL_TIME": None, "PART_TIME": None, "CONTRACTOR": "freelance", "TEMPORARY": None,
              "INTERN": "stage", "PER_DIEM": None, "VOLUNTEER": None, "OTHER": None}
 
 
+def _address_parts(url: str) -> tuple[str | None, str]:
+    """(offer id found in the address or None, words of the address).
+
+    The id is a number of 4 digits or more: the last segment
+    ("/3441/46789675648"), or the start or end of the last segment
+    ("/148324-boucher-vichy", "/equipier-lyon-749288"). The words come from
+    the last segment that is not a number ("/emploi/paris/data-analyst/3441/123").
+    """
+    segments = [re.sub(r"\.html?$", "", unquote(s)) for s in urlsplit(url).path.split("/") if s]
+    if not segments:
+        return None, ""
+    offer_id = None
+    if _ID_SEGMENT.match(segments[-1]):
+        offer_id = segments[-1]
+    else:
+        edge = _EDGE_ID.search(segments[-1])
+        if edge:
+            offer_id = edge.group(1) or edge.group(2)
+    textual = [s for s in segments if not s.isdigit()]
+    words = _EDGE_ID.sub("", textual[-1]) if textual else ""
+    return offer_id, words.replace("-", " ").replace("_", " ").strip()
+
+
 def parse_site_map(xml: str) -> tuple[list[dict], list[str]]:
-    """(offers listed: id, url, words of the address; nested site maps)."""
-    offers, nested = [], []
+    """(offers listed: id, url, words of the address; nested site maps).
+
+    When some addresses carry an offer id, only those are offers (the
+    others are category or presentation pages). A site whose offer
+    addresses carry no number at all ("/offre/tq3g3vmorv") keeps them all.
+    """
+    entries, nested = [], []
     for kind, block in _URL_BLOCK.findall(xml):
         match = _LOC.search(block)
         if not match:
@@ -43,13 +73,13 @@ def parse_site_map(xml: str) -> tuple[list[dict], list[str]]:
         if kind == "sitemap":
             nested.append(url)
             continue
-        path = urlsplit(url).path.rstrip("/")
-        last = re.sub(r"\.html?$", "", unquote(path.rsplit("/", 1)[-1]))
-        found = _TRAILING_ID.search(path)
-        offer_id = found.group(1) if found else path
-        words = _TRAILING_ID.sub("", last).replace("-", " ").replace("_", " ").strip()
-        offers.append({"id": offer_id, "url": url, "words": words})
-    return offers, nested
+        offer_id, words = _address_parts(url)
+        entries.append({"id": offer_id, "url": url, "words": words})
+    if any(entry["id"] for entry in entries):
+        entries = [entry for entry in entries if entry["id"]]
+    for entry in entries:
+        entry["id"] = entry["id"] or urlsplit(entry["url"]).path
+    return entries, nested
 
 
 def job_posting(html: str) -> dict:
@@ -80,14 +110,15 @@ def _country_code(address: dict) -> str:
     return str(country).strip().lower()
 
 
-def _date(value: str | None) -> datetime | None:
+def _date(value: str | None, zone: ZoneInfo) -> datetime | None:
+    """A JobPosting date; a date without time zone ("2026-11-10") is local."""
     if not value:
         return None
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
     except ValueError:
         return None
-    return parsed if parsed.tzinfo else None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=zone)
 
 
 def _contract(posting: dict) -> str | None:
@@ -118,12 +149,14 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         opaque = " " not in item["words"]  # an address without words: the title is only on the page
         if not context.is_known(source_name, item["id"]) and (opaque or title_is_candidate(item["words"], context.config)):
             posting = job_posting(context.client.get(item["url"]).text)
+            if not posting:
+                continue  # not an offer page (or an offer already removed)
         address = _address(posting)
         code = _country_code(address)
         if code and code not in COUNTRY_CODES.get(country, {country.lower()}):
             continue
         place = " ".join(str(address.get(key) or "") for key in ("postalCode", "addressLocality")).strip()
-        published = _date(posting.get("datePosted"))
+        published = _date(posting.get("datePosted"), ZoneInfo(context.config.schedule.timezone))
         description = html_to_text(posting.get("description") or "")
         offers.append(
             Offer(
