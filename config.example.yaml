@@ -380,7 +380,7 @@ companies:
     - { name: "Bonduelle", sector: agriculture_agrifood, careers_url: "https://jobs.bonduelle.com", ats: "successfactors_search" }  # page de recherche HTML
     - { name: "Agrial", sector: agriculture_agrifood, careers_url: "https://agrial.csod.com/ux/ats/careersite/8/home?c=agrial&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
     - { name: "Savencia", sector: agriculture_agrifood, careers_url: "https://eoct.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/fr/sites/careers/jobs", ats: "oracle" }  # JSON interne Oracle
-    - { name: "Isagri", sector: agriculture_agrifood, careers_url: "https://emploi.isagri.fr/offre", ats: "beetween" }  # données dans la page HTML
+    - { name: "Isagri", sector: agriculture_agrifood, careers_url: "https://emploi.isagri.fr/sitemap/offers-sitemap.xml", ats: "jobposting" }  # plan du site des offres + données JobPosting
     # Grande consommation
     - { name: "Suntory Beverage & Food France", sector: consumer_goods, careers_url: "https://careers.suntorybeverageandfood.com/search/?locationsearch=France", ats: "successfactors_search" }  # page de recherche HTML, offres en France
     - { name: "Coca-Cola Europacific Partners", sector: consumer_goods, careers_url: "https://www.ccep.jobs/fr/france-jobs", ats: "eightfold" }  # JSON Eightfold autorisé par robots.txt
@@ -390,10 +390,10 @@ companies:
     - { name: "Heineken France", sector: consumer_goods, careers_url: "https://careers.theheinekencompany.com/Francais/HEINEKEN-France", ats: "successfactors" }  # HTML, Crawl-delay 5 s
     - { name: "Bel", sector: consumer_goods, careers_url: "https://jobs.groupe-bel.com/?locale=fr_FR", ats: "successfactors_sitemap" }  # plan du site public (service de recherche interdit par robots.txt)
     # Distribution
-    - { name: "Carrefour", sector: retail, careers_url: "https://recrute.carrefour.fr/offres/", ats: "icims" }  # HTML iCIMS
+    - { name: "Carrefour", sector: retail, careers_url: "https://recrute.carrefour.fr/wp-content/themes/crf-2.01-menuV1/offers-sitemap.xml", ats: "jobposting" }  # plan du site des offres + données JobPosting
     - { name: "Auchan", sector: retail, careers_url: "https://www.auchan-recrute.fr/jobs/", ats: "meteojob" }  # plateforme Meteojob : jamais de collecte directe
     - { name: "Les Mousquetaires", sector: retail, careers_url: "https://www.carrieres-mousquetaires.com/nos-offres/", ats: "smartrecruiters" }  # API interdite aux robots par robots.txt ; site carrière HTML possible
-    - { name: "Lidl France", sector: retail, careers_url: "https://emplois.lidl.fr/offres-d-emploi", ats: "successfactors" }  # JSON du site autorisé par robots.txt
+    - { name: "Lidl France", sector: retail, careers_url: "https://emplois.lidl.fr/sitemap-jobs.xml", ats: "jobposting" }  # plan du site des offres + données JobPosting
     - { name: "Groupe Casino", sector: retail, careers_url: "https://recrute.groupe-casino.fr/fr/annonces", ats: "digitalrecruiters" }  # service public Digital Recruiters (Monoprix, Franprix...)
     - { name: "Système U", sector: retail, careers_url: "https://u-emploi.com/offres-emploi", ats: "protected" }  # site protégé contre les robots (Cloudflare) : pas de connecteur, couvert par les alertes
     # Autres

@@ -149,6 +149,7 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 | `cornerstone` | Service de recherche appelé par le site carrière Cornerstone, avec le jeton anonyme que la page donne à chaque visiteur (toutes les offres, description complète, pause de 10 s demandée par le site) | Avril, Tereos, Agrial |
 | `digitalrecruiters` | Service public Digital Recruiters utilisé par le site carrière (toutes les offres ; détail lu seulement pour les nouvelles offres ciblées ; lien vers le site de l'enseigne) | Groupe Casino (Monoprix, Franprix...) |
 | `successfactors_sitemap` | Plan du site public SAP SuccessFactors (toutes les offres ; page ouverte seulement pour les nouvelles offres ciblées, pays lu sur la page) | Limagrain, Bel |
+| `jobposting` | Plan du site des offres + données standard JobPosting (schema.org) de chaque page d'offre ; `careers_url` est l'adresse du plan du site. Page ouverte seulement pour les nouvelles offres ciblées (ou pour toute nouvelle offre si l'adresse ne contient pas l'intitulé) | Lidl France, Carrefour, Isagri |
 
 ### Alertes e-mail (Gmail, lecture seule)
 
