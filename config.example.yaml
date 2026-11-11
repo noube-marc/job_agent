@@ -358,7 +358,7 @@ companies:
     - { name: "CNP Assurances", sector: insurance, careers_url: "https://cnp-recrute.talent-soft.com", ats: "talentsoft_rss" }  # flux RSS public
     - { name: "AG2R La Mondiale", sector: insurance, careers_url: "https://ag2rlamondiale.wd3.myworkdayjobs.com/Candidats", ats: "workday" }  # liste et fiches Workday
     - { name: "Malakoff Humanis", sector: insurance, careers_url: "https://carrieres.malakoffhumanis.com", ats: "talentsoft_rss" }  # flux RSS public
-    - { name: "Crédit Agricole Assurances", sector: insurance, careers_url: "https://groupecreditagricole.jobs/fr/nos-marques/credit-agricole-assurances/nos-offres/", ats: "talentsoft" }  # flux RSS interdit par robots.txt ; HTML possible
+    - { name: "Crédit Agricole Assurances", sector: insurance, careers_url: "https://groupecreditagricole.jobs/fr/nos-marques/credit-agricole-assurances/nos-offres/", ats: "credit_agricole_jobs" }  # site emploi du groupe, pages HTML de la marque
     - { name: "BNP Paribas Cardif", sector: insurance, careers_url: "https://group.bnpparibas/emploi-carriere/toutes-offres-emploi/bnp-paribas-cardif", ats: "own" }  # site protégé contre les robots
     - { name: "Alan", sector: insurance, careers_url: "https://jobs.ashbyhq.com/alan", ats: "ashby" }  # API publique documentée
     # Banque

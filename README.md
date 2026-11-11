@@ -145,6 +145,7 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 | `successfactors_search` | Page de recherche publique SAP SuccessFactors (fiche ouverte seulement pour les nouvelles offres ciblées) | Generali, Lactalis, Bonduelle, Suntory Beverage & Food France, Nestlé France |
 | `avature` | Page de recherche publique Avature (offres du groupe dans tous les pays, filtrées sur la France ; fiche ouverte seulement pour les nouvelles offres ciblées) | TotalEnergies |
 | `phenom` | Service JSON appelé par la page de recherche publique Phenom (toutes les offres du pays ; fiche ouverte seulement pour les nouvelles offres ciblées) | Allianz |
+| `credit_agricole_jobs` | Pages HTML publiques du site emploi du groupe Crédit Agricole, pour une marque (toutes ses offres ; fiche ouverte seulement pour les nouvelles offres ciblées, avec la vraie date de publication) | Crédit Agricole Assurances |
 
 ### Alertes e-mail (Gmail, lecture seule)
 
