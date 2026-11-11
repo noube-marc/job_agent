@@ -350,7 +350,7 @@ companies:
     - { name: "AXA", sector: insurance, careers_url: "https://recrutement.axa.fr", ats: "radancy" }  # JSON interne Radancy, connecteur non disponible
     - { name: "Allianz", sector: insurance, careers_url: "https://careers.allianz.com/global/en/search-results?qcountry=France", ats: "phenom" }  # site Phenom : service JSON de la page de recherche
     - { name: "Generali", sector: insurance, careers_url: "https://carrieres.generali.fr", ats: "successfactors_search" }  # page de recherche HTML
-    - { name: "Groupama", sector: insurance, careers_url: "https://www.groupama-gan-recrute.com/nos-offres", ats: "talentsoft" }  # flux RSS interdit par robots.txt
+    - { name: "Groupama", sector: insurance, careers_url: "https://www.groupama-gan-recrute.com/nos-offres", ats: "talentsoft" }  # offres chargées par un service tiers en JavaScript : connecteur non disponible (couvert par les alertes)
     - { name: "Covéa", sector: insurance, careers_url: "https://recrutement.covea.com/jobs", ats: "smartrecruiters" }  # API interdite aux robots par robots.txt ; site carrière HTML possible
     - { name: "MAIF", sector: insurance, careers_url: "https://recrutement.maif.fr", ats: "talentsoft_rss" }  # flux RSS public
     - { name: "Aéma Groupe", sector: insurance, careers_url: "https://abeilleassurances.wd103.myworkdayjobs.com/External", ats: "workday" }  # liste et fiches Workday ; Macif bloque les robots

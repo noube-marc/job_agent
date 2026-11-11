@@ -38,7 +38,8 @@ class RobotRules:
         groups: list[_Group] = []
         current: _Group | None = None
         last_was_agent = False
-        for raw_line in text.splitlines():
+        # Some files start with a byte order mark, which would hide the first line.
+        for raw_line in text.lstrip(chr(0xFEFF)).splitlines():
             line = raw_line.split("#", 1)[0].strip()
             if ":" not in line:
                 continue
