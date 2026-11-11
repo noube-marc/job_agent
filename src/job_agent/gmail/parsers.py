@@ -12,6 +12,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from job_agent.collectors.base import html_to_text
 from job_agent.gmail.hellowork import parse_hellowork
+from job_agent.gmail.indeed import parse_indeed
 from job_agent.gmail.reader import AlertEmail
 from job_agent.offer import Offer
 from job_agent.processing.extract import detect_contract
@@ -101,6 +102,7 @@ def linkedin_more_offers_link(alert: AlertEmail) -> str | None:
 PARSERS: dict[str, Callable[[AlertEmail], list[Offer]]] = {
     "linkedin": parse_linkedin,
     "hellowork": parse_hellowork,
+    "indeed": parse_indeed,
 }
 MORE_OFFERS_LINKS: dict[str, Callable[[AlertEmail], str | None]] = {
     "linkedin": linkedin_more_offers_link,
