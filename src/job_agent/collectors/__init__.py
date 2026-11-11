@@ -10,6 +10,7 @@ from job_agent.collectors import (
     avature,
     cornerstone,
     credit_agricole,
+    creditmutuel,
     danone,
     digitalrecruiters,
     heineken,
@@ -38,4 +39,5 @@ CONNECTORS: dict[str, Connector] = {
     "danone": danone.collect,
     "heineken": heineken.collect,
     "oracle": oracle.collect,
+    "creditmutuel": creditmutuel.collect,
 }

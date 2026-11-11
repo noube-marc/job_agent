@@ -145,7 +145,7 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 | `successfactors_search` | Page de recherche publique SAP SuccessFactors (fiche ouverte seulement pour les nouvelles offres ciblées) | Generali, Lactalis, Bonduelle, Suntory Beverage & Food France, Nestlé France |
 | `avature` | Page de recherche publique Avature (offres du groupe dans tous les pays, filtrées sur la France ; fiche ouverte seulement pour les nouvelles offres ciblées) | TotalEnergies |
 | `phenom` | Service JSON appelé par la page de recherche publique Phenom (toutes les offres du pays ; fiche ouverte seulement pour les nouvelles offres ciblées) | Allianz |
-| `credit_agricole_jobs` | Pages HTML publiques du site emploi du groupe Crédit Agricole, pour une marque (toutes ses offres ; fiche ouverte seulement pour les nouvelles offres ciblées, avec la vraie date de publication) | Crédit Agricole Assurances |
+| `credit_agricole_jobs` | Pages HTML publiques du site emploi du groupe Crédit Agricole, pour une marque (toutes ses offres ; fiche ouverte seulement pour les nouvelles offres ciblées, avec la vraie date de publication) | Crédit Agricole Assurances, groupe Crédit Agricole (LCL, CIB... : chaque offre prend le nom de sa marque) |
 | `cornerstone` | Service de recherche appelé par le site carrière Cornerstone, avec le jeton anonyme que la page donne à chaque visiteur (toutes les offres, description complète, pause de 10 s demandée par le site) | Avril, Tereos, Agrial |
 | `digitalrecruiters` | Service public Digital Recruiters utilisé par le site carrière (toutes les offres ; détail lu seulement pour les nouvelles offres ciblées ; lien vers le site de l'enseigne) | Groupe Casino (Monoprix, Franprix...) |
 | `successfactors_sitemap` | Plan du site public SAP SuccessFactors (toutes les offres ; page ouverte seulement pour les nouvelles offres ciblées, pays lu sur la page) | Limagrain, Bel |
@@ -153,6 +153,7 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 | `danone` | Plan du site public de careers.danone.com + données de la page d'offre (pays lu sur la page) | Danone |
 | `heineken` | Liste publique des offres d'une société HEINEKEN (recherche interdite aux robots, non utilisée) + données JobPosting des pages d'offres ; pause de 5 s demandée par le site | Heineken France |
 | `oracle` | Service public Oracle Recruiting Cloud appelé par la page (toutes les offres ; détail lu seulement pour les nouvelles offres ciblées) | Savencia |
+| `creditmutuel` | Plan du site des offres (déclaré dans robots.txt), pages ouvertes seulement pour les nouvelles offres publiées dans la fenêtre de fraîcheur ; le site coupant parfois les connexions, l'agent s'arrête après 3 échecs et reprend au passage suivant | Crédit Mutuel |
 
 ### Alertes e-mail (Gmail, lecture seule)
 
