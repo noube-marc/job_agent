@@ -394,8 +394,8 @@ companies:
     - { name: "Auchan", sector: retail, careers_url: "https://www.auchan-recrute.fr/jobs/", ats: "meteojob" }  # plateforme Meteojob : jamais de collecte directe
     - { name: "Les Mousquetaires", sector: retail, careers_url: "https://www.carrieres-mousquetaires.com/nos-offres/", ats: "smartrecruiters" }  # API interdite aux robots par robots.txt ; site carrière HTML possible
     - { name: "Lidl France", sector: retail, careers_url: "https://emplois.lidl.fr/offres-d-emploi", ats: "successfactors" }  # JSON du site autorisé par robots.txt
-    - { name: "Groupe Casino", sector: retail, careers_url: "https://recrute.groupe-casino.fr/fr/annonces", ats: "digitalrecruiters" }  # JSON interne, Crawl-delay 10 s
-    - { name: "Système U", sector: retail, careers_url: "https://u-emploi.com/offres-emploi", ats: "digitalrecruiters" }  # site protégé contre les robots
+    - { name: "Groupe Casino", sector: retail, careers_url: "https://recrute.groupe-casino.fr/fr/annonces", ats: "digitalrecruiters" }  # service public Digital Recruiters (Monoprix, Franprix...)
+    - { name: "Système U", sector: retail, careers_url: "https://u-emploi.com/offres-emploi", ats: "protected" }  # site protégé contre les robots (Cloudflare) : pas de connecteur, couvert par les alertes
     # Autres
     - { name: "TotalEnergies", sector: other, careers_url: "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/", ats: "avature" }  # page de recherche HTML (toutes les offres du groupe, filtrées sur la France)
 
