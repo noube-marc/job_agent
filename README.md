@@ -51,7 +51,7 @@ Ouvrez `config.yaml` avec un éditeur de texte. Chaque réglage est expliqué en
 
 | Section | Rôle |
 |---|---|
-| `search` | Intitulés recherchés, mots exclus, règle Business Analyst |
+| `search` | Intitulés recherchés, mots exclus, règle Business Analyst, employeurs écartés (ESN, cabinets de recrutement, sites d'emploi : `excluded_companies`) et expressions qui trahissent un intermédiaire (« notre client » : `intermediary_phrases`, jamais appliquées aux offres lues sur un site carrière) |
 | `technical_profile` | Vos compétences, les technologies qui rendent un poste trop avancé, et les mots « junior » ou « débutant » qui font passer une offre en priorité (jamais écartée comme trop avancée) |
 | `experience` | Seuil d'expérience minimum demandée (5 ans par défaut) |
 | `contracts`, `location` | Contrats acceptés, régions, télétravail |
@@ -177,7 +177,7 @@ Chaque nouvelle offre retenue reçoit un score de 0 à 100, affiché dans le fic
 - 70 % : proximité de sens entre votre CV et l'offre, avec le modèle léger et multilingue `intfloat/multilingual-e5-small` (environ 470 Mo, téléchargé une seule fois) ;
 - 30 % : nombre de vos compétences maîtrisées (`technical_profile.mastered_skills`) citées dans l'offre.
 
-Pour les offres venant d'alertes e-mail, sans description, le score est estimé sur l'intitulé seul (mention « score estimé sur l'intitulé »). Le score aide à comparer les offres ; le tri reste par date de publication.
+Seules les offres qui respectent vos critères reçoivent un score. L'expérience demandée n'entre jamais dans le score (elle est jugée par le filtre) : les phrases qui donnent un nombre d'années sont retirées avant la comparaison. Pour les offres venant d'alertes e-mail, sans description ou avec un court extrait, la proximité de sens est estimée sur l'intitulé seul (mention « score estimé sur l'intitulé » quand il n'y a aucun extrait). Le score aide à comparer les offres ; le tri reste par date de publication.
 
 ## Étiquetage des offres (futur modèle « offre pertinente pour moi »)
 
