@@ -377,7 +377,7 @@ sources:
         allowed_senders: ["jobalerts-noreply@linkedin.com"]
       indeed:
         enabled: true
-        allowed_senders: []
+        allowed_senders: [donotreply@jobalert.indeed.com]
       hellowork:
         enabled: true
         allowed_senders: [alerte@emails.hellowork.com]
