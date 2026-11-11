@@ -213,11 +213,12 @@ def _enrich_with_ai(config: AppConfig, storage: Storage) -> Counter[str]:
         return Counter()
     counts = enrich_new_offers(storage, config, extractor)
     if counts["analysed"]:
-        log.info("IA : %d offre(s) analysée(s), %d remarque(s) ajoutée(s).", counts["analysed"], counts["flags"])
+        log.info("IA : %d offre(s) analysée(s), %d écartée(s) d'après l'IA, %d remarque(s) ajoutée(s).",
+                 counts["analysed"], counts["rejected"], counts["flags"])
     if counts["unavailable"] or counts["quota"]:
         log.warning("IA indisponible pour l'instant (%s) : les offres seront analysées plus tard.",
                     storage.get_state("ai_last_error"))
-    return Counter(ai_analysed=counts["analysed"])
+    return Counter(ai_analysed=counts["analysed"], kept=-counts["rejected"], rejected=counts["rejected"])
 
 
 FLAG_TITLE_ONLY_SCORE = "score estimé sur l'intitulé"
