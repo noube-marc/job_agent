@@ -18,6 +18,7 @@ dependencies = [
     "python-dotenv>=1.2.4",
     "pyyaml>=6.0.3",
     "rapidfuzz>=3.14.6",
+    "scikit-learn>=1.9.1",
     "sentence-transformers>=6.2.0",
     "tzdata>=2026.6",
 ]
