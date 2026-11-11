@@ -347,7 +347,7 @@ companies:
   # 10/11/2026).
   watchlist:
     # Assurance
-    - { name: "AXA", sector: insurance, careers_url: "https://recrutement.axa.fr", ats: "avature" }  # JSON interne Radancy, connecteur non disponible
+    - { name: "AXA", sector: insurance, careers_url: "https://recrutement.axa.fr", ats: "radancy" }  # JSON interne Radancy, connecteur non disponible
     - { name: "Allianz", sector: insurance, careers_url: "https://careers.allianz.com/global/en/search-results?qcountry=France", ats: "successfactors" }  # front Phenom, JSON dans la page
     - { name: "Generali", sector: insurance, careers_url: "https://carrieres.generali.fr", ats: "successfactors_search" }  # page de recherche HTML
     - { name: "Groupama", sector: insurance, careers_url: "https://www.groupama-gan-recrute.com/nos-offres", ats: "talentsoft" }  # flux RSS interdit par robots.txt
@@ -397,7 +397,7 @@ companies:
     - { name: "Groupe Casino", sector: retail, careers_url: "https://recrute.groupe-casino.fr/fr/annonces", ats: "digitalrecruiters" }  # JSON interne, Crawl-delay 10 s
     - { name: "Système U", sector: retail, careers_url: "https://u-emploi.com/offres-emploi", ats: "digitalrecruiters" }  # site protégé contre les robots
     # Autres
-    - { name: "TotalEnergies", sector: other, careers_url: "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/", ats: "avature" }  # HTML
+    - { name: "TotalEnergies", sector: other, careers_url: "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/", ats: "avature" }  # page de recherche HTML (toutes les offres du groupe, filtrées sur la France)
 
 
 # ---------------------------------------------------------------------
