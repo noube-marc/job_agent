@@ -63,16 +63,18 @@ search:
 
   # Employeurs écartés : ESN, cabinets de recrutement, agences d'intérim
   # et sites d'emploi qui republient des offres. Un nom ou un mot du nom
-  # de l'entreprise suffit ("consulting" écarte "Klint Consulting").
+  # de l'entreprise suffit. Les cabinets d'audit et de conseil (EY,
+  # Deloitte, PwC, KPMG, Forvis Mazars, Wavestone...) et les employeurs
+  # publics qui recrutent via leur propre site (La Sécu recrute) ne sont
+  # pas dans cette liste : ils recrutent pour eux-mêmes.
   excluded_companies:
     # Mots génériques
-    - "consulting"
     - "interim"
     - "recrutement"
     - "recruitment"
     - "staffing"
     - "portage salarial"
-    # ESN et sociétés de conseil
+    # ESN (entreprises de services du numérique)
     - "Accenture"
     - "Capgemini"
     - "Sopra Steria"
@@ -83,14 +85,11 @@ search:
     - "Atos"
     - "CGI"
     - "Devoteam"
-    - "Wavestone"
-    - "Onepoint"
-    - "Talan"
     - "Micropole"
     - "Keyrus"
     - "Business & Decision"
-    - "Converteo"
     - "Actinvision"
+    - "Klint"
     - "Niji"
     - "Nexton"
     - "Segula"
@@ -99,10 +98,8 @@ search:
     - "Decideom"
     - "Hedon Technologies"
     - "Nowbrains"
-    - "Collective Works"
     - "Kaizen Solutions"
     - "Sinbad conseil"
-    - "Selescope"
     - "Extia"
     - "Davidson"
     - "Aubay"
@@ -115,6 +112,8 @@ search:
     - "Astek"
     # Cabinets de recrutement et intérim
     - "Externatic"
+    - "Selescope"
+    - "Collective Works"
     - "Hays"
     - "Michael Page"
     - "Page Personnel"
@@ -132,14 +131,16 @@ search:
     - "Silkhom"
     # Sites d'emploi qui republient des offres
     - "Talents Handicap"
-    - "Lasecurecrute"
 
-  # Expressions de la description qui trahissent un intermédiaire.
-  # Pas appliquées aux offres lues sur un site carrière d'entreprise.
+  # Expressions de la description qui trahissent un intermédiaire. Elles
+  # sont précises exprès : un cabinet de conseil parle aussi de « notre
+  # client » pour ses propres missions. Pas appliquées aux offres lues
+  # sur un site carrière d'entreprise.
   intermediary_phrases:
-    - "notre client"
     - "pour le compte de notre client"
     - "pour l'un de nos clients"
+    - "notre client recherche"
+    - "notre client recrute"
     - "cabinet de recrutement"
     - "cabinet de conseil en recrutement"
     - "entreprise de services du numérique"
