@@ -5,14 +5,15 @@ from job_agent.processing.filters import evaluate
 
 
 def test_excluded_company_by_name(config) -> None:
-    for company in ("Nexton", "Talents Handicap", "Hays France", "Klint Consulting", "Intérim Nation"):
+    for company in ("Nexton", "Talents Handicap", "Hays France", "Klint Consulting", "Intérim Nation", "Inetum"):
         result = evaluate(make_offer(company=company), config, NOW)
         assert not result.kept, company
         assert result.reasons[0].startswith("employeur exclu")
 
 
 def test_ordinary_company_is_kept(config) -> None:
-    for company in ("AXA France", "Natixis", "Conseil régional Exemple"):
+    for company in ("AXA France", "Natixis", "Conseil régional Exemple", "Lasecurecrute.fr",
+                    "EY Consulting", "Deloitte", "PwC France", "KPMG", "Forvis Mazars", "Wavestone"):
         assert evaluate(make_offer(company=company), config, NOW).kept, company
 
 
