@@ -488,10 +488,11 @@ sources:
 # VÉRIFICATION À LA SOURCE
 # ---------------------------------------------------------------------
 source_verification:
-  # true = toute offre venant d'un site d'emploi est recherchée sur le
-  # site carrière de l'entreprise (si celle-ci est dans "companies").
-  # Fonction pas encore disponible : laisser à false.
-  enabled: false
+  # true = toute offre venant d'un site d'emploi (alerte e-mail) est
+  # recherchée sur le site carrière de l'entreprise, si celle-ci est dans
+  # "companies" avec un connecteur. Statuts : vérifiée à la source,
+  # vérification en attente, absente du site carrière, non vérifiable.
+  enabled: true
   # true = une offre absente du site carrière n'est pas gardée : elle
   # est inscrite dans l'onglet des offres écartées, avec la raison.
   exclude_if_missing_on_career_site: true

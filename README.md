@@ -109,7 +109,7 @@ Le **tout premier passage est silencieux** : il remplit le fichier de suivi sans
 
 | Fichier | Contenu |
 |---|---|
-| `job_tracking.xlsx` | Fichier de suivi : onglets **Suivi** (offres retenues), **Descriptions** (texte complet) et **Écartées** (avec la raison) |
+| `job_tracking.xlsx` | Fichier de suivi : onglets **Suivi** (offres retenues), **Descriptions** (texte complet), **Écartées** (avec la raison) et **Vérifications** (changements de statut de vérification) |
 | `job_agent.db` | Mémoire de l'agent (offres vues, notifiées, historique des passages) |
 | `logs/job_agent.log` | Journal de chaque passage : offres collectées par source, retenues, écartées, notifiées |
 
@@ -174,6 +174,23 @@ Les e-mails Hellowork ne contiennent que des liens de suivi qui incluent votre a
 Indeed indique l'ancienneté de chaque offre (« il y a 3 jours ») : cette date sert au filtre de fraîcheur, sans mention « date estimée ». Le lien de chaque offre est l'adresse publique `fr.indeed.com/viewjob?jk=...`, sans aucun code de suivi ; pour les offres sponsorisées, qui n'en ont pas, c'est une recherche Indeed (intitulé et ville). L'extrait de l'offre présent dans l'e-mail est conservé et sert aux filtres (expérience, Business Analyst).
 
 Les autres entreprises de la liste n'ont pas encore de connecteur (le journal les signale « connecteur non disponible ») : leurs offres arrivent par les alertes e-mail. Les sites d'emploi (LinkedIn, Indeed, Hellowork, Welcome to the Jungle, Apec, Cadremploi, Meteojob) ne sont jamais lus directement.
+
+### Vérification à la source
+
+Une offre arrivée par une alerte e-mail est recherchée sur le site carrière de l'entreprise (`source_verification` dans `config.yaml`) :
+
+| Statut | Signification |
+|---|---|
+| vérifiée à la source | La même offre est sur le site carrière : le lien principal devient celui du site carrière, et sa date remplace la date estimée |
+| vérification en attente | L'entreprise a un connecteur mais l'offre n'y est pas encore. Elle est notifiée tout de suite (`notify_while_pending`) |
+| absente du site carrière | Toujours introuvable après `grace_period_hours` (24 h) : l'offre est écartée, et un message Telegram vous prévient si elle vous avait été signalée |
+| non vérifiable | Entreprise hors liste ou sans connecteur, site en erreur, ou liste du site trop courte pour conclure. L'offre est gardée : une erreur ne veut jamais dire « absente » |
+
+Avant de conclure « absente », l'agent cherche aussi un intitulé proche parmi les offres de l'entreprise : s'il en trouve un, l'offre est « vérifiée » avec la mention « correspondance probable ».
+
+Une fois par jour (`recheck_interval_hours`), les offres du fichier de suivi qui ne sont plus listées par leur site carrière sont marquées « disparue du site carrière », et un message Telegram en donne la liste. Seules les offres plus récentes que la plus ancienne offre lue sur le site sont jugées.
+
+Le fichier de suivi reste en ajout seul : le statut est écrit à l'ajout de la ligne, et chaque changement est ajouté dans l'onglet **Vérifications** (date, offre, ancien et nouveau statut, détail).
 
 ## Analyse par IA (Gemini, gratuit)
 
