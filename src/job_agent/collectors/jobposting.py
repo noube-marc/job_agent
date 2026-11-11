@@ -7,7 +7,9 @@ followed one level down.
 Many career sites publish a site map of their offers (made for robots) and
 describe each offer page with the standard schema.org "JobPosting" data
 (the format read by search engines): title, publication date, contract,
-place, description. The connector reads the site map at each run (the
+place, description. Some sites put a republication date in "datePosted"
+(Isagri: 05/11 while the page says "Publié le 16/10/2026"): the oldest of
+that date and the date written on the page is kept. The connector reads the site map at each run (the
 whole list) and opens an offer page only for NEW offers whose title, read
 in the address, matches the search. When the address holds no words (a
 mere code, as "/offre/tq3g3vmorv"), every new offer page is opened.
@@ -110,6 +112,29 @@ def _country_code(address: dict) -> str:
     return str(country).strip().lower()
 
 
+_VISIBLE_DATE = re.compile(
+    r"(?:publi[ée]+e?\s+le|date\s+de\s+publication\s*:?)\s*(\d{1,2})/(\d{1,2})/(\d{4})", re.IGNORECASE
+)
+
+
+def visible_date(html: str, zone: ZoneInfo) -> datetime | None:
+    """The publication date written on the page ("Publié le 16/10/2026"), if any."""
+    match = _VISIBLE_DATE.search(re.sub(r"<[^>]+>", " ", html))
+    if not match:
+        return None
+    day, month, year = (int(part) for part in match.groups())
+    try:
+        return datetime(year, month, day, tzinfo=zone)
+    except ValueError:
+        return None
+
+
+def earliest(*dates: datetime | None) -> datetime | None:
+    """The oldest known date: a republished offer must never look new."""
+    known = [value for value in dates if value is not None]
+    return min(known) if known else None
+
+
 def _date(value: str | None, zone: ZoneInfo) -> datetime | None:
     """A JobPosting date; a date without time zone ("2026-11-10") is local."""
     if not value:
@@ -146,9 +171,11 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
             continue
         seen.add(item["id"])
         posting: dict = {}
+        page = ""
         opaque = " " not in item["words"]  # an address without words: the title is only on the page
         if not context.is_known(source_name, item["id"]) and (opaque or title_is_candidate(item["words"], context.config)):
-            posting = job_posting(context.client.get(item["url"]).text)
+            page = context.client.get(item["url"]).text
+            posting = job_posting(page)
             if not posting:
                 continue  # not an offer page (or an offer already removed)
         address = _address(posting)
@@ -156,7 +183,9 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         if code and code not in COUNTRY_CODES.get(country, {country.lower()}):
             continue
         place = " ".join(str(address.get(key) or "") for key in ("postalCode", "addressLocality")).strip()
-        published = _date(posting.get("datePosted"), ZoneInfo(context.config.schedule.timezone))
+        zone = ZoneInfo(context.config.schedule.timezone)
+        # "datePosted" may be a republication date: the date written on the page wins if older.
+        published = earliest(_date(posting.get("datePosted"), zone), visible_date(page, zone))
         description = html_to_text(posting.get("description") or "")
         offers.append(
             Offer(
