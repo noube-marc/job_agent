@@ -75,6 +75,19 @@ def _main_link(members: list[sqlite3.Row]) -> str:
     return first["apply_url"] or first["url"]
 
 
+CAREER_SITE_LINE = "✅ Offre lue directement sur le site carrière de l'entreprise"
+FLAG_CAREER_DATE = "date du site carrière"  # same text as processing.pipeline.FLAG_CAREER_DATE
+
+
+def date_origin(main: sqlite3.Row, flags: list[str]) -> str:
+    """Where the publication date comes from, in words."""
+    if main["source"] == "career_page" or FLAG_CAREER_DATE in flags:
+        return "date du site carrière"
+    if FLAG_DATE_ESTIMATED in flags:
+        return "date estimée : réception de l'alerte"
+    return "date du site d'emploi"
+
+
 VERIFICATION_LINES = {
     "verified": "✅ Vérifiée sur le site carrière",
     "pending": "⏳ Vérification en attente sur le site carrière",
@@ -104,10 +117,11 @@ def format_offer(main: sqlite3.Row, members: list[sqlite3.Row], config: AppConfi
         lines.append(" · ".join(details))
     if "publication_date" in fields and main["effective_date"]:
         local = datetime.fromisoformat(main["effective_date"]).astimezone(zone)
-        estimated = " (date estimée)" if FLAG_DATE_ESTIMATED in flags else ""
-        lines.append(f"🗓 Publiée le {local:%d/%m à %H:%M}{estimated}")
+        lines.append(f"🗓 Publiée le {local:%d/%m à %H:%M} ({date_origin(main, flags)})")
 
-    if "verification_status" in fields and "verification" in main.keys() and main["source"] != "career_page":
+    if "verification_status" in fields and main["source"] == "career_page":
+        lines.append(CAREER_SITE_LINE)
+    elif "verification_status" in fields and "verification" in main.keys():
         status = VERIFICATION_LINES.get(main["verification"] or "")
         if status:
             lines.append(status)
