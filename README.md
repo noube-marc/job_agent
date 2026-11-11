@@ -1,16 +1,18 @@
 # job-agent
 
-Agent de veille emploi. Plusieurs fois par jour, il lit les nouvelles offres publiées sur les sites carrière des entreprises que vous surveillez, les filtre selon vos critères, les ajoute à un fichier de suivi Excel et vous prévient sur Telegram.
+Agent de veille emploi. Plusieurs fois par jour, il lit les nouvelles offres publiées sur les sites carrière des entreprises que vous surveillez et dans vos alertes e-mail (LinkedIn, Indeed, Hellowork), les filtre selon vos critères, les ajoute à un fichier de suivi Excel et vous prévient sur Telegram.
 
 Objectif : être parmi les premiers à postuler.
 
 ## Ce que fait un passage
 
-1. **Collecte** des offres sur les sites carrière lisibles (voir [Sources](#sources)).
-2. **Filtres** : intitulé recherché, mots exclus, postes trop avancés, expérience minimum, contrat, lieu, fraîcheur. Chaque offre écartée garde sa raison.
+1. **Collecte** des offres sur les sites carrière lisibles et dans les alertes e-mail (voir [Sources](#sources)).
+2. **Filtres** : intitulé recherché, mots exclus, employeurs exclus (ESN, cabinets de recrutement), postes trop avancés, expérience minimum, contrat, lieu, fraîcheur. Chaque offre écartée garde sa raison.
 3. **Dédoublonnage** : une même offre vue sur deux sources n'apparaît qu'une fois.
-4. **Fichier de suivi Excel** : les nouvelles offres sont ajoutées en bas, sans jamais modifier les lignes existantes ni vos colonnes.
-5. **Notification Telegram** pour chaque nouvelle offre retenue.
+4. **Analyse par IA** (Gemini, gratuit) des offres retenues : elle complète ce que les règles n'ont pas trouvé (contrat, expérience, télétravail).
+5. **Score de correspondance** avec votre CV, calculé sur votre ordinateur.
+6. **Fichier de suivi Excel** : les nouvelles offres sont ajoutées en bas, sans jamais modifier les lignes existantes ni vos colonnes.
+7. **Notification Telegram** pour chaque nouvelle offre retenue, de la plus récente à la plus ancienne.
 
 Tous les critères sont dans `config.yaml`. Rien de personnel n'est écrit dans le code.
 
@@ -89,6 +91,18 @@ Lancer un passage tout de suite (même hors de la plage horaire) :
 uv run job-agent run --force
 ```
 
+Autres commandes :
+
+| Commande | Rôle |
+|---|---|
+| `uv run job-agent check-config` | Vérifie `config.yaml` |
+| `uv run job-agent telegram-setup` | Aide à trouver `TELEGRAM_CHAT_ID` |
+| `uv run job-agent gmail-setup` | Autorise la lecture de Gmail (à refaire chaque semaine en mode Test) |
+| `uv run job-agent gmail-senders` | Liste les expéditeurs du libellé Gmail, pour remplir `allowed_senders` |
+| `uv run job-agent ai-sheet` puis `ai-evaluate` | Mesure l'IA contre les règles simples sur 30 offres annotées |
+| `uv run job-agent label-sheet` | Crée ou complète la feuille d'étiquetage |
+| `uv run job-agent relevance-model` | Mesure le modèle « offre pertinente pour moi » |
+
 Le **tout premier passage est silencieux** : il remplit le fichier de suivi sans envoyer de notification, pour éviter des dizaines de messages d'un coup. Les passages suivants notifient uniquement les nouvelles offres.
 
 ### Fichiers produits (dans `private/`)
@@ -159,7 +173,7 @@ Les e-mails Hellowork ne contiennent que des liens de suivi qui incluent votre a
 
 Indeed indique l'ancienneté de chaque offre (« il y a 3 jours ») : cette date sert au filtre de fraîcheur, sans mention « date estimée ». Le lien de chaque offre est l'adresse publique `fr.indeed.com/viewjob?jk=...`, sans aucun code de suivi ; pour les offres sponsorisées, qui n'en ont pas, c'est une recherche Indeed (intitulé et ville). L'extrait de l'offre présent dans l'e-mail est conservé et sert aux filtres (expérience, Business Analyst).
 
-Les autres entreprises de la liste n'ont pas encore de connecteur (le journal les signale « connecteur non disponible ») : leurs offres arriveront par les alertes e-mail, prévues dans une prochaine version. Les sites d'emploi (LinkedIn, Indeed, Hellowork, Welcome to the Jungle, Apec, Cadremploi, Meteojob) ne sont jamais lus directement.
+Les autres entreprises de la liste n'ont pas encore de connecteur (le journal les signale « connecteur non disponible ») : leurs offres arrivent par les alertes e-mail. Les sites d'emploi (LinkedIn, Indeed, Hellowork, Welcome to the Jungle, Apec, Cadremploi, Meteojob) ne sont jamais lus directement.
 
 ## Analyse par IA (Gemini, gratuit)
 
