@@ -16,10 +16,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol
 from urllib.parse import urlsplit
-from urllib.robotparser import RobotFileParser
 
 import httpx
 
+from job_agent.collectors.robots import RobotRules
 from job_agent.config.models import AppConfig, WatchedCompany
 from job_agent.offer import Offer
 
@@ -68,26 +68,26 @@ class PoliteClient:
         self._sleep = sleep
         self._clock = clock
         self._last_request: dict[str, float] = {}
-        self._robots: dict[str, RobotFileParser | None] = {}
+        self._robots: dict[str, RobotRules | None] = {}
         self.requests_made = 0
 
     def close(self) -> None:
         self._client.close()
 
     # --- robots.txt ---------------------------------------------------
-    def _robots_for(self, url: str) -> RobotFileParser | None:
+    def _robots_for(self, url: str) -> RobotRules | None:
         parts = urlsplit(url)
         host = f"{parts.scheme}://{parts.netloc}"
         if host not in self._robots:
-            parser: RobotFileParser | None = RobotFileParser()
+            parser: RobotRules | None = None
             try:
                 response = self._raw("GET", f"{host}/robots.txt")
                 # RFC 9309: a 4xx answer means "no rules" (everything is
                 # allowed); a 5xx answer means "assume everything is forbidden".
                 if response.status_code == 200:
-                    parser.parse(response.text.splitlines())
+                    parser = RobotRules(response.text)
                 elif response.status_code >= 500:
-                    parser.disallow_all = True
+                    parser = RobotRules(disallow_all=True)
                 else:
                     parser = None
             except httpx.HTTPError:
