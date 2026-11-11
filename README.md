@@ -135,7 +135,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\uninstall_task.ps1
 
 ## Sources
 
-Les offres sont lues uniquement par des accès publics, en respectant le fichier `robots.txt` de chaque site, avec une pause entre deux requêtes et un identifiant de robot générique.
+Les offres sont lues uniquement par des accès publics, en respectant le fichier `robots.txt` de chaque site (lu selon la norme RFC 9309 : la règle la plus précise l'emporte), avec une pause entre deux requêtes et un identifiant de robot générique.
 
 | Outil de recrutement (`ats`) | Accès | Entreprises (inventaire du 10/11/2026) |
 |---|---|---|
@@ -143,6 +143,7 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 | `ashby` | API publique documentée | Alan, Qonto |
 | `workday` | Interface du site carrière Workday (liste des offres en France, fiche détaillée seulement pour les nouvelles offres ciblées) | Aéma Groupe (Abeille Assurances), AG2R La Mondiale, Pernod Ricard, Unilever |
 | `successfactors_search` | Page de recherche publique SAP SuccessFactors (fiche ouverte seulement pour les nouvelles offres ciblées) | Generali, Lactalis, Bonduelle, Suntory Beverage & Food France, Nestlé France |
+| `avature` | Page de recherche publique Avature (offres du groupe dans tous les pays, filtrées sur la France ; fiche ouverte seulement pour les nouvelles offres ciblées) | TotalEnergies |
 
 ### Alertes e-mail (Gmail, lecture seule)
 
