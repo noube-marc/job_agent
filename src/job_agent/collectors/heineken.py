@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 
 from job_agent.collectors.base import CollectContext, SourceError, html_to_text
-from job_agent.collectors.jobposting import job_posting
+from job_agent.collectors.jobposting import earliest, job_posting, visible_date
 from job_agent.config.models import WatchedCompany
 from job_agent.offer import Offer
 from job_agent.processing.filters import title_is_candidate
@@ -77,9 +77,11 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
     offers: list[Offer] = []
     for item in listed:
         posting: dict = {}
+        page = ""
         if not context.is_known(source_name, item["id"]) and title_is_candidate(item["words"], context.config):
-            posting = job_posting(context.client.get(item["url"]).text)
-        published = parse_date(posting.get("datePosted"), zone)
+            page = context.client.get(item["url"]).text
+            posting = job_posting(page)
+        published = earliest(parse_date(posting.get("datePosted"), zone), visible_date(page, zone))
         description = html_to_text(posting.get("description") or "")
         location = posting.get("jobLocation") or {}
         if isinstance(location, list):

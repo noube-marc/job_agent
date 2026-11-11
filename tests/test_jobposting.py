@@ -99,3 +99,15 @@ def test_date_without_time_zone_is_local() -> None:
 
     date = jobposting._date("2026-11-10", ZoneInfo("Europe/Paris"))
     assert date.isoformat() == "2026-11-10T00:00:00+01:00"
+
+
+def test_older_date_written_on_the_page_wins() -> None:
+    from zoneinfo import ZoneInfo
+
+    zone = ZoneInfo("Europe/Paris")
+    page = '<li><svg></svg><span>Publié le 16/10/2026</span></li>' + _page("Data Scientist (H/F)")
+    posted = jobposting._date(jobposting.job_posting(page)["datePosted"], zone)  # 05/11: a republication
+    published = jobposting.earliest(posted, jobposting.visible_date(page, zone))
+    assert published.date().isoformat() == "2026-10-16"
+    assert jobposting.visible_date("<p>Date de publication : 03/11/2026</p>", zone).day == 3
+    assert jobposting.visible_date("<p>aucune date</p>", zone) is None
