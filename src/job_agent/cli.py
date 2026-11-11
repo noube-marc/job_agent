@@ -38,6 +38,9 @@ def _build_parser() -> argparse.ArgumentParser:
     commands.add_parser("ai-evaluate", help="compare l'IA et les règles sur les offres annotées")
     commands.add_parser("label-sheet", help="ajoute les nouvelles offres à la feuille d'étiquetage")
     commands.add_parser(
+        "relevance-model", help="mesure un modèle « offre pertinente pour moi » sur la feuille d'étiquetage"
+    )
+    commands.add_parser(
         "gmail-senders", help="liste les expéditeurs des e-mails du libellé (pour allowed_senders)"
     )
     return parser
@@ -106,6 +109,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         storage = Storage(config.storage.database_path)
         try:
             return label_sheet_command(storage, [*config.labelling.not_relevant_companies, *config.search.excluded_companies])
+        finally:
+            storage.close()
+    if args.command == "relevance-model":
+        from job_agent.ai.relevance import relevance_command
+        from job_agent.storage import Storage
+
+        storage = Storage(config.storage.database_path)
+        try:
+            return relevance_command(
+                storage, config.ai.anonymized_cv_path, config.technical_profile.mastered_skills
+            )
         finally:
             storage.close()
     if args.command in ("ai-sheet", "ai-evaluate"):
