@@ -114,6 +114,13 @@ CREATE TABLE IF NOT EXISTS verification_events (
     written INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS letters (
+    offer_id INTEGER PRIMARY KEY,
+    model TEXT NOT NULL,
+    result TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS app_state (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -442,6 +449,16 @@ class Storage:
                ORDER BY o.effective_date DESC LIMIT ?""",
             (min_description, limit),
         ).fetchall()
+
+    def letter_result(self, offer_id: int) -> sqlite3.Row | None:
+        return self.connection.execute("SELECT * FROM letters WHERE offer_id = ?", (offer_id,)).fetchone()
+
+    def save_letter(self, offer_id: int, model: str, result: str) -> None:
+        with self.transaction() as db:
+            db.execute(
+                "INSERT OR REPLACE INTO letters (offer_id, model, result, created_at) VALUES (?, ?, ?, ?)",
+                (offer_id, model, result, _iso(utc_now())),
+            )
 
     def ai_result(self, offer_id: int) -> sqlite3.Row | None:
         return self.connection.execute("SELECT * FROM ai_extractions WHERE offer_id = ?", (offer_id,)).fetchone()
