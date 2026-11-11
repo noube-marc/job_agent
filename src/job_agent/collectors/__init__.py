@@ -13,6 +13,7 @@ from job_agent.collectors import (
     digitalrecruiters,
     phenom,
     successfactors,
+    successfactors_sitemap,
     talentsoft,
     workday,
 )
@@ -28,4 +29,5 @@ CONNECTORS: dict[str, Connector] = {
     "credit_agricole_jobs": credit_agricole.collect,
     "cornerstone": cornerstone.collect,
     "digitalrecruiters": digitalrecruiters.collect,
+    "successfactors_sitemap": successfactors_sitemap.collect,
 }

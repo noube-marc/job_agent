@@ -374,7 +374,7 @@ companies:
     - { name: "InVivo", sector: agriculture_agrifood, careers_url: "https://invivo-recrute.talent-soft.com", ats: "talentsoft_rss" }  # flux RSS public
     - { name: "Avril", sector: agriculture_agrifood, careers_url: "https://groupeavril.csod.com/ux/ats/careersite/2/home?c=groupeavril&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
     - { name: "Tereos", sector: agriculture_agrifood, careers_url: "https://tereos.csod.com/ux/ats/careersite/1/home?c=tereos&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
-    - { name: "Limagrain", sector: agriculture_agrifood, careers_url: "https://jobs.limagrain.com", ats: "successfactors" }  # plan du site autorisé, JSON interdit
+    - { name: "Limagrain", sector: agriculture_agrifood, careers_url: "https://jobs.limagrain.com", ats: "successfactors_sitemap" }  # plan du site public (service de recherche interdit par robots.txt)
     - { name: "Lactalis", sector: agriculture_agrifood, careers_url: "https://jobs.lactalisexperience.fr", ats: "successfactors_search" }  # page de recherche HTML
     - { name: "Danone", sector: agriculture_agrifood, careers_url: "https://careers.danone.com/en-global/jobs.html", ats: "icims" }  # HTML ; JSON interdit par robots.txt
     - { name: "Bonduelle", sector: agriculture_agrifood, careers_url: "https://jobs.bonduelle.com", ats: "successfactors_search" }  # page de recherche HTML
@@ -388,7 +388,7 @@ companies:
     - { name: "Nestlé France", sector: consumer_goods, careers_url: "https://jobdetails.nestle.com/search/?q=&locationsearch=France", ats: "successfactors_search" }  # page de recherche HTML, offres en France
     - { name: "Unilever France", sector: consumer_goods, careers_url: "https://unilever.wd3.myworkdayjobs.com/Unilever_Experienced_Professionals", ats: "workday" }  # liste et fiches Workday
     - { name: "Heineken France", sector: consumer_goods, careers_url: "https://careers.theheinekencompany.com/Francais/HEINEKEN-France", ats: "successfactors" }  # HTML, Crawl-delay 5 s
-    - { name: "Bel", sector: consumer_goods, careers_url: "https://jobs.groupe-bel.com/?locale=fr_FR", ats: "successfactors" }  # plan du site autorisé, JSON interdit
+    - { name: "Bel", sector: consumer_goods, careers_url: "https://jobs.groupe-bel.com/?locale=fr_FR", ats: "successfactors_sitemap" }  # plan du site public (service de recherche interdit par robots.txt)
     # Distribution
     - { name: "Carrefour", sector: retail, careers_url: "https://recrute.carrefour.fr/offres/", ats: "icims" }  # HTML iCIMS
     - { name: "Auchan", sector: retail, careers_url: "https://www.auchan-recrute.fr/jobs/", ats: "meteojob" }  # plateforme Meteojob : jamais de collecte directe
