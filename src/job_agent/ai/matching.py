@@ -99,8 +99,8 @@ class CVMatcher:
         text_tokens = tokens(text)
         return [skill for skill in self._skills if contains_phrase(text_tokens, skill)]
 
-    def scores(self, offers: list[tuple[str, str]]) -> list[int]:
-        """Scores of (title, description) pairs; empty description = title only."""
+    def parts(self, offers: list[tuple[str, str]]) -> list[tuple[float, int]]:
+        """(closeness of meaning from 0 to 1, number of mastered skills named)."""
         if not offers:
             return []
         texts = [title if is_excerpt(description) else f"{title}. {without_experience(description)[:OFFER_CHARS]}"
@@ -109,7 +109,12 @@ class CVMatcher:
         results = []
         for (title, description), value in zip(offers, closeness):
             bounds = BOUNDS_TITLE_ONLY if is_excerpt(description) else BOUNDS_WITH_DESCRIPTION
-            skills = min(len(self.skills_found(f"{title} {description}")), MAX_SKILLS) / MAX_SKILLS
-            score = SEMANTIC_WEIGHT * _rescale(float(value), bounds) + (1 - SEMANTIC_WEIGHT) * skills
-            results.append(round(100 * score))
+            results.append((_rescale(float(value), bounds), len(self.skills_found(f"{title} {description}"))))
         return results
+
+    def scores(self, offers: list[tuple[str, str]]) -> list[int]:
+        """Scores of (title, description) pairs; empty description = title only."""
+        return [
+            round(100 * (SEMANTIC_WEIGHT * meaning + (1 - SEMANTIC_WEIGHT) * min(skills, MAX_SKILLS) / MAX_SKILLS))
+            for meaning, skills in self.parts(offers)
+        ]

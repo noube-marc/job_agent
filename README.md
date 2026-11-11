@@ -183,6 +183,8 @@ Seules les offres qui respectent vos critères reçoivent un score. L'expérienc
 
 `uv run job-agent label-sheet` crée `private/etiquetage.xlsx`. Indiquez « oui » ou « non » dans la colonne verte « Pertinente pour moi ? » (une offre à laquelle vous auriez envie de postuler). Ensuite, chaque passage ajoute automatiquement les nouvelles offres en bas de la feuille, sans toucher à vos réponses (sauf si le fichier est ouvert dans Excel : ce sera au passage suivant). Avec 150 à 200 offres étiquetées, un modèle pourra apprendre vos préférences. Les « non » évidents sont mis par l'agent, uniquement dans les cases vides et avec la raison en commentaire : contrat ni CDI ni CDD, 5 ans d'expérience ou plus, intitulé hors cible sans aucun mot data ou statistique, entreprise de conseil (liste `labelling.not_relevant_companies`), ESN ou cabinet (liste `search.excluded_companies`), intitulé « consultant ». Vous pouvez les corriger : l'agent ne remplace jamais une réponse.
 
+`uv run job-agent relevance-model` mesure ensuite un modèle qui apprend vos réponses (régression logistique et forêt aléatoire, calculées sur votre ordinateur) : validation croisée, part de « oui » parmi les 10 offres les mieux classées, variables les plus utiles. Le résultat est écrit dans `reports/relevance_model.md` (chiffres seulement). L'agent n'utilise pas encore ce modèle : le tri reste par date. Relancez la commande après avoir étiqueté de nouvelles offres pour voir s'il progresse.
+
 ## Dépannage
 
 | Message | Que faire |
