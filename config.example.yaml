@@ -380,7 +380,7 @@ sources:
         allowed_senders: []
       hellowork:
         enabled: true
-        allowed_senders: []
+        allowed_senders: [alerte@emails.hellowork.com]
       welcome_to_the_jungle:
         enabled: true
         allowed_senders: []
