@@ -22,10 +22,13 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.worksheet import Worksheet
 
 from job_agent.processing.filters import CONTRACT_LABELS, FLAG_DATE_ESTIMATED
+from job_agent.processing.verification import LABELS as VERIFICATION_LABELS
+from job_agent.processing.verification import status_label
 
 SHEET_TRACKING = "Suivi"
 SHEET_DESCRIPTIONS = "Descriptions"
 SHEET_REJECTED = "Écartées"
+SHEET_VERIFICATIONS = "Vérifications"
 
 AGENT_COLUMNS = [
     ("Identifiant", 11), ("Entreprise", 22), ("Poste", 40), ("Lieu", 18), ("Contrat", 9),
@@ -43,6 +46,10 @@ DESCRIPTION_COLUMNS = [("Identifiant", 11), ("Entreprise", 22), ("Poste", 40), (
 REJECTED_COLUMNS = [
     ("Identifiant", 11), ("Entreprise", 22), ("Poste", 40), ("Lieu", 18), ("Contrat", 9),
     ("Source", 22), ("Date de publication", 17), ("Date de collecte", 17), ("Raisons", 60), ("Lien", 40),
+]
+VERIFICATION_COLUMNS = [
+    ("Date", 17), ("Identifiant", 11), ("Entreprise", 22), ("Poste", 40),
+    ("Ancien statut", 24), ("Nouveau statut", 24), ("Détail", 60),
 ]
 SECTOR_LABELS = {
     "insurance": "Assurance", "banking": "Banque", "agriculture_agrifood": "Agro-industrie",
@@ -67,6 +74,7 @@ class WriteResult:
     written_ids: list[int]
     kept: int
     rejected: int
+    events_written: list[int] | None = None
 
 
 # ---------------------------------------------------------------------
@@ -100,6 +108,7 @@ def _create_workbook(path: Path) -> None:
 
     _write_header(workbook.create_sheet(SHEET_DESCRIPTIONS), DESCRIPTION_COLUMNS, _AGENT_FILL)
     _write_header(workbook.create_sheet(SHEET_REJECTED), REJECTED_COLUMNS, _AGENT_FILL)
+    _write_header(workbook.create_sheet(SHEET_VERIFICATIONS), VERIFICATION_COLUMNS, _AGENT_FILL)
     for sheet in workbook.worksheets:
         sheet.auto_filter.ref = f"A1:{get_column_letter(sheet.max_column)}1"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -140,7 +149,7 @@ def _tracking_row(main: sqlite3.Row, members: list[sqlite3.Row], timezone: ZoneI
         main["id"], main["company"] or main["company_key"], main["title"], main["location"],
         CONTRACT_LABELS.get(main["contract_type"] or "", ""), SECTOR_LABELS.get(main["sector"] or "", ""),
         main["source_name"], sources[0], ", ".join(sources), published, collected, delay,
-        main_link, "\n".join(other_links), "", "; ".join(flags),
+        main_link, "\n".join(other_links), status_label(main), "; ".join(flags),
         main["match_score"] if "match_score" in main.keys() else None,
     ]
 
@@ -166,8 +175,9 @@ def append_offers(
     members_of,
     keep_rejected: bool,
     timezone_name: str = "Europe/Paris",
+    events: list[sqlite3.Row] = (),
 ) -> WriteResult:
-    """Append pending offers to the tracking file.
+    """Append pending offers, and verification status changes, to the tracking file.
 
     `members_of(group_id)` returns all offers of a duplicate group.
     Raises TrackingFileLocked if the file cannot be saved.
@@ -184,6 +194,9 @@ def append_offers(
     tracking = workbook[SHEET_TRACKING]
     descriptions = workbook[SHEET_DESCRIPTIONS]
     rejected_sheet = workbook[SHEET_REJECTED]
+    if SHEET_VERIFICATIONS not in workbook.sheetnames:  # files created before this sheet existed
+        _write_header(workbook.create_sheet(SHEET_VERIFICATIONS), VERIFICATION_COLUMNS, _AGENT_FILL)
+    verifications = workbook[SHEET_VERIFICATIONS]
     written: list[int] = []
     kept = rejected = 0
 
@@ -211,10 +224,17 @@ def append_offers(
             rejected += 1
         written.append(main["id"])
 
+    for event in events:
+        _append(verifications, [
+            _local(event["at"], timezone), event["group_id"], event["company"] or event["company_key"],
+            event["title"], VERIFICATION_LABELS.get(event["old_status"] or "", ""),
+            VERIFICATION_LABELS.get(event["new_status"], event["new_status"]), event["detail"],
+        ])
+
     for sheet in workbook.worksheets:
         sheet.auto_filter.ref = f"A1:{get_column_letter(sheet.max_column)}{max(sheet.max_row, 1)}"
     try:
         workbook.save(path)
     except PermissionError as error:
         raise TrackingFileLocked(str(path)) from error
-    return WriteResult(written, kept, rejected)
+    return WriteResult(written, kept, rejected, [event["id"] for event in events])

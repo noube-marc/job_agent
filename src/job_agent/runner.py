@@ -49,12 +49,17 @@ def setup_logging(log_dir: Path = LOG_DIR) -> None:
 
 def _collect_and_process(
     config: AppConfig, storage: Storage, run_id: int, now: datetime
-) -> tuple[Counter[str], list[str]]:
+) -> tuple[Counter[str], list[str], dict]:
+    """Read the career sites. Also returns, per company, what its site listed
+    in this run (used by the career site verification)."""
+    from job_agent.processing.verification import Listing, listing_from
+
     totals: Counter[str] = Counter()
     unavailable: list[str] = []
+    listings: dict[str, Listing] = {}
     if not config.sources.career_pages.enabled:
         log.info("Sites carrière désactivés dans config.yaml.")
-        return totals, unavailable
+        return totals, unavailable, listings
 
     sectors = SectorIndex.build(config)
     settings = config.sources.career_pages
@@ -73,7 +78,9 @@ def _collect_and_process(
                 log.warning("  %s : erreur, %s", source_name, error)
                 storage.record_source(run_id, source_name, 0, str(error))
                 totals["source_errors"] += 1
+                listings[company.name] = Listing(company.ats, ok=False)
                 continue
+            listings[company.name] = listing_from(company.ats, offers, storage.published_dates(source_name))
             counts = process_offers(offers, config, storage, sectors, now)
             storage.record_source(run_id, source_name, len(offers), None)
             totals.update(counts)
@@ -86,7 +93,24 @@ def _collect_and_process(
                 log.warning("  Attention : %s ne renvoie aucune offre depuis %d passages.", source_name, streak)
     finally:
         client.close()
-    return totals, unavailable
+    return totals, unavailable, listings
+
+
+def _verify_at_source(config: AppConfig, storage: Storage, listings: dict, now: datetime) -> None:
+    """Conclude on pending verifications, and recheck the tracked offers."""
+    if not config.source_verification.enabled:
+        return
+    from job_agent.processing.verification import MISSING, UNVERIFIABLE, VERIFIED, check_pending, recheck_tracked
+
+    counts = check_pending(storage, config, listings, now)
+    if any(counts.values()):
+        log.info(
+            "Vérification à la source : %d vérifiée(s), %d absente(s) du site carrière, %d non vérifiable(s).",
+            counts[VERIFIED], counts[MISSING], counts[UNVERIFIABLE],
+        )
+    gone = recheck_tracked(storage, config, listings, now, now)
+    if gone:
+        log.info("Revérification : %d offre(s) du suivi ne sont plus en ligne.", len(gone))
 
 
 GMAIL_WARNING_KEY = "gmail_auth_warning_date"
@@ -273,12 +297,14 @@ def _update_tracking(config: AppConfig, storage: Storage) -> None:
         log.warning("Suivi « %s » pas encore disponible : seul excel est géré.", config.tracking.backend)
         return
     pending = storage.pending_tracking()
-    if not pending:
+    events = storage.unwritten_verification_events()
+    if not pending and not events:
         return
     try:
         result = append_offers(
             config.tracking.excel.path, pending, storage.group_members,
             keep_rejected=config.tracking.keep_rejected, timezone_name=config.schedule.timezone,
+            events=events,
         )
     except TrackingFileLocked:
         log.warning(
@@ -286,7 +312,12 @@ def _update_tracking(config: AppConfig, storage: Storage) -> None:
         )
         return
     storage.mark_tracked(result.written_ids)
-    log.info("Fichier de suivi : %d offre(s) retenue(s) et %d écartée(s) ajoutées.", result.kept, result.rejected)
+    storage.mark_verification_events_written(result.events_written or [])
+    if pending:
+        log.info("Fichier de suivi : %d offre(s) retenue(s) et %d écartée(s) ajoutées.", result.kept, result.rejected)
+    if events:
+        log.info("Fichier de suivi : %d changement(s) de vérification ajouté(s) à l'onglet « Vérifications ».",
+                 len(events))
 
 
 def _notify(config: AppConfig, storage: Storage, silent: bool) -> Counter[str]:
@@ -341,11 +372,12 @@ def run(config: AppConfig, force: bool = False) -> int:
                 run_id = storage.start_run(silent)
                 log.info("Passage n°%d (profil %s)%s", run_id, config.profile_name,
                          " : premier passage silencieux" if silent else "")
-                totals, unavailable = _collect_and_process(config, storage, run_id, now)
+                totals, unavailable, listings = _collect_and_process(config, storage, run_id, now)
                 if unavailable:
                     log.info("Connecteur non disponible pour %d entreprise(s) : %s",
                              len(unavailable), ", ".join(unavailable))
                 totals.update(_collect_email_alerts(config, storage, run_id, now))
+                _verify_at_source(config, storage, listings, now)
                 totals.update(_enrich_with_ai(config, storage))
                 totals.update(_score_offers(config, storage))
                 _update_tracking(config, storage)

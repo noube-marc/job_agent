@@ -8,6 +8,8 @@ Tables:
   successful send, so a failed send is retried at the next run).
 - tracking: offers already written to the tracking file.
 - runs / source_runs: history of runs and number of offers per source.
+- verification_events: changes of the career site verification status,
+  appended to the "Vérifications" sheet of the tracking file.
 """
 
 import json
@@ -102,6 +104,16 @@ CREATE TABLE IF NOT EXISTS ai_extractions (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS verification_events (
+    id INTEGER PRIMARY KEY,
+    group_id INTEGER NOT NULL,
+    at TEXT NOT NULL,
+    old_status TEXT,
+    new_status TEXT NOT NULL,
+    detail TEXT NOT NULL DEFAULT '',
+    written INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS app_state (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -140,6 +152,10 @@ class Storage:
                 db.execute("ALTER TABLE offers ADD COLUMN junior INTEGER NOT NULL DEFAULT 0")
             if "match_score" not in columns:
                 db.execute("ALTER TABLE offers ADD COLUMN match_score INTEGER")
+            if "verification" not in columns:
+                db.execute("ALTER TABLE offers ADD COLUMN verification TEXT")
+            if "last_seen_at" not in columns:
+                db.execute("ALTER TABLE offers ADD COLUMN last_seen_at TEXT")
 
     def close(self) -> None:
         self.connection.close()
@@ -167,7 +183,7 @@ class Storage:
         row = dict(values)
         for key in ("reasons", "flags"):
             row[key] = json.dumps(row.get(key, []), ensure_ascii=False)
-        for key in ("published_at", "effective_date", "first_seen_at"):
+        for key in ("published_at", "effective_date", "first_seen_at", "last_seen_at"):
             if isinstance(row.get(key), datetime):
                 row[key] = _iso(row[key])
         row["kept"] = int(bool(row["kept"]))
@@ -183,6 +199,65 @@ class Storage:
             if group_id is None:
                 db.execute("UPDATE offers SET group_id = id WHERE id = ?", (offer_id,))
         return offer_id
+
+    def touch_offer(self, source_name: str, source_offer_id: str, when: datetime) -> None:
+        """The offer was listed again by its source."""
+        with self.transaction() as db:
+            db.execute(
+                "UPDATE offers SET last_seen_at = ? WHERE source_name = ? AND source_offer_id = ?",
+                (_iso(when), source_name, source_offer_id),
+            )
+
+    def published_dates(self, source_name: str) -> dict[str, str | None]:
+        rows = self.connection.execute(
+            "SELECT source_offer_id, published_at FROM offers WHERE source_name = ?", (source_name,)
+        ).fetchall()
+        return {row[0]: row[1] for row in rows}
+
+    # --- career site verification -------------------------------------
+    def set_verification(self, group_id: int, status: str, detail: str, when: datetime) -> None:
+        """Change the status of a group and log the change (nothing if unchanged)."""
+        row = self.get_offer(group_id)
+        if row is None or row["verification"] == status:
+            return
+        with self.transaction() as db:
+            db.execute("UPDATE offers SET verification = ? WHERE id = ?", (status, group_id))
+            db.execute(
+                "INSERT INTO verification_events (group_id, at, old_status, new_status, detail) VALUES (?, ?, ?, ?, ?)",
+                (group_id, _iso(when), row["verification"], status, detail),
+            )
+
+    def groups_with_verification(self, status: str) -> list[sqlite3.Row]:
+        return self.connection.execute(
+            "SELECT * FROM offers WHERE id = group_id AND kept = 1 AND verification = ? ORDER BY id", (status,)
+        ).fetchall()
+
+    def career_offers_of_company(self, company_key: str) -> list[sqlite3.Row]:
+        return self.connection.execute(
+            "SELECT * FROM offers WHERE company_key = ? AND source = 'career_page'", (company_key,)
+        ).fetchall()
+
+    def tracked_career_offers(self, company_key: str) -> list[sqlite3.Row]:
+        """Career site offers of kept groups already in the tracking file."""
+        return self.connection.execute(
+            """SELECT m.* FROM offers m
+               JOIN offers g ON g.id = m.group_id
+               JOIN tracking t ON t.offer_id = g.id
+               WHERE m.company_key = ? AND m.source = 'career_page' AND g.kept = 1
+                 AND COALESCE(g.verification, '') != 'disappeared'""",
+            (company_key,),
+        ).fetchall()
+
+    def unwritten_verification_events(self) -> list[sqlite3.Row]:
+        return self.connection.execute(
+            """SELECT e.*, o.company, o.company_key, o.title FROM verification_events e
+               JOIN offers o ON o.id = e.group_id
+               WHERE e.written = 0 ORDER BY e.id"""
+        ).fetchall()
+
+    def mark_verification_events_written(self, event_ids: list[int]) -> None:
+        with self.transaction() as db:
+            db.executemany("UPDATE verification_events SET written = 1 WHERE id = ?", [(i,) for i in event_ids])
 
     def group_members(self, group_id: int) -> list[sqlite3.Row]:
         return self.connection.execute(
