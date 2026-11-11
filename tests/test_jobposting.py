@@ -1,4 +1,4 @@
-"""Generic site map + JobPosting connector, on a fake site."""
+"""Generic site map + JobPosting connector, on fake sites."""
 
 import json
 
@@ -13,9 +13,12 @@ INDEX = """<sitemapindex><sitemap><loc>https://emplois.exemple.fr/offers-sitemap
 OFFERS = """<urlset>
 <url><loc>https://emplois.exemple.fr/jobs/data-analyst-h-f-paris-1001</loc></url>
 <url><loc>https://emplois.exemple.fr/jobs/equipier-polyvalent-h-f-lyon-1002</loc></url>
-<url><loc>https://emplois.exemple.fr/offre/tq3g3vmorv</loc></url>
+<url><loc>https://emplois.exemple.fr/emploi/paris/data-scientist-f-h/3441/46789675648</loc></url>
 <url><loc>https://emplois.exemple.fr/jobs/data-engineer-h-f-bruxelles-1004</loc></url>
+<url><loc>https://emplois.exemple.fr/categorie/offres-data/3441/32379072/1</loc></url>
+<url><loc>https://emplois.exemple.fr/en/data-careers</loc></url>
 </urlset>"""
+OPAQUE = """<urlset><url><loc>https://emplois.exemple.fr/offre/tq3g3vmorv</loc></url></urlset>"""
 
 
 def _page(title: str, country: str = "FR", kind: object = "PERMANENT") -> str:
@@ -39,30 +42,60 @@ class Fake:
             return httpx.Response(200, text=INDEX)
         if path == "/offers-sitemap.xml":
             return httpx.Response(200, text=OFFERS)
+        if path == "/opaque.xml":
+            return httpx.Response(200, text=OPAQUE)
         self.opened.append(path)
         if path.endswith("1004"):
             return httpx.Response(200, text=_page("Data Engineer H/F", country="BE"))
+        if path.endswith("46789675648"):
+            return httpx.Response(200, text="<html>offre retirée</html>")  # no JobPosting
         return httpx.Response(200, text=_page("Data Scientist (H/F)", kind=["FULL_TIME"]))
+
+
+def _collect(config, careers_url: str, fake: Fake):
+    client = PoliteClient(0, 5, transport=httpx.MockTransport(fake), sleep=lambda s: None)
+    company = WatchedCompany(name="Exemple", sector="retail", careers_url=careers_url, ats="jobposting")
+    return jobposting.collect(company, CollectContext(client, config, NOW))
 
 
 def test_collect(config) -> None:
     fake = Fake()
-    client = PoliteClient(0, 5, transport=httpx.MockTransport(fake), sleep=lambda s: None)
-    company = WatchedCompany(name="Exemple", sector="retail",
-                             careers_url="https://emplois.exemple.fr/sitemap_index.xml", ats="jobposting")
-    offers = jobposting.collect(company, CollectContext(client, config, NOW))
+    offers = _collect(config, "https://emplois.exemple.fr/sitemap_index.xml", fake)
 
-    assert [o.source_offer_id for o in offers] == ["1001", "1002", "/offre/tq3g3vmorv"]  # Belgian offer skipped
-    # Target titles read in the address, and the address without words; not the "équipier".
-    assert fake.opened == ["/jobs/data-analyst-h-f-paris-1001", "/offre/tq3g3vmorv", "/jobs/data-engineer-h-f-bruxelles-1004"]
+    # Category and presentation pages are not offers; the Belgian offer and the page
+    # without JobPosting are skipped.
+    assert [o.source_offer_id for o in offers] == ["1001", "1002"]
+    assert fake.opened == ["/jobs/data-analyst-h-f-paris-1001", "/emploi/paris/data-scientist-f-h/3441/46789675648",
+                           "/jobs/data-engineer-h-f-bruxelles-1004"]
     first = offers[0]
     assert first.title == "Data Scientist (H/F)" and first.location == "60000 Beauvais"
-    assert first.description == "Modèles de prévision en Python." and first.contract_type_raw is None  # FULL_TIME says nothing
+    assert first.description == "Modèles de prévision en Python." and first.contract_type_raw is None
     assert first.published_at.isoformat() == "2026-11-05T08:36:23.676000+00:00"
     assert offers[1].title == "equipier polyvalent h f lyon" and offers[1].description == ""
+
+
+def test_addresses_without_words_are_opened(config) -> None:
+    fake = Fake()
+    offers = _collect(config, "https://emplois.exemple.fr/opaque.xml", fake)
+    assert [o.source_offer_id for o in offers] == ["/offre/tq3g3vmorv"] and fake.opened == ["/offre/tq3g3vmorv"]
+
+
+def test_address_parts() -> None:
+    parts = jobposting._address_parts
+    assert parts("https://x.fr/emploi/paris/data-analyst-f-h/3441/46789675648") == ("46789675648", "data analyst f h")
+    assert parts("https://x.fr/offres/148324-boucher-cdi-vichy") == ("148324", "boucher cdi vichy")
+    assert parts("https://x.fr/jobs/equipier-lyon-749288") == ("749288", "equipier lyon")
+    assert parts("https://x.fr/categorie/offres/3441/32379072/1")[0] is None
 
 
 def test_contract_and_missing_data() -> None:
     assert jobposting._contract({"employmentType": "PERMANENT"}) == "PERMANENT"
     assert jobposting._contract({"employmentType": ["INTERN"]}) == "stage"
     assert jobposting.job_posting("<html>pas de données</html>") == {}
+
+
+def test_date_without_time_zone_is_local() -> None:
+    from zoneinfo import ZoneInfo
+
+    date = jobposting._date("2026-11-10", ZoneInfo("Europe/Paris"))
+    assert date.isoformat() == "2026-11-10T00:00:00+01:00"
