@@ -102,6 +102,7 @@ Autres commandes :
 | `uv run job-agent ai-sheet` puis `ai-evaluate` | Mesure l'IA contre les règles simples sur 30 offres annotées |
 | `uv run job-agent label-sheet` | Crée ou complète la feuille d'étiquetage |
 | `uv run job-agent relevance-model` | Mesure le modèle « offre pertinente pour moi » |
+| `uv run job-agent lettre 1234` | Prépare une lettre de motivation et des adaptations du CV pour l'offre n°1234 |
 
 Le **tout premier passage est silencieux** : il remplit le fichier de suivi sans envoyer de notification, pour éviter des dizaines de messages d'un coup. Les passages suivants notifient uniquement les nouvelles offres.
 
@@ -219,6 +220,21 @@ Chaque nouvelle offre retenue reçoit un score de 0 à 100, affiché dans le fic
 - 30 % : nombre de vos compétences maîtrisées (`technical_profile.mastered_skills`) citées dans l'offre.
 
 Seules les offres qui respectent vos critères reçoivent un score. L'expérience demandée n'entre jamais dans le score (elle est jugée par le filtre) : les phrases qui donnent un nombre d'années sont retirées avant la comparaison. Pour les offres venant d'alertes e-mail, sans description ou avec un court extrait, la proximité de sens est estimée sur l'intitulé seul (mention « score estimé sur l'intitulé » quand il n'y a aucun extrait). Le score aide à comparer les offres ; le tri reste par date de publication.
+
+## Lettre de motivation et adaptation du CV
+
+Pour une offre qui vous intéresse, lancez (l'identifiant est dans la première colonne du fichier de suivi, et rappelé dans chaque message Telegram) :
+```powershell
+uv run job-agent lettre 1234
+```
+L'agent écrit `private/lettres/1234-entreprise-poste.docx`, à relire et personnaliser :
+- la lettre selon la méthode **vous, moi, nous** : *vous* (l'entreprise et ce que le poste lui apporte), *moi* (votre parcours et vos compétences utiles, tirés uniquement de votre CV), *nous* (la valeur concrète que vous apporterez aux missions de l'offre) ;
+- des **propositions d'adaptation du CV** (mots-clés de l'offre, expériences à remonter) ; une proposition qui suppose une information absente de votre CV est marquée « à vérifier » ;
+- les **points à vérifier** avant envoi.
+
+Ce qui est envoyé à l'IA (Gemini, gratuit) : le texte de l'offre, vos notes facultatives sur l'entreprise (`private/entreprises/<Entreprise>.md`) et votre **CV anonymisé** (`private/cv_anonymized.md`, sans e-mail, téléphone ni lien de profil). Votre nom et vos coordonnées, dans `private/lettre_entete.md` (créé vide au premier lancement), sont ajoutés au document sur votre ordinateur et ne sont jamais envoyés.
+
+Une seule lettre est demandée par offre : relancer la commande réécrit le document sans nouvel appel ; ajoutez `--nouvelle` pour en demander une autre. La lettre partage le quota gratuit du jour avec l'analyse des offres : s'il est épuisé, réessayez après 9 h.
 
 ## Étiquetage des offres (futur modèle « offre pertinente pour moi »)
 

@@ -112,12 +112,16 @@ class GeminiExtractor:
 
     def extract(self, title: str, company: str | None, description: str) -> tuple[AIExtraction, str]:
         """Returns the extraction and the model that produced it."""
-        from google.genai import types
-
         prompt = PROMPT.format(title=title, company=company or "non précisée",
                                description=description[:MAX_DESCRIPTION_CHARS])
+        return self.generate(prompt, AIExtraction)
+
+    def generate(self, prompt: str, schema: type[BaseModel], temperature: float = 0) -> tuple[BaseModel, str]:
+        """Answer of the first available model, validated against `schema`."""
+        from google.genai import types
+
         config = types.GenerateContentConfig(
-            response_mime_type="application/json", response_schema=AIExtraction, temperature=0
+            response_mime_type="application/json", response_schema=schema, temperature=temperature
         )
         problems = []
         for model in self.models:
@@ -126,7 +130,7 @@ class GeminiExtractor:
             self._wait_turn()
             try:
                 response = self._client.models.generate_content(model=model, contents=prompt, config=config)
-                return AIExtraction.model_validate_json(response.text), model
+                return schema.model_validate_json(response.text), model
             except ValidationError:
                 problems.append(f"{model} : réponse invalide")
             except Exception as error:  # 503 overloaded, 429 quota, network...

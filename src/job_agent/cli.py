@@ -37,6 +37,11 @@ def _build_parser() -> argparse.ArgumentParser:
     commands.add_parser("ai-sheet", help="prépare 30 offres à annoter pour mesurer l'IA")
     commands.add_parser("ai-evaluate", help="compare l'IA et les règles sur les offres annotées")
     commands.add_parser("label-sheet", help="ajoute les nouvelles offres à la feuille d'étiquetage")
+    letter_parser = commands.add_parser(
+        "lettre", help="prépare une lettre de motivation « vous, moi, nous » et des adaptations du CV pour une offre"
+    )
+    letter_parser.add_argument("identifiant", type=int, help="identifiant de l'offre (1re colonne du fichier de suivi)")
+    letter_parser.add_argument("--nouvelle", action="store_true", help="demande une nouvelle lettre à l'IA")
     commands.add_parser(
         "relevance-model", help="mesure un modèle « offre pertinente pour moi » sur la feuille d'étiquetage"
     )
@@ -109,6 +114,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         storage = Storage(config.storage.database_path)
         try:
             return label_sheet_command(storage, [*config.labelling.not_relevant_companies, *config.search.excluded_companies])
+        finally:
+            storage.close()
+    if args.command == "lettre":
+        from job_agent.ai.letter import letter_command
+        from job_agent.storage import Storage
+
+        storage = Storage(config.storage.database_path)
+        try:
+            return letter_command(storage, config, args.identifiant, regenerate=args.nouvelle)
         finally:
             storage.close()
     if args.command == "relevance-model":

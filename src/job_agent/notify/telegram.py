@@ -125,6 +125,7 @@ def format_offer(main: sqlite3.Row, members: list[sqlite3.Row], config: AppConfi
         lines.append("ℹ️ " + e(" · ".join(remarks)))
     if "url" in fields:
         lines.append(f'<a href="{e(_main_link(members), quote=True)}">Voir l\'offre et postuler</a>')
+    lines.append(f"✍️ Lettre : <code>uv run job-agent lettre {main['id']}</code>")
     return "\n".join(lines)
 
 
