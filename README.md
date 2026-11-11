@@ -165,7 +165,7 @@ Les autres entreprises de la liste n'ont pas encore de connecteur (le journal le
 
 Avec une clé `GEMINI_API_KEY` dans `.env` (créée gratuitement sur [Google AI Studio](https://aistudio.google.com), sans carte bancaire), chaque nouvelle offre retenue est lue par Gemini avant l'envoi de la notification : vrai type de contrat, expérience minimale, compétences exigées et facultatives, télétravail, niveau. Seul le texte public de l'offre est envoyé, et jamais deux fois la même offre (résultats gardés en mémoire).
 
-L'IA n'écarte rien d'elle-même : quand elle n'est pas d'accord avec les règles simples, elle ajoute une remarque « IA : ... (à vérifier) » dans le fichier de suivi et sur Telegram. Pour mesurer sa fiabilité :
+Mesurée sur 30 offres annotées, l'IA est plus fiable que les règles simples sur tous les champs (contrat 73 % contre 67 %, expérience 85 % contre 75 %, télétravail 87 % contre 53 %). Donc, quand les règles ne trouvent rien (contrat, expérience minimum ou télétravail « non précisé »), la valeur de l'IA est utilisée avec les mêmes seuils : une offre qui demande 5 ans ou plus, ou un stage déguisé, est écartée avant d'être notifiée (raison « d'après l'IA » dans l'onglet « Écartées »). Quand les règles ont trouvé une valeur, elles la gardent, et une lecture différente de l'IA ajoute seulement une remarque « IA : ... (à vérifier) ». Pour mesurer sa fiabilité :
 1. `uv run job-agent ai-sheet` prépare `private/annotation_ia.xlsx` : 30 offres, avec des colonnes vertes à remplir d'après le texte (contrat, expérience minimum, télétravail, niveau).
 2. `uv run job-agent ai-evaluate` compare ensuite les règles simples et l'IA à vos réponses, champ par champ, et écrit le résultat dans `reports/ai_evaluation.md`.
 
@@ -181,7 +181,7 @@ Seules les offres qui respectent vos critères reçoivent un score. L'expérienc
 
 ## Étiquetage des offres (futur modèle « offre pertinente pour moi »)
 
-`uv run job-agent label-sheet` crée `private/etiquetage.xlsx`. Indiquez « oui » ou « non » dans la colonne verte « Pertinente pour moi ? » (une offre à laquelle vous auriez envie de postuler). Ensuite, chaque passage ajoute automatiquement les nouvelles offres en bas de la feuille, sans toucher à vos réponses (sauf si le fichier est ouvert dans Excel : ce sera au passage suivant). Avec 150 à 200 offres étiquetées, un modèle pourra apprendre vos préférences. Les « non » évidents sont mis par l'agent, uniquement dans les cases vides et avec la raison en commentaire : contrat ni CDI ni CDD, 5 ans d'expérience ou plus, intitulé hors cible sans aucun mot data ou statistique. Vous pouvez les corriger : l'agent ne remplace jamais une réponse.
+`uv run job-agent label-sheet` crée `private/etiquetage.xlsx`. Indiquez « oui » ou « non » dans la colonne verte « Pertinente pour moi ? » (une offre à laquelle vous auriez envie de postuler). Ensuite, chaque passage ajoute automatiquement les nouvelles offres en bas de la feuille, sans toucher à vos réponses (sauf si le fichier est ouvert dans Excel : ce sera au passage suivant). Avec 150 à 200 offres étiquetées, un modèle pourra apprendre vos préférences. Les « non » évidents sont mis par l'agent, uniquement dans les cases vides et avec la raison en commentaire : contrat ni CDI ni CDD, 5 ans d'expérience ou plus, intitulé hors cible sans aucun mot data ou statistique, entreprise de conseil (liste `labelling.not_relevant_companies`), ESN ou cabinet (liste `search.excluded_companies`), intitulé « consultant ». Vous pouvez les corriger : l'agent ne remplace jamais une réponse.
 
 ## Dépannage
 
