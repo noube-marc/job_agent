@@ -237,10 +237,28 @@ def _check_freshness(offer: Offer, config: AppConfig, now: datetime, result: Eva
 # ---------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------
+def _check_employer(offer: Offer, config: AppConfig, result: Evaluation) -> None:
+    """ESN, recruitment agencies and job sites, by name or by description."""
+    search = config.search
+    company_tokens = tokens(offer.company or "")
+    for name in search.excluded_companies:
+        if contains_phrase(company_tokens, name):
+            result.reject(f"employeur exclu (« {name} »)")
+            return
+    if offer.source == "career_page":  # the company itself publishes the offer
+        return
+    description_tokens = tokens(offer.description)
+    for phrase in search.intermediary_phrases:
+        if contains_phrase(description_tokens, phrase):
+            result.reject(f"intermédiaire (ESN ou cabinet) : « {phrase} »")
+            return
+
+
 def evaluate(offer: Offer, config: AppConfig, now: datetime) -> Evaluation:
     """Apply every rule. All reasons are collected, not only the first."""
     result = Evaluation()
     _check_title(offer, config, result)
+    _check_employer(offer, config, result)
     _check_seniority(offer, config, result)
     _check_experience(offer, config, result)
     _check_contract(offer, config, result)
