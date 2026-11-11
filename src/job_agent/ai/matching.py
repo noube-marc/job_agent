@@ -7,6 +7,11 @@ Score from 0 to 100, combining:
 - 30 %: number of mastered skills (technical_profile.mastered_skills)
   named in the offer, up to 5.
 
+Experience is never part of the score: it is judged by the filters, so
+sentences giving a number of years are removed before the comparison.
+Short excerpts (e-mail alerts) say more about the company than about the
+job: for them, the meaning part is computed on the title only.
+
 The meaning part is rescaled with bounds measured on real offers
 (11/11/2026): the raw closeness of this model stays between about 0.82
 and 0.92. The score helps compare offers; it is not a verdict, and offers
@@ -26,10 +31,24 @@ OFFER_CHARS = 1500
 # Raw closeness bounds (lowest, highest), with a description or title only.
 BOUNDS_WITH_DESCRIPTION = (0.84, 0.92)
 BOUNDS_TITLE_ONLY = (0.78, 0.88)
+# Below this length, a description is an excerpt (e-mail alert).
+EXCERPT_CHARS = 400
+
+_SENTENCES = re.compile("(?<=[.;!?" + chr(10) + chr(0x2022) + "])")
+_YEARS = re.compile(r"\b\d+\s*(?:\+\s*)?(?:(?:a|à|-|ou)\s*\d+\s*)?(?:ans?|années?|years?)\b", re.IGNORECASE)
 
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 _PHONE = re.compile(r"(?:\+33\s?|0)[1-9](?:[\s.-]?\d{2}){4}")
 _PROFILE_LINK = re.compile(r"\S*(?:linkedin\.com/in|github\.com)/\S+", re.IGNORECASE)
+
+
+def without_experience(text: str) -> str:
+    """The text without the sentences that give a number of years."""
+    return "".join(part for part in _SENTENCES.split(text) if not _YEARS.search(part))
+
+
+def is_excerpt(description: str) -> bool:
+    return len(description.strip()) < EXCERPT_CHARS
 
 
 class MatchingUnavailable(Exception):
@@ -84,12 +103,12 @@ class CVMatcher:
         """Scores of (title, description) pairs; empty description = title only."""
         if not offers:
             return []
-        texts = [f"{title}. {description[:OFFER_CHARS]}" if description.strip() else title
+        texts = [title if is_excerpt(description) else f"{title}. {without_experience(description)[:OFFER_CHARS]}"
                  for title, description in offers]
         closeness = self._encode(texts) @ self._cv
         results = []
         for (title, description), value in zip(offers, closeness):
-            bounds = BOUNDS_WITH_DESCRIPTION if description.strip() else BOUNDS_TITLE_ONLY
+            bounds = BOUNDS_TITLE_ONLY if is_excerpt(description) else BOUNDS_WITH_DESCRIPTION
             skills = min(len(self.skills_found(f"{title} {description}")), MAX_SKILLS) / MAX_SKILLS
             score = SEMANTIC_WEIGHT * _rescale(float(value), bounds) + (1 - SEMANTIC_WEIGHT) * skills
             results.append(round(100 * score))
