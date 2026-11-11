@@ -151,6 +151,8 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 | `successfactors_sitemap` | Plan du site public SAP SuccessFactors (toutes les offres ; page ouverte seulement pour les nouvelles offres ciblées, pays lu sur la page) | Limagrain, Bel |
 | `jobposting` | Plan du site des offres + données standard JobPosting (schema.org) de chaque page d'offre ; `careers_url` est l'adresse du plan du site. Page ouverte seulement pour les nouvelles offres ciblées (ou pour toute nouvelle offre si l'adresse ne contient pas l'intitulé) | Lidl France, Carrefour, Isagri, AXA, Coca-Cola Europacific Partners |
 | `danone` | Plan du site public de careers.danone.com + données de la page d'offre (pays lu sur la page) | Danone |
+| `heineken` | Liste publique des offres d'une société HEINEKEN (recherche interdite aux robots, non utilisée) + données JobPosting des pages d'offres ; pause de 5 s demandée par le site | Heineken France |
+| `oracle` | Service public Oracle Recruiting Cloud appelé par la page (toutes les offres ; détail lu seulement pour les nouvelles offres ciblées) | Savencia |
 
 ### Alertes e-mail (Gmail, lecture seule)
 

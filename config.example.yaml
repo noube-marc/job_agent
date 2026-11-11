@@ -379,7 +379,7 @@ companies:
     - { name: "Danone", sector: agriculture_agrifood, careers_url: "https://careers.danone.com", ats: "danone" }  # plan du site public + attributs de la page d'offre
     - { name: "Bonduelle", sector: agriculture_agrifood, careers_url: "https://jobs.bonduelle.com", ats: "successfactors_search" }  # page de recherche HTML
     - { name: "Agrial", sector: agriculture_agrifood, careers_url: "https://agrial.csod.com/ux/ats/careersite/8/home?c=agrial&lang=fr-FR", ats: "cornerstone" }  # JSON interne avec jeton temporaire
-    - { name: "Savencia", sector: agriculture_agrifood, careers_url: "https://eoct.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/fr/sites/careers/jobs", ats: "oracle" }  # JSON interne Oracle
+    - { name: "Savencia", sector: agriculture_agrifood, careers_url: "https://eoct.fa.em2.oraclecloud.com/hcmUI/CandidateExperience/fr/sites/careers/jobs", ats: "oracle" }  # service public Oracle Recruiting Cloud appelé par la page
     - { name: "Isagri", sector: agriculture_agrifood, careers_url: "https://emploi.isagri.fr/sitemap/offers-sitemap.xml", ats: "jobposting" }  # plan du site des offres + données JobPosting
     # Grande consommation
     - { name: "Suntory Beverage & Food France", sector: consumer_goods, careers_url: "https://careers.suntorybeverageandfood.com/search/?locationsearch=France", ats: "successfactors_search" }  # page de recherche HTML, offres en France
@@ -387,7 +387,7 @@ companies:
     - { name: "Pernod Ricard", sector: consumer_goods, careers_url: "https://pernodricard.wd3.myworkdayjobs.com/pernod-ricard", ats: "workday" }  # liste et fiches Workday
     - { name: "Nestlé France", sector: consumer_goods, careers_url: "https://jobdetails.nestle.com/search/?q=&locationsearch=France", ats: "successfactors_search" }  # page de recherche HTML, offres en France
     - { name: "Unilever France", sector: consumer_goods, careers_url: "https://unilever.wd3.myworkdayjobs.com/Unilever_Experienced_Professionals", ats: "workday" }  # liste et fiches Workday
-    - { name: "Heineken France", sector: consumer_goods, careers_url: "https://careers.theheinekencompany.com/Francais/HEINEKEN-France", ats: "successfactors" }  # HTML, Crawl-delay 5 s
+    - { name: "Heineken France", sector: consumer_goods, careers_url: "https://careers.theheinekencompany.com/Francais/job-listing?operatings_company%5B0%5D=312", ats: "heineken" }  # liste des offres de HEINEKEN France (recherche interdite aux robots, non utilisée), pause de 5 s
     - { name: "Bel", sector: consumer_goods, careers_url: "https://jobs.groupe-bel.com/?locale=fr_FR", ats: "successfactors_sitemap" }  # plan du site public (service de recherche interdit par robots.txt)
     # Distribution
     - { name: "Carrefour", sector: retail, careers_url: "https://recrute.carrefour.fr/wp-content/themes/crf-2.01-menuV1/offers-sitemap.xml", ats: "jobposting" }  # plan du site des offres + données JobPosting
