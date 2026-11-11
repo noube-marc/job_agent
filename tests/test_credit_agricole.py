@@ -23,7 +23,8 @@ def _card(reference: str, title: str, country: str = "France", contract: str = "
 
 
 OFFER_PAGE = """
-<div class="side-menu-content-middle"><p class="publication-date">Publiée le 07/11/2026</p></div>
+<div class="side-menu-content-middle"><p class="publication-date">Modifiée le 11/11/2026</p>
+  <p class="publication-date">Publiée le 07/11/2026</p></div>
 <section class="block offer-content text-container"><h2>Description du poste</h2>
   <p>Vous analysez les sinistres avec <b>SQL</b> et Power BI.</p></section>
 <section class="block accordions"><div class="accordion-item-content">
