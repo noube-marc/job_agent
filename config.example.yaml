@@ -364,9 +364,9 @@ companies:
     # Banque
     - { name: "BNP Paribas", sector: banking, careers_url: "https://group.bnpparibas/emploi-carriere/toutes-offres-emploi", ats: "own" }  # site protégé contre les robots
     - { name: "Société Générale", sector: banking, careers_url: "https://careers.societegenerale.com/rechercher", ats: "taleo" }  # plan du site et pages HTML
-    - { name: "Crédit Agricole", sector: banking, careers_url: "https://groupecreditagricole.jobs/fr/nos-offres/", ats: "own" }  # HTML, Crawl-delay 3 s
+    - { name: "Crédit Agricole", sector: banking, careers_url: "https://groupecreditagricole.jobs/fr/nos-offres/", ats: "credit_agricole_jobs" }  # page de tout le groupe (LCL, CIB...), sauf Crédit Agricole Assurances suivie à part
     - { name: "BPCE", sector: banking, careers_url: "https://recrutement.bpce.fr/offres-emploi", ats: "own" }  # JSON interne partiel, recherche interdite par robots.txt
-    - { name: "Crédit Mutuel", sector: banking, careers_url: "https://recrutement.creditmutuel.fr/fr/nos_offres.html", ats: "own" }  # plan du site et pages HTML
+    - { name: "Crédit Mutuel", sector: banking, careers_url: "https://recrutement.creditmutuel.fr/fr/sitemap_offres.aspx", ats: "creditmutuel" }  # plan du site des offres (déclaré dans robots.txt) + pages HTML
     - { name: "La Banque Postale", sector: banking, careers_url: "https://www.labanquepostale.com/candidats/offres-d-emploi/nos-offres-d-emploi.html", ats: "successfactors" }  # HTML
     - { name: "BoursoBank", sector: banking, careers_url: "https://www.boursobank-group.com/fr/carrieres-emplois/consulter-nos-offres", ats: "taleo" }  # offres publiées sur le site Société Générale
     - { name: "Qonto", sector: banking, careers_url: "https://jobs.ashbyhq.com/qonto", ats: "ashby" }  # API publique documentée

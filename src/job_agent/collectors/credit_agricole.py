@@ -10,6 +10,10 @@ publication date is on the offer page ("Publiée le 03/11/2025"), opened
 only for NEW offers whose title matches the search, with the full
 description and the application criteria.
 
+`careers_url` may also be the page of the whole group (".../fr/nos-offres/"):
+each offer then takes the name of its brand (LCL, Crédit Agricole CIB...),
+and the brands watched separately with this connector are skipped.
+
 robots.txt only forbids the WordPress administration pages.
 """
 
@@ -23,8 +27,10 @@ from job_agent.collectors.base import CollectContext, SourceError, html_to_text
 from job_agent.config.models import WatchedCompany
 from job_agent.offer import Offer
 from job_agent.processing.filters import title_is_candidate
+from job_agent.text import plain
 
-MAX_PAGES = 15
+# The whole group page holds about 1300 offers (41 pages).
+MAX_PAGES = 60
 COUNTRY_NAMES = {"FR": "France", "BE": "Belgique", "LU": "Luxembourg", "CH": "Suisse"}
 _PUBLISHED = re.compile(r"Publi[ée]+e? le\s*(\d{2}/\d{2}/\d{4})")
 _REFERENCE = re.compile(r"reference--([0-9-]+?)-*/?$")
@@ -62,8 +68,9 @@ def parse_list_page(html: str) -> list[dict]:
 def parse_offer_page(html: str) -> dict:
     """Publication date, description and application criteria of an offer page."""
     soup = BeautifulSoup(html, "html.parser")
-    date_element = soup.select_one(".publication-date")
-    match = _PUBLISHED.search(date_element.get_text(" ", strip=True) if date_element else "")
+    # Several ".publication-date" lines may exist ("Modifiée le …", then "Publiée le …").
+    dates = " ".join(element.get_text(" ", strip=True) for element in soup.select(".publication-date"))
+    match = _PUBLISHED.search(dates)
     parts = []
     content = soup.select_one("section.offer-content")
     if content is not None:
@@ -94,7 +101,12 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         listed += items
 
     offers: list[Offer] = []
+    # Brands watched on their own with this connector are not read twice.
+    others = {plain(other.name) for other in context.config.companies.watchlist
+              if other.ats == "credit_agricole_jobs" and other.name != company.name}
     for item in listed:
+        if item["entity"] and plain(item["entity"]) in others:
+            continue
         if item["country"] and item["country"] != country:
             continue
         details = {"published": None, "description": ""}
@@ -111,7 +123,7 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
                 apply_url=item["url"],
                 reference=item["id"],
                 title=item["title"],
-                company=company.name,
+                company=item["entity"] or company.name,
                 location=item["city"],
                 description=details["description"],
                 description_is_partial=not details["description"],
