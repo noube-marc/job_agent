@@ -75,6 +75,13 @@ def _main_link(members: list[sqlite3.Row]) -> str:
     return first["apply_url"] or first["url"]
 
 
+VERIFICATION_LINES = {
+    "verified": "✅ Vérifiée sur le site carrière",
+    "pending": "⏳ Vérification en attente sur le site carrière",
+    "unverifiable": "❔ Non vérifiable sur le site carrière",
+}
+
+
 def format_offer(main: sqlite3.Row, members: list[sqlite3.Row], config: AppConfig) -> str:
     fields = set(config.notifications.fields)
     flags = json.loads(main["flags"])
@@ -100,6 +107,10 @@ def format_offer(main: sqlite3.Row, members: list[sqlite3.Row], config: AppConfi
         estimated = " (date estimée)" if FLAG_DATE_ESTIMATED in flags else ""
         lines.append(f"🗓 Publiée le {local:%d/%m à %H:%M}{estimated}")
 
+    if "verification_status" in fields and "verification" in main.keys() and main["source"] != "career_page":
+        status = VERIFICATION_LINES.get(main["verification"] or "")
+        if status:
+            lines.append(status)
     if "match_score" in fields and "match_score" in main.keys() and main["match_score"] is not None:
         lines.append(f"📊 Correspondance avec votre CV : {main['match_score']}/100")
     remarks = []
@@ -146,6 +157,9 @@ def notify_pending(
 ) -> NotifyResult:
     """Notify every kept offer not notified yet. `send` raises NotificationError."""
     pending = storage.pending_notifications()
+    if not config.source_verification.notify_while_pending:
+        # Offers waiting for the career site check are notified once it is done.
+        pending = [row for row in pending if row["verification"] != "pending"]
     result = NotifyResult()
     if not pending:
         return result

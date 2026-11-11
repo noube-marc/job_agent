@@ -16,6 +16,7 @@ from job_agent.processing.extract import (
 )
 from job_agent.processing.filters import FLAG_DATE_ESTIMATED, evaluate
 from job_agent.processing.sectors import SectorIndex
+from job_agent.processing.verification import initial_status, on_career_match
 from job_agent.storage import Storage
 from job_agent.text import plain
 
@@ -62,6 +63,8 @@ def process_offers(
         counts["collected"] += 1
         if storage.has_offer(raw_offer.source_name, raw_offer.source_offer_id):
             counts["already_seen"] += 1
+            if raw_offer.source == "career_page":
+                storage.touch_offer(raw_offer.source_name, raw_offer.source_offer_id, now)
             continue
 
         offer = complete_offer(raw_offer)
@@ -108,6 +111,11 @@ def process_offers(
             "published_at": offer.published_at,
             "effective_date": result.effective_date,
             "first_seen_at": offer.first_seen_at,
+            "last_seen_at": offer.first_seen_at,
+            "verification": (
+                initial_status(config, company_key)[0]
+                if group_id is None and offer.source != "career_page" else None
+            ),
             "kept": result.kept,
             "reasons": result.reasons,
             "flags": result.flags,
@@ -117,9 +125,12 @@ def process_offers(
         storage.insert_offer(values, group_id=group_id)
         if group_id is None:
             counts["kept" if result.kept else "rejected"] += 1
-        elif offer.source == "career_page" and offer.published_at is not None and result.effective_date:
-            if _apply_career_date(storage, group_id, offer, result.effective_date, config, now):
-                counts["date_corrections"] += 1
+            continue
+        if offer.source == "career_page":
+            on_career_match(storage, group_id, now)
+            if offer.published_at is not None and result.effective_date:
+                if _apply_career_date(storage, group_id, offer, result.effective_date, config, now):
+                    counts["date_corrections"] += 1
     return counts
 
 
