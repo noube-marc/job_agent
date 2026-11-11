@@ -7,7 +7,7 @@ import pytest
 from openpyxl import load_workbook
 
 from conftest import NOW, ROOT, make_offer
-from job_agent.ai.enrich import compare_with_rules, enrich_new_offers
+from job_agent.ai.enrich import compare_with_rules, enrich_new_offers, fill_gaps
 from job_agent.ai.evaluation import evaluate_sheet, write_sheet
 from job_agent.ai.extraction import AIExtraction, AIUnavailable, GeminiExtractor
 from job_agent.processing.pipeline import process_offers
@@ -88,7 +88,8 @@ def test_enrichment_is_cached_and_skips_notified_offers(config, tmp_path) -> Non
 
 
 def test_ai_warnings(config, tmp_path) -> None:
-    storage = _stored(config, tmp_path, make_offer(description="Stack Kafka. Expérience de 2 ans. " * 10, contract_type=None))
+    """The rules found a value (CDI, 2 years): the AI only adds warnings."""
+    storage = _stored(config, tmp_path, make_offer(description="Stack Kafka. Expérience de 2 ans. " * 10))
     row = storage.pending_notifications()[0]
     ai = AIExtraction(contract_type="internship", min_experience_years=6, required_skills=["SQL"],
                       seniority="lead_or_manager")
@@ -162,4 +163,46 @@ def test_all_models_out_of_quota_skips_ai(config, tmp_path) -> None:
     extractor, fake = _extractor({"m1": GOOD, "m2": GOOD})
     second = enrich_new_offers(storage, config, extractor)
     assert second["quota"] == 1 and fake.calls == []
+    storage.close()
+
+
+NO_DETAILS = "Vous construisez des tableaux de bord Power BI et des requêtes SQL pour les équipes métier. " * 4
+
+
+def _enriched(config, tmp_path, answer: dict, **offer):
+    storage = _stored(config, tmp_path, make_offer(description=NO_DETAILS, contract_type=None, **offer))
+    extractor, _ = _extractor({"m1": answer})
+    counts = enrich_new_offers(storage, config, extractor)
+    return storage, storage.get_offer(storage.pending_notifications()[0]["group_id"]) if storage.pending_notifications() else None, counts
+
+
+def test_ai_fills_what_the_rules_did_not_find(config, tmp_path) -> None:
+    storage, row, counts = _enriched(config, tmp_path, GOOD)
+    assert counts["rejected"] == 0
+    assert row["contract_type"] == "permanent" and row["min_experience_years"] == 2 and row["work_mode"] == "hybrid"
+    flags = json.loads(row["flags"])
+    assert "contrat non précisé" not in flags and "expérience non précisée" not in flags
+    assert "contrat d'après l'IA : CDI" in flags and "expérience d'après l'IA : 2 an(s) minimum" in flags
+    storage.close()
+
+
+def test_ai_rejects_five_years_when_rules_found_nothing(config, tmp_path) -> None:
+    storage, row, counts = _enriched(config, tmp_path, {**GOOD, "min_experience_years": 5})
+    assert counts["rejected"] == 1 and row is None  # never notified
+    offer = storage.connection.execute("SELECT * FROM offers").fetchone()
+    assert not offer["kept"] and "d'après l'IA" in offer["reasons"]
+    storage.close()
+
+
+def test_ai_rejects_hidden_internship(config, tmp_path) -> None:
+    storage, row, counts = _enriched(config, tmp_path, {**GOOD, "contract_type": "internship"})
+    assert counts["rejected"] == 1 and row is None
+    storage.close()
+
+
+def test_rules_value_is_kept_when_ai_disagrees(config, tmp_path) -> None:
+    storage = _stored(config, tmp_path, make_offer(description=DESCRIPTION))  # CDI, 2 years found by the rules
+    row = storage.pending_notifications()[0]
+    reason, updates, _, _ = fill_gaps(row, AIExtraction(contract_type="internship", min_experience_years=6), config)
+    assert reason is None and "contract_type" not in updates and "min_experience_years" not in updates
     storage.close()

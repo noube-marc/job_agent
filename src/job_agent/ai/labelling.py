@@ -12,7 +12,9 @@ titles, so that the model also sees obvious negatives.
 Obvious negatives are answered "non" by the agent, only in EMPTY answer
 cells (an answer of the user is never changed), with the reason in the
 comment: contract other than CDI or CDD, 5 years of experience or more,
-title outside the target without any data or statistics word.
+title outside the target without any data or statistics word, consulting
+firm (labelling.not_relevant_companies, ESN or agency rejected by the
+filters, "consultant" title).
 """
 
 import json
@@ -26,7 +28,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 from job_agent.processing.filters import CONTRACT_LABELS
 from job_agent.storage import Storage
-from job_agent.text import plain
+from job_agent.text import contains_phrase, plain, tokens
 
 SHEET_PATH = Path("private/etiquetage.xlsx")
 SHEET_NAME = "Étiquetage"
@@ -74,7 +76,10 @@ def _decision(row) -> str:
     return "écartée : " + "; ".join(json.loads(row["reasons"]))
 
 
-def obvious_no(row) -> str | None:
+CONSULTING = "entreprise de conseil, ESN ou cabinet"
+
+
+def obvious_no(row, not_relevant_companies: list[str] = ()) -> str | None:
     """Reason why the offer is surely not for the user, or None."""
     reasons = json.loads(row["reasons"])
     for reason in reasons:
@@ -82,12 +87,17 @@ def obvious_no(row) -> str | None:
             return "contrat ni CDI ni CDD"
         if reason.startswith("expérience demandée trop élevée"):
             return "5 ans d'expérience ou plus"
+        if reason.startswith(("employeur exclu", "intermédiaire", "intitulé exclu (« consultant »)")):
+            return CONSULTING
+    company = tokens(row["company"] or "")
+    if any(contains_phrase(company, name) for name in not_relevant_companies):
+        return CONSULTING
     if "intitulé hors cible" in reasons and not DATA_WORDS.search(plain(row["title"])):
         return "poste non data"
     return None
 
 
-def _prefill(sheet, storage: Storage) -> int:
+def _prefill(sheet, storage: Storage, not_relevant_companies: list[str]) -> int:
     """Answer "non" in empty answer cells of obvious negatives."""
     filled = 0
     for row_number in range(2, sheet.max_row + 1):
@@ -96,7 +106,7 @@ def _prefill(sheet, storage: Storage) -> int:
         if offer_id is None or (answer.value is not None and str(answer.value).strip()):
             continue
         row = storage.get_offer(int(offer_id))
-        reason = obvious_no(row) if row is not None else None
+        reason = obvious_no(row, not_relevant_companies) if row is not None else None
         if reason is None:
             continue
         answer.value = "non"
@@ -130,7 +140,9 @@ def _new_workbook() -> Workbook:
     return workbook
 
 
-def update_sheet(storage: Storage, path: Path = SHEET_PATH) -> tuple[int, int, int, int]:
+def update_sheet(
+    storage: Storage, path: Path = SHEET_PATH, not_relevant_companies: list[str] = ()
+) -> tuple[int, int, int, int]:
     """Add new offers and answer obvious negatives.
 
     Returns (added, total rows, rows labelled, answers filled by the agent).
@@ -148,7 +160,7 @@ def update_sheet(storage: Storage, path: Path = SHEET_PATH) -> tuple[int, int, i
         ])
         sheet.cell(row=sheet.max_row, column=9).alignment = Alignment(wrap_text=True, vertical="top")
         added += 1
-    prefilled = _prefill(sheet, storage)
+    prefilled = _prefill(sheet, storage, list(not_relevant_companies))
     sheet.auto_filter.ref = f"A1:{sheet.cell(row=1, column=len(COLUMNS)).column_letter}{max(sheet.max_row, 1)}"
     path.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(path)
@@ -159,9 +171,9 @@ def update_sheet(storage: Storage, path: Path = SHEET_PATH) -> tuple[int, int, i
     return added, sheet.max_row - 1, labelled, prefilled
 
 
-def label_sheet_command(storage: Storage) -> int:
+def label_sheet_command(storage: Storage, not_relevant_companies: list[str] = ()) -> int:
     try:
-        added, total, labelled, prefilled = update_sheet(storage)
+        added, total, labelled, prefilled = update_sheet(storage, SHEET_PATH, not_relevant_companies)
     except PermissionError:
         print(f"{SHEET_PATH} est ouvert dans Excel : fermez-le, puis relancez la commande.")
         return 1

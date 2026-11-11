@@ -235,6 +235,12 @@ class AIConfig(StrictModel):
 # ---------------------------------------------------------------------
 # Root model: the whole config.yaml file
 # ---------------------------------------------------------------------
+class LabellingConfig(StrictModel):
+    # Employers whose offers are answered "non" in the labelling sheet
+    # (consulting firms): a name or a word of the company name.
+    not_relevant_companies: list[str] = Field(default_factory=list)
+
+
 class AppConfig(StrictModel):
     config_version: Literal[1]
     profile_name: str = Field(min_length=1)
@@ -254,3 +260,4 @@ class AppConfig(StrictModel):
     tracking: TrackingConfig
     notifications: NotificationsConfig
     ai: AIConfig
+    labelling: LabellingConfig = Field(default_factory=LabellingConfig)

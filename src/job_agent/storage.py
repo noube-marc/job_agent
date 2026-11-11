@@ -316,6 +316,20 @@ class Storage:
                 (_iso(published_at), _iso(effective_date), json.dumps(flags, ensure_ascii=False), offer_id),
             )
 
+    AI_FIELDS = ("contract_type", "min_experience_years", "work_mode")
+
+    def update_offer_from_ai(self, offer_id: int, fields: dict, removed_flags: list[str]) -> None:
+        """Fill fields the rules left empty, and drop the matching warnings."""
+        fields = {key: value for key, value in fields.items() if key in self.AI_FIELDS}
+        row = self.get_offer(offer_id)
+        flags = [flag for flag in json.loads(row["flags"]) if flag not in removed_flags]
+        assignments = ", ".join(f"{key} = ?" for key in fields)
+        with self.transaction() as db:
+            db.execute(
+                f"UPDATE offers SET {assignments + ', ' if assignments else ''}flags = ? WHERE id = ?",
+                (*fields.values(), json.dumps(flags, ensure_ascii=False), offer_id),
+            )
+
     def reject_offer(self, offer_id: int, reason: str) -> None:
         row = self.get_offer(offer_id)
         reasons = json.loads(row["reasons"]) + [reason]

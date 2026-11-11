@@ -213,11 +213,12 @@ def _enrich_with_ai(config: AppConfig, storage: Storage) -> Counter[str]:
         return Counter()
     counts = enrich_new_offers(storage, config, extractor)
     if counts["analysed"]:
-        log.info("IA : %d offre(s) analysée(s), %d remarque(s) ajoutée(s).", counts["analysed"], counts["flags"])
+        log.info("IA : %d offre(s) analysée(s), %d écartée(s) d'après l'IA, %d remarque(s) ajoutée(s).",
+                 counts["analysed"], counts["rejected"], counts["flags"])
     if counts["unavailable"] or counts["quota"]:
         log.warning("IA indisponible pour l'instant (%s) : les offres seront analysées plus tard.",
                     storage.get_state("ai_last_error"))
-    return Counter(ai_analysed=counts["analysed"])
+    return Counter(ai_analysed=counts["analysed"], kept=-counts["rejected"], rejected=counts["rejected"])
 
 
 FLAG_TITLE_ONLY_SCORE = "score estimé sur l'intitulé"
@@ -249,14 +250,16 @@ def _score_offers(config: AppConfig, storage: Storage) -> Counter[str]:
     return Counter(scored=len(rows))
 
 
-def _update_labelling_sheet(storage: Storage) -> None:
+def _update_labelling_sheet(config: AppConfig, storage: Storage) -> None:
     """Add new offers to the labelling sheet, only if the user started it."""
     from job_agent.ai.labelling import SHEET_PATH, update_sheet
 
     if not SHEET_PATH.exists():
         return
     try:
-        added, _, labelled, prefilled = update_sheet(storage)
+        added, _, labelled, prefilled = update_sheet(
+            storage, SHEET_PATH, [*config.labelling.not_relevant_companies, *config.search.excluded_companies]
+        )
     except PermissionError:
         log.info("Feuille d'étiquetage ouverte dans Excel : mise à jour au prochain passage.")
         return
@@ -346,7 +349,7 @@ def run(config: AppConfig, force: bool = False) -> int:
                 totals.update(_enrich_with_ai(config, storage))
                 totals.update(_score_offers(config, storage))
                 _update_tracking(config, storage)
-                _update_labelling_sheet(storage)
+                _update_labelling_sheet(config, storage)
                 totals.update(_notify(config, storage, silent))
                 summary = dict(totals)
                 storage.finish_run(run_id, summary)

@@ -616,3 +616,46 @@ ai:
   # true = sécurité supplémentaire : tout e-mail ou numéro de téléphone
   # restant est retiré automatiquement avant l'envoi à l'IA.
   strip_contact_details: true
+
+# ---------------------------------------------------------------------
+# FEUILLE D'ÉTIQUETAGE (futur modèle « offre pertinente pour moi »)
+# ---------------------------------------------------------------------
+labelling:
+  # Employeurs dont les offres reçoivent « non » d'office dans la feuille
+  # d'étiquetage (elles restent notifiées). Un nom ou un mot du nom de
+  # l'entreprise suffit. Les ESN et cabinets écartés par les filtres et
+  # les intitulés « consultant » reçoivent aussi « non ».
+  not_relevant_companies:
+    - "consulting"
+    - "advisory"
+    - "EY"
+    - "Ernst & Young"
+    - "Deloitte"
+    - "PwC"
+    - "KPMG"
+    - "Mazars"
+    - "Grant Thornton"
+    - "BDO"
+    - "RSM"
+    - "Wavestone"
+    - "Converteo"
+    - "Onepoint"
+    - "Talan"
+    - "Sia Partners"
+    - "BearingPoint"
+    - "Capgemini Invent"
+    - "McKinsey"
+    - "Boston Consulting Group"
+    - "BCG"
+    - "Bain"
+    - "Roland Berger"
+    - "Kearney"
+    - "Julhiet Sterwen"
+    - "Square Management"
+    - "mc2i"
+    - "Magellan Partners"
+    - "Avanade"
+    - "Alvarez & Marsal"
+    - "Eleven Strategy"
+    - "Ekimetrics"
+    - "Quantmetry"
