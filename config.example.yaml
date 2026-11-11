@@ -348,7 +348,7 @@ companies:
   watchlist:
     # Assurance
     - { name: "AXA", sector: insurance, careers_url: "https://recrutement.axa.fr", ats: "radancy" }  # JSON interne Radancy, connecteur non disponible
-    - { name: "Allianz", sector: insurance, careers_url: "https://careers.allianz.com/global/en/search-results?qcountry=France", ats: "successfactors" }  # front Phenom, JSON dans la page
+    - { name: "Allianz", sector: insurance, careers_url: "https://careers.allianz.com/global/en/search-results?qcountry=France", ats: "phenom" }  # site Phenom : service JSON de la page de recherche
     - { name: "Generali", sector: insurance, careers_url: "https://carrieres.generali.fr", ats: "successfactors_search" }  # page de recherche HTML
     - { name: "Groupama", sector: insurance, careers_url: "https://www.groupama-gan-recrute.com/nos-offres", ats: "talentsoft" }  # flux RSS interdit par robots.txt
     - { name: "Covéa", sector: insurance, careers_url: "https://recrutement.covea.com/jobs", ats: "smartrecruiters" }  # API interdite aux robots par robots.txt ; site carrière HTML possible
