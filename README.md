@@ -152,9 +152,12 @@ Tant que l'application Google reste en mode Test, l'accès expire au bout de 7 j
 |---|---|
 | LinkedIn | disponible |
 | Hellowork | disponible |
-| Indeed, Apec, Cadremploi | dès réception des premières alertes |
+| Indeed | disponible |
+| Apec, Cadremploi | dès réception des premières alertes |
 
 Les e-mails Hellowork ne contiennent que des liens de suivi qui incluent votre adresse e-mail : l'agent ne les garde pas. Le lien de chaque offre Hellowork est une **recherche Hellowork** (intitulé et ville), à ouvrir vous-même. Hellowork affiche toutes les offres dans l'e-mail : pas de lien « Voir toutes les offres » à suivre.
+
+Indeed indique l'ancienneté de chaque offre (« il y a 3 jours ») : cette date sert au filtre de fraîcheur, sans mention « date estimée ». Le lien de chaque offre est l'adresse publique `fr.indeed.com/viewjob?jk=...`, sans aucun code de suivi ; pour les offres sponsorisées, qui n'en ont pas, c'est une recherche Indeed (intitulé et ville). L'extrait de l'offre présent dans l'e-mail est conservé et sert aux filtres (expérience, Business Analyst).
 
 Les autres entreprises de la liste n'ont pas encore de connecteur (le journal les signale « connecteur non disponible ») : leurs offres arriveront par les alertes e-mail, prévues dans une prochaine version. Les sites d'emploi (LinkedIn, Indeed, Hellowork, Welcome to the Jungle, Apec, Cadremploi, Meteojob) ne sont jamais lus directement.
 
