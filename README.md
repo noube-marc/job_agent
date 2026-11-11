@@ -144,6 +144,7 @@ Les offres sont lues uniquement par des accès publics, en respectant le fichier
 | `workday` | Interface du site carrière Workday (liste des offres en France, fiche détaillée seulement pour les nouvelles offres ciblées) | Aéma Groupe (Abeille Assurances), AG2R La Mondiale, Pernod Ricard, Unilever |
 | `successfactors_search` | Page de recherche publique SAP SuccessFactors (fiche ouverte seulement pour les nouvelles offres ciblées) | Generali, Lactalis, Bonduelle, Suntory Beverage & Food France, Nestlé France |
 | `avature` | Page de recherche publique Avature (offres du groupe dans tous les pays, filtrées sur la France ; fiche ouverte seulement pour les nouvelles offres ciblées) | TotalEnergies |
+| `phenom` | Service JSON appelé par la page de recherche publique Phenom (toutes les offres du pays ; fiche ouverte seulement pour les nouvelles offres ciblées) | Allianz |
 
 ### Alertes e-mail (Gmail, lecture seule)
 

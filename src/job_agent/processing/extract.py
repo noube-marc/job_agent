@@ -16,7 +16,7 @@ from job_agent.text import plain
 # Order matters: the first family found wins ("CDI" before "stage" so
 # that "CDI après stage" stays a CDI only if nothing more specific is set).
 _CONTRACT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("apprenticeship", re.compile(r"\b(alternance|alternant|apprenti|apprentissage|contrat de professionnalisation|work study)\b")),
+    ("apprenticeship", re.compile(r"\b(alternance|alternant|apprenti|apprentissage|apprenticeship|apprentice|contrat de professionnalisation|work study)\b")),
     ("internship", re.compile(r"\b(stage|stagiaire|internship|intern)\b")),
     ("interim", re.compile(r"\b(interim|interimaire|travail temporaire|temporary)\b")),
     ("freelance", re.compile(r"\b(freelance|independant|portage salarial|contractor)\b")),
