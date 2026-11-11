@@ -100,3 +100,25 @@ def test_message_content(env) -> None:
     assert "<b>Data Analyst &lt;Power BI&gt;</b>" in message
     assert "secteur prioritaire" in message and "expérience non précisée" in message
     assert 'href="https://example.org/offres/1"' in message
+
+
+def test_message_tells_where_the_date_comes_from(config, tmp_path) -> None:
+    from datetime import timedelta
+
+    from job_agent.notify.telegram import format_offer
+
+    storage = Storage(tmp_path / "t.db")
+    process_offers([
+        make_offer(source_offer_id="c1", title="Data Scientist (H/F)", company="Isagri"),
+        make_offer(source="email_alert", source_name="email:linkedin", source_offer_id="a1", title="Data Analyst",
+                   company="Société Inconnue", published_at=None, published_at_source=None),
+        make_offer(source="email_alert", source_name="email:indeed", source_offer_id="i1", title="Data Engineer",
+                   company="Autre Société", published_at=NOW - timedelta(days=1), published_at_source="job_board"),
+    ], config, storage, SectorIndex.build(config, ROOT / "sectors.yaml"), NOW)
+    messages = {row["title"]: format_offer(row, storage.group_members(row["group_id"]), config)
+                for row in storage.pending_notifications()}
+    assert "(date du site carrière)" in messages["Data Scientist (H/F)"]
+    assert "lue directement sur le site carrière" in messages["Data Scientist (H/F)"]
+    assert "(date estimée : réception de l'alerte)" in messages["Data Analyst"]
+    assert "(date du site d'emploi)" in messages["Data Engineer"]
+    storage.close()
