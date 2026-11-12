@@ -20,6 +20,9 @@ from job_agent.tracking.excel import TrackingFileLocked, append_offers
 LOG_DIR = Path("private/logs")
 LOCK_FILE = Path("private/job_agent.lock")
 ZERO_STREAK_ALERT = 3
+# A career site silent for this many runs in a row (about one day) is reported on Telegram.
+SILENT_SOURCE_RUNS = 6
+SILENT_STATE_PREFIX = "silent_source:"
 
 log = logging.getLogger("job_agent")
 
@@ -98,6 +101,33 @@ def _collect_and_process(
     finally:
         client.close()
     return totals, unavailable, listings
+
+
+def _watch_silent_sources(storage: Storage, run_id: int) -> None:
+    """Telegram message when a career site returns nothing for about a day, and when it is back."""
+    for source_name in storage.sources_of_run(run_id):
+        if source_name.startswith("email"):
+            continue  # no new alert e-mail is normal
+        key = SILENT_STATE_PREFIX + source_name
+        reported = storage.get_state(key)
+        streak = storage.zero_streak(source_name)
+        site = source_name.split(":", 1)[-1]
+        if streak >= SILENT_SOURCE_RUNS and not reported:
+            error = storage.last_error(source_name)
+            detail = f" Dernière erreur : {error}." if error else " Aucune erreur : le site a peut-être changé."
+            storage.add_to_outbox(
+                f"silent:{source_name}:{run_id}",
+                f"⚠️ Le site carrière de {site} ne renvoie plus aucune offre depuis {streak} passages.{detail} "
+                "Ses offres restent couvertes par vos alertes e-mail ; "
+                "si cela dure, signalez-le pour corriger le connecteur.",
+            )
+            storage.set_state(key, str(run_id))
+            log.warning("  %s : muet depuis %d passages, signalé sur Telegram.", source_name, streak)
+        elif streak == 0 and reported:
+            storage.add_to_outbox(
+                f"back:{source_name}:{run_id}", f"✅ Le site carrière de {site} renvoie de nouveau des offres."
+            )
+            storage.delete_state(key)
 
 
 def _verify_at_source(config: AppConfig, storage: Storage, listings: dict, now: datetime) -> None:
@@ -408,6 +438,7 @@ def run(config: AppConfig, force: bool = False) -> int:
                     )
                 totals.update(_collect_email_alerts(config, storage, run_id, now))
                 _verify_at_source(config, storage, listings, now)
+                _watch_silent_sources(storage, run_id)
                 totals.update(_enrich_with_ai(config, storage))
                 totals.update(_score_offers(config, storage))
                 _update_tracking(config, storage)

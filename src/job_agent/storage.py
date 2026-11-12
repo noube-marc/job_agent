@@ -346,6 +346,21 @@ class Storage:
                 (_iso(utc_now()), json.dumps(summary, ensure_ascii=False), run_id),
             )
 
+    def sources_of_run(self, run_id: int) -> list[str]:
+        return [
+            row[0]
+            for row in self.connection.execute(
+                "SELECT source_name FROM source_runs WHERE run_id = ? ORDER BY source_name", (run_id,)
+            )
+        ]
+
+    def last_error(self, source_name: str) -> str | None:
+        row = self.connection.execute(
+            "SELECT error FROM source_runs WHERE source_name = ? AND error IS NOT NULL ORDER BY run_id DESC LIMIT 1",
+            (source_name,),
+        ).fetchone()
+        return row[0] if row else None
+
     def zero_streak(self, source_name: str) -> int:
         """Number of latest consecutive runs where the source returned nothing."""
         rows = self.connection.execute(
@@ -375,6 +390,10 @@ class Storage:
     def get_state(self, key: str) -> str | None:
         row = self.connection.execute("SELECT value FROM app_state WHERE key = ?", (key,)).fetchone()
         return row[0] if row else None
+
+    def delete_state(self, key: str) -> None:
+        with self.transaction() as db:
+            db.execute("DELETE FROM app_state WHERE key = ?", (key,))
 
     def set_state(self, key: str, value: str) -> None:
         with self.transaction() as db:

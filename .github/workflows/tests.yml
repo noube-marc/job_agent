@@ -1,0 +1,30 @@
+# Lance tous les tests à chaque pull request et à chaque fusion dans main.
+# Windows, comme l'ordinateur de l'utilisateur (et torch y est installé sans
+# les bibliothèques GPU). Aucun secret : les tests n'appellent jamais le réseau.
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Installer Python et les dépendances
+        run: uv sync --frozen
+      - name: Vérifier le style du code (Ruff)
+        run: |
+          uv run ruff check
+          uv run ruff format --check
+      - name: Lancer les tests
+        run: uv run pytest -q
