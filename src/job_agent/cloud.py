@@ -1,10 +1,14 @@
 """Cloud mode: the agent runs in GitHub Actions, in a PRIVATE repository.
 
 - `cloud-setup` (once, on the user's computer): creates the encryption key,
-  sends the secrets to the private repository WITHOUT printing them (through
-  the `gh` command, value on its standard input), installs the workflow,
-  and uploads the current memory of the agent, encrypted, so that the cloud
-  goes on exactly where the computer stopped (no duplicates).
+  sends the small secrets (keys, tokens) to the private repository WITHOUT
+  printing them (through the `gh` command, value on its standard input),
+  uploads config.yaml and the anonymised CV ENCRYPTED with the same key
+  (GitHub refuses to start a workflow that reads multi-kilobyte multi-line
+  secrets), installs the workflow, and uploads the current memory of the
+  agent, encrypted, so that the cloud goes on exactly where the computer
+  stopped (no duplicates).
+- `cloud-unpack` (in the workflow): decrypts config.yaml and the CV.
 - `cloud-state export|import` (in the workflow): the database, encrypted with
   the key JOB_AGENT_STATE_KEY (Fernet: AES with integrity check), kept in
   the "state" branch of the private repository between two runs.
@@ -27,6 +31,10 @@ KEY_VARIABLE = "JOB_AGENT_STATE_KEY"
 WORKFLOW_TEMPLATE = Path("cloud/run.yml")
 STATE_BRANCH = "state"
 STATE_FILE = "state.bin"
+SECURE_FOLDER = "secure"
+CONFIG_FILE = "config.bin"
+CV_FILE = "cv.bin"
+CV_DEFAULT = Path("private/cv_anonymized.md")
 SECRET_VARIABLES = [
     "TELEGRAM_BOT_TOKEN",
     "TELEGRAM_CHAT_ID",
@@ -192,9 +200,16 @@ def cloud_setup(config, config_path: Path, env_path: Path = Path(".env")) -> int
             raise CloudError(f"variable(s) absente(s) de {env_path} : {', '.join(missing)}")
         for name in [*SECRET_VARIABLES, KEY_VARIABLE]:
             set_secret(repository, name, (get_key(str(env_path), name) or "").strip())
-        set_secret(repository, "CONFIG_YAML", config_path.read_text(encoding="utf-8"))
-        set_secret(repository, "CV_ANONYMIZED", cv_path.read_text(encoding="utf-8"))
-        print(f"{len(SECRET_VARIABLES) + 3} secrets envoyés à {repository} (valeurs jamais affichées).")
+        print(f"{len(SECRET_VARIABLES) + 1} secrets envoyés à {repository} (valeurs jamais affichées).")
+        fernet = _fernet(key)
+        put_file(
+            repository,
+            f"{SECURE_FOLDER}/{CONFIG_FILE}",
+            fernet.encrypt(config_path.read_bytes()),
+            "Encrypted configuration",
+        )
+        put_file(repository, f"{SECURE_FOLDER}/{CV_FILE}", fernet.encrypt(cv_path.read_bytes()), "Encrypted CV")
+        print("Configuration et CV anonymisé déposés, chiffrés, dans le dépôt privé.")
 
         put_file(
             repository, ".github/workflows/run.yml", WORKFLOW_TEMPLATE.read_bytes(), "Install the job-agent workflow"
@@ -215,6 +230,18 @@ def cloud_setup(config, config_path: Path, env_path: Path = Path(".env")) -> int
     print(f"Terminé. Lancez un premier passage : https://github.com/{repository}/actions (job-agent, Run workflow).")
     print("Pensez à supprimer la tâche planifiée Windows : scripts\\uninstall_task.ps1")
     return 0
+
+
+def unpack(folder: Path, key: str | None = None) -> None:
+    """In the workflow: decrypt config.yaml, then the CV where the configuration expects it."""
+    import yaml
+
+    fernet = _fernet(key)
+    config_text = fernet.decrypt((folder / CONFIG_FILE).read_bytes())
+    Path("config.yaml").write_bytes(config_text)
+    cv_path = Path((yaml.safe_load(config_text) or {}).get("ai", {}).get("anonymized_cv_path") or CV_DEFAULT)
+    cv_path.parent.mkdir(parents=True, exist_ok=True)
+    cv_path.write_bytes(fernet.decrypt((folder / CV_FILE).read_bytes()))
 
 
 def cloud_pull(config) -> int:
