@@ -33,6 +33,9 @@ def _build_parser() -> argparse.ArgumentParser:
     commands.add_parser("ai-sheet", help="prépare 30 offres à annoter pour mesurer l'IA")
     commands.add_parser("ai-evaluate", help="compare l'IA et les règles sur les offres annotées")
     commands.add_parser("label-sheet", help="ajoute les nouvelles offres à la feuille d'étiquetage")
+    commands.add_parser(
+        "sheets-import", help="crée le suivi Google Sheets et y copie le fichier Excel actuel (une seule fois)"
+    )
     letter_parser = commands.add_parser(
         "lettre", help="prépare une lettre de motivation « vous, moi, nous » et des adaptations du CV pour une offre"
     )
@@ -74,6 +77,38 @@ def _gmail_senders(config: AppConfig) -> int:
     return 0
 
 
+def _sheets_import(config) -> int:
+    from job_agent.gmail.auth import GmailAuthError
+    from job_agent.storage import Storage
+    from job_agent.tracking import sheets
+
+    storage = Storage(config.storage.database_path)
+    try:
+        service = sheets.build_service()
+        target = sheets.spreadsheet_id(service, storage, config.tracking.google_sheets.spreadsheet_id)
+        existing = (
+            service.spreadsheets()
+            .values()
+            .get(spreadsheetId=target, range=f"'{sheets.SHEET_TRACKING}'!A2:A2")
+            .execute()
+        )
+        if existing.get("values"):
+            print("La feuille Google contient déjà des offres : copie annulée pour éviter les doublons.")
+        else:
+            copied = sheets.import_excel(service, target, config.tracking.excel.path)
+            print("Copié : " + ", ".join(f"{name} {count} ligne(s)" for name, count in copied.items()))
+        print(f"Suivi Google Sheets : https://docs.google.com/spreadsheets/d/{target}/edit")
+        return 0
+    except GmailAuthError as error:
+        print(f"Autorisation Google : {error}")
+        return 1
+    except FileNotFoundError:
+        print(f"Fichier Excel introuvable : {config.tracking.excel.path}")
+        return 1
+    finally:
+        storage.close()
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     # Accented French messages must print correctly, even when the output
     # is redirected to a file by the Windows task scheduler.
@@ -112,6 +147,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         finally:
             storage.close()
+    if args.command == "sheets-import":
+        return _sheets_import(config)
     if args.command == "lettre":
         from job_agent.ai.letter import letter_command
         from job_agent.storage import Storage

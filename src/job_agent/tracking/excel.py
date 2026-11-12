@@ -31,8 +31,14 @@ SHEET_REJECTED = "Écartées"
 SHEET_VERIFICATIONS = "Vérifications"
 SHEET_REPLIES = "Réponses"
 REPLY_COLUMNS = [
-    ("Date", 17), ("Identifiant", 11), ("Entreprise", 22), ("Poste", 40), ("Expéditeur", 24),
-    ("Objet", 50), ("Sens probable", 20), ("Statut suggéré", 16),
+    ("Date", 17),
+    ("Identifiant", 11),
+    ("Entreprise", 22),
+    ("Poste", 40),
+    ("Expéditeur", 24),
+    ("Objet", 50),
+    ("Sens probable", 20),
+    ("Statut suggéré", 16),
 ]
 
 AGENT_COLUMNS = [
@@ -303,10 +309,19 @@ def append_offers(
     for row in replies:
         reply = json.loads(row["reply"])
         received = datetime.fromisoformat(reply["received_at"]).astimezone(timezone).replace(tzinfo=None)
-        _append(workbook[SHEET_REPLIES], [
-            received.replace(second=0, microsecond=0), reply["offer_id"], reply["company"], reply["title"],
-            reply["sender_name"], reply["subject"], reply["meaning"], reply["suggested_status"],
-        ])
+        _append(
+            workbook[SHEET_REPLIES],
+            [
+                received.replace(second=0, microsecond=0),
+                reply["offer_id"],
+                reply["company"],
+                reply["title"],
+                reply["sender_name"],
+                reply["subject"],
+                reply["meaning"],
+                reply["suggested_status"],
+            ],
+        )
 
     for sheet in workbook.worksheets:
         sheet.auto_filter.ref = f"A1:{get_column_letter(sheet.max_column)}{max(sheet.max_row, 1)}"

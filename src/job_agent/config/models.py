@@ -332,7 +332,7 @@ class ApplicationRepliesConfig(StrictModel):
     def _start_date_when_enabled(self):
         if self.enabled and self.start_date is None:
             raise ValueError(
-                "application_replies est activé : indiquez start_date (format \"AAAA-MM-JJ\"), "
+                'application_replies est activé : indiquez start_date (format "AAAA-MM-JJ"), '
                 "seuls les e-mails reçus à partir de cette date sont lus."
             )
         return self

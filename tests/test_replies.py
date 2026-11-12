@@ -1,9 +1,10 @@
 """Recruiters' replies read in a dedicated Gmail label (no real Gmail, no AI)."""
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from types import SimpleNamespace
 
 from openpyxl import load_workbook
+from test_gmail_lock import MESSAGES, FakeGmail
 
 from conftest import NOW, ROOT, make_offer
 from job_agent.gmail.reader import AlertEmail, GmailReader
@@ -12,18 +13,20 @@ from job_agent.processing.pipeline import process_offers
 from job_agent.processing.sectors import SectorIndex
 from job_agent.storage import Storage
 from job_agent.tracking.excel import SHEET_REPLIES, SHEET_TRACKING, append_offers
-from test_gmail_lock import MESSAGES, FakeGmail
 
-RECEIVED = datetime(2026, 11, 12, 9, 0, tzinfo=timezone.utc)
+RECEIVED = datetime(2026, 11, 12, 9, 0, tzinfo=UTC)
 
 
 def test_meaning_of_replies() -> None:
     assert classify("Votre candidature", "Malheureusement, nous ne pouvons pas donner suite.")[1] == "refusé"
-    assert classify("Suite de votre candidature", "Pouvez-vous nous indiquer vos disponibilités pour un entretien ?")[
-        1
-    ] == "entretien"
+    assert (
+        classify("Suite de votre candidature", "Pouvez-vous nous indiquer vos disponibilités pour un entretien ?")[1]
+        == "entretien"
+    )
     assert classify("Accusé de réception", "Nous avons bien reçu votre candidature.")[1] == "postulé"
-    assert classify("Bonne nouvelle", "Nous avons le plaisir de vous faire une promesse d'embauche.")[1] == "offre reçue"
+    assert (
+        classify("Bonne nouvelle", "Nous avons le plaisir de vous faire une promesse d'embauche.")[1] == "offre reçue"
+    )
     # A refusal after an interview is a refusal.
     assert classify("Suite à notre entretien", "Malheureusement, nous avons retenu un autre candidat.")[1] == "refusé"
     assert classify("Question", "Pouvez-vous me rappeler ?")[1] == "à lire"
@@ -32,10 +35,15 @@ def test_meaning_of_replies() -> None:
 def _tracked(config, tmp_path) -> Storage:
     storage = Storage(tmp_path / "t.db")
     process_offers(
-        [make_offer(source_offer_id="1", title="Data Analyst H/F", company="AXA France"),
-         make_offer(source_offer_id="2", title="Data Engineer H/F", company="AXA France"),
-         make_offer(source_offer_id="3", title="Data Scientist H/F", company="Natixis")],
-        config, storage, SectorIndex.build(config, ROOT / "sectors.yaml"), NOW,
+        [
+            make_offer(source_offer_id="1", title="Data Analyst H/F", company="AXA France"),
+            make_offer(source_offer_id="2", title="Data Engineer H/F", company="AXA France"),
+            make_offer(source_offer_id="3", title="Data Scientist H/F", company="Natixis"),
+        ],
+        config,
+        storage,
+        SectorIndex.build(config, ROOT / "sectors.yaml"),
+        NOW,
     )
     storage.mark_tracked([1, 2, 3])
     return storage

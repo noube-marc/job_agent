@@ -369,7 +369,47 @@ def _update_labelling_sheet(config: AppConfig, storage: Storage) -> None:
         )
 
 
+def _update_google_sheets(config: AppConfig, storage: Storage) -> None:
+    from job_agent.gmail.auth import GmailAuthError
+    from job_agent.tracking import sheets
+
+    pending = storage.pending_tracking()
+    events = storage.unwritten_verification_events()
+    replies = storage.unwritten_replies()
+    if not pending and not events and not replies:
+        return
+    try:
+        service = sheets.build_service()
+        target = sheets.spreadsheet_id(service, storage, config.tracking.google_sheets.spreadsheet_id)
+        result = sheets.append_offers(
+            service,
+            target,
+            pending,
+            storage.group_members,
+            keep_rejected=config.tracking.keep_rejected,
+            timezone_name=config.schedule.timezone,
+            events=events,
+            replies=replies,
+        )
+    except GmailAuthError as error:
+        log.warning("Suivi Google Sheets : %s. Les offres seront ajoutées au prochain passage.", error)
+        return
+    except Exception as error:  # quota, network: nothing is lost, the offers stay in the database
+        log.warning(
+            "Suivi Google Sheets indisponible (%s) : offres ajoutées au prochain passage.",
+            type(error).__name__ if not isinstance(error, sheets.SheetsUnavailable) else error,
+        )
+        return
+    storage.mark_tracked(result.written_ids)
+    storage.mark_verification_events_written(result.events_written or [])
+    storage.mark_replies_written([row["message_id"] for row in replies])
+    log.info("Suivi Google Sheets : %d offre(s) retenue(s) et %d écartée(s) ajoutées.", result.kept, result.rejected)
+
+
 def _update_tracking(config: AppConfig, storage: Storage) -> None:
+    if config.tracking.backend == "google_sheets":
+        _update_google_sheets(config, storage)
+        return
     if config.tracking.backend != "excel":
         log.warning("Suivi « %s » pas encore disponible : seul excel est géré.", config.tracking.backend)
         return
