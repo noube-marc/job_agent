@@ -65,3 +65,52 @@ def test_robots_server_error_forbids_everything() -> None:
     client = _client(handler, FakeClock())
     with pytest.raises(SourceError, match="robots.txt"):
         client.get("https://flaky.example/jobs")
+
+
+def test_flaky_site_gets_two_more_tries() -> None:
+    calls: list[str] = []
+    pauses: list[float] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/robots.txt":
+            return httpx.Response(404)
+        calls.append(request.url.path)
+        if len(calls) == 1:
+            raise httpx.RemoteProtocolError("connexion coupée")
+        if len(calls) == 2:
+            return httpx.Response(503, headers={"Retry-After": "12"})
+        return httpx.Response(200, text="ok")
+
+    client = PoliteClient(0, 5, transport=httpx.MockTransport(handler), sleep=pauses.append)
+    assert client.get("https://site.example/offres").text == "ok"
+    assert len(calls) == 3 and 5.0 in pauses and 12.0 in pauses  # Retry-After respected
+
+
+def test_site_still_down_after_retries_is_an_error() -> None:
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/robots.txt":
+            return httpx.Response(404)
+        calls.append(request.url.path)
+        return httpx.Response(502)
+
+    client = PoliteClient(0, 5, transport=httpx.MockTransport(handler), sleep=lambda s: None)
+    with pytest.raises(SourceError, match="502"):
+        client.get("https://site.example/offres")
+    assert len(calls) == 3
+
+
+def test_page_not_found_is_not_retried() -> None:
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/robots.txt":
+            return httpx.Response(404)
+        calls.append(request.url.path)
+        return httpx.Response(404)
+
+    client = PoliteClient(0, 5, transport=httpx.MockTransport(handler), sleep=lambda s: None)
+    with pytest.raises(SourceError):
+        client.get("https://site.example/absente")
+    assert len(calls) == 1

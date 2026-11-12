@@ -60,3 +60,24 @@ def test_no_internet_postpones_the_run(config, tmp_path, monkeypatch) -> None:
     assert runner.run(config, force=True) == 0
     assert called == []
     assert not (tmp_path / "private" / "job_agent.db").exists()  # nothing recorded
+
+
+def test_silent_career_site_is_reported_once_then_back(tmp_path) -> None:
+    from job_agent.runner import SILENT_SOURCE_RUNS, _watch_silent_sources
+    from job_agent.storage import Storage
+
+    storage = Storage(tmp_path / "t.db")
+    for _ in range(SILENT_SOURCE_RUNS + 2):
+        run_id = storage.start_run(False)
+        storage.record_source(run_id, "workday:Exemple", 0, "réponse HTTP 500 (exemple.com)")
+        storage.record_source(run_id, "email:linkedin", 0, None)  # no new e-mail is normal
+        _watch_silent_sources(storage, run_id)
+    messages = [row["message"] for row in storage.pending_outbox()]
+    assert len(messages) == 1 and "Exemple" in messages[0] and "HTTP 500" in messages[0]
+
+    run_id = storage.start_run(False)
+    storage.record_source(run_id, "workday:Exemple", 12, None)
+    _watch_silent_sources(storage, run_id)
+    messages = [row["message"] for row in storage.pending_outbox()]
+    assert len(messages) == 2 and "de nouveau" in messages[1]
+    storage.close()
