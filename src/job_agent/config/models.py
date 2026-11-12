@@ -12,7 +12,9 @@ from datetime import date
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # ---------------------------------------------------------------------
 # Closed lists of allowed values
@@ -116,6 +118,16 @@ class TechnicalProfileConfig(StrictModel):
         default_factory=lambda: ["junior", "débutant", "débutante", "jeune diplômé", "jeune diplômée"]
     )
 
+    @model_validator(mode="after")
+    def _gap_below_exclusion(self):
+        if self.technical_gap_threshold >= self.too_advanced_threshold:
+            raise ValueError(
+                f"technical_gap_threshold ({self.technical_gap_threshold}) doit être inférieur à "
+                f"too_advanced_threshold ({self.too_advanced_threshold}) : l'« écart technique » est signalé "
+                "avant le seuil qui écarte l'offre."
+            )
+        return self
+
 
 # ---------------------------------------------------------------------
 # companies, sectors
@@ -129,6 +141,21 @@ class WatchedCompany(StrictModel):
 
 class CompaniesConfig(StrictModel):
     watchlist: list[WatchedCompany] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _unique_names_and_addresses(self):
+        seen: set[str] = set()
+        for company in self.watchlist:
+            key = company.name.strip().lower()
+            if key in seen:
+                raise ValueError(f"l'entreprise « {company.name} » apparaît deux fois dans watchlist : gardez une seule ligne.")
+            seen.add(key)
+            if company.careers_url and not company.careers_url.startswith(("https://", "http://")):
+                raise ValueError(
+                    f"careers_url de « {company.name} » invalide (« {company.careers_url} ») : "
+                    "adresse complète attendue, commençant par https://."
+                )
+        return self
 
 
 class SectorsConfig(StrictModel):
@@ -168,6 +195,22 @@ class EmailAlertsSource(ToggleSource):
     start_date: date
     providers: EmailProviders = Field(default_factory=EmailProviders)
 
+    @model_validator(mode="after")
+    def _some_sender_when_enabled(self):
+        if self.enabled and not any(block.enabled and block.allowed_senders for _, block in self.providers):
+            raise ValueError(
+                "les alertes e-mail sont activées (enabled: true) mais aucun site n'a d'expéditeur autorisé : "
+                "ajoutez l'adresse d'envoi des alertes dans providers.<site>.allowed_senders "
+                "(la commande « uv run job-agent gmail-senders » les liste), ou mettez enabled: false."
+            )
+        for name, block in self.providers:
+            for sender in block.allowed_senders:
+                if "@" not in sender or " " in sender.strip():
+                    raise ValueError(
+                        f"providers.{name}.allowed_senders : « {sender} » n'est pas une adresse e-mail complète."
+                    )
+        return self
+
 
 class SourcesConfig(StrictModel):
     france_travail: ToggleSource
@@ -186,6 +229,16 @@ class SourceVerificationConfig(StrictModel):
     recheck_tracked_offers: bool = True
     recheck_interval_hours: int = Field(ge=1)
 
+    @model_validator(mode="after")
+    def _probable_below_match(self):
+        if self.probable_match_threshold > self.match_threshold:
+            raise ValueError(
+                f"probable_match_threshold ({self.probable_match_threshold}) doit être inférieur ou égal à "
+                f"match_threshold ({self.match_threshold}) : une « correspondance probable » est moins sûre "
+                "qu'une correspondance."
+            )
+        return self
+
 
 # ---------------------------------------------------------------------
 # schedule, storage, tracking, notifications, ai
@@ -196,6 +249,24 @@ class ScheduleConfig(StrictModel):
     start_hour: int = Field(ge=0, le=23)
     end_hour: int = Field(ge=0, le=23)
     interval_hours: int = Field(ge=1, le=24)
+
+    @field_validator("timezone")
+    @classmethod
+    def _known_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError(f"fuseau horaire « {value} » inconnu : par exemple « Europe/Paris ».") from None
+        return value
+
+    @model_validator(mode="after")
+    def _start_before_end(self):
+        if self.start_hour >= self.end_hour:
+            raise ValueError(
+                f"start_hour ({self.start_hour}) doit être inférieur à end_hour ({self.end_hour}) : "
+                "l'agent tourne de start_hour à end_hour."
+            )
+        return self
 
 
 class StorageConfig(StrictModel):

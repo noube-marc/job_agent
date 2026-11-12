@@ -33,6 +33,11 @@ def _describe(error: dict[str, Any]) -> str:
     ctx = error.get("ctx") or {}
     value = error.get("input")
 
+    if kind in {"value_error", "assertion_error"}:
+        message = str(error.get("msg", ""))
+        for prefix in ("Value error, ", "Assertion failed, "):
+            message = message.removeprefix(prefix)
+        return message
     if kind == "extra_forbidden":
         return "clé inconnue. Vérifiez son orthographe ou supprimez-la."
     if kind == "missing":

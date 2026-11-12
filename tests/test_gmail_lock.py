@@ -81,6 +81,13 @@ def _settings(**overrides) -> EmailAlertsSource:
     return EmailAlertsSource(**values)
 
 
+def _unchecked(providers: dict) -> EmailAlertsSource:
+    """Settings that config.yaml validation refuses: the reader must refuse them too."""
+    from job_agent.config.models import EmailProviders
+
+    return _settings().model_copy(update={"providers": EmailProviders.model_validate(providers)})
+
+
 def test_only_allowed_messages_are_returned() -> None:
     gmail = FakeGmail()
     alerts = GmailReader(gmail, _settings()).read_alerts()
@@ -108,7 +115,7 @@ def test_no_request_without_allowed_senders() -> None:
     with pytest.raises(GmailLockError):
         build_query(date(2026, 11, 9), [])
     gmail = FakeGmail()
-    reader = GmailReader(gmail, _settings(providers={"linkedin": {"enabled": True, "allowed_senders": []}}))
+    reader = GmailReader(gmail, _unchecked({"linkedin": {"enabled": True, "allowed_senders": []}}))
     with pytest.raises(GmailLockError):
         reader.read_alerts()
     assert not [kw for name, kw in gmail.calls if name == "list" and "labelIds" in kw]
@@ -123,7 +130,7 @@ def test_no_request_without_label() -> None:
 
 def test_disabled_provider_is_not_read() -> None:
     gmail = FakeGmail()
-    settings = _settings(providers={"linkedin": {"enabled": False, "allowed_senders": ["jobalerts-noreply@linkedin.com"]}})
+    settings = _unchecked({"linkedin": {"enabled": False, "allowed_senders": ["jobalerts-noreply@linkedin.com"]}})
     with pytest.raises(GmailLockError):
         GmailReader(gmail, settings).read_alerts()
 
