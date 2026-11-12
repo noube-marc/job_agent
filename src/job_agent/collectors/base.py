@@ -5,6 +5,9 @@ Rules applied to every request (CLAUDE.md, section 5):
 - a pause of `request_delay_seconds` (or the site's Crawl-delay, if
   longer) between two requests to the same host;
 - a timeout on every request;
+- two more tries when a site drops the connection, times out or answers
+  "too many requests" / "unavailable" (429, 5xx), after 5 then 20 s (or the
+  pause the site asks in Retry-After, up to 60 s);
 - a generic User-Agent without any personal data.
 """
 
@@ -22,6 +25,19 @@ import httpx
 from job_agent.collectors.robots import RobotRules
 from job_agent.config.models import AppConfig, WatchedCompany
 from job_agent.offer import Offer
+
+# A busy or flaky site gets two more tries, after these pauses (seconds).
+RETRIES = 2
+RETRY_WAITS = (5.0, 20.0)
+RETRY_STATUSES = {429, 500, 502, 503, 504}
+MAX_RETRY_AFTER = 60.0
+
+
+def _retry_after(response: httpx.Response) -> float | None:
+    """The pause asked by the site (Retry-After, in seconds), within reason."""
+    value = response.headers.get("Retry-After", "")
+    return min(float(value), MAX_RETRY_AFTER) if value.strip().isdigit() else None
+
 
 USER_AGENT = "job-agent/0.1 (+https://github.com/noube-marc/job_agent)"
 
@@ -128,17 +144,27 @@ class PoliteClient:
             wait = delay - (self._clock() - last)
             if wait > 0:
                 self._sleep(wait)
-        try:
-            response = self._raw(method, url, **kwargs)
-        except httpx.TimeoutException:
-            raise SourceError(f"délai dépassé ({urlsplit(url).netloc})") from None
-        except httpx.HTTPError as error:
-            raise SourceError(f"site injoignable ({urlsplit(url).netloc}, {type(error).__name__})") from None
-        if response.status_code >= 400:
-            raise SourceError(
-                f"réponse HTTP {response.status_code} ({urlsplit(url).netloc})", response.status_code
-            )
-        return response
+        for attempt in range(RETRIES + 1):
+            last_try = attempt == RETRIES
+            try:
+                response = self._raw(method, url, **kwargs)
+            except httpx.TimeoutException:
+                if not last_try:
+                    self._sleep(RETRY_WAITS[attempt])
+                    continue
+                raise SourceError(f"délai dépassé ({host})") from None
+            except httpx.HTTPError as error:
+                if not last_try:
+                    self._sleep(RETRY_WAITS[attempt])
+                    continue
+                raise SourceError(f"site injoignable ({host}, {type(error).__name__})") from None
+            if response.status_code in RETRY_STATUSES and not last_try:
+                self._sleep(_retry_after(response) or RETRY_WAITS[attempt])
+                continue
+            if response.status_code >= 400:
+                raise SourceError(f"réponse HTTP {response.status_code} ({host})", response.status_code)
+            return response
+        raise SourceError(f"site injoignable ({host})")  # not reached
 
     def get(self, url: str, **kwargs: Any) -> httpx.Response:
         return self.request("GET", url, **kwargs)

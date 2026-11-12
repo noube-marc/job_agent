@@ -136,7 +136,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\uninstall_task.ps1
 
 ## Sources
 
-Les offres sont lues uniquement par des accès publics, en respectant le fichier `robots.txt` de chaque site (lu selon la norme RFC 9309 : la règle la plus précise l'emporte), avec une pause entre deux requêtes et un identifiant de robot générique.
+Les offres sont lues uniquement par des accès publics, en respectant le fichier `robots.txt` de chaque site (lu selon la norme RFC 9309 : la règle la plus précise l'emporte), avec deux nouvelles tentatives quand un site est momentanément indisponible, avec une pause entre deux requêtes et un identifiant de robot générique.
 
 | Outil de recrutement (`ats`) | Accès | Entreprises (inventaire du 10/11/2026) |
 |---|---|---|
@@ -256,6 +256,7 @@ Une seule lettre est demandée par offre : relancer la commande réécrit le doc
 | `IA indisponible pour l'instant` | Modèles gratuits saturés : les offres sont analysées au passage suivant |
 | `Fichier de suivi ouvert dans Excel` | Fermez le fichier : les offres seront ajoutées au passage suivant |
 | `ne renvoie aucune offre depuis 3 passages` | Le site a peut-être changé : signalez-le dans une Issue GitHub |
+| Telegram : « Le site carrière de X ne renvoie plus aucune offre depuis 6 passages » | Le site est en panne ou a changé. Ses offres restent couvertes par vos alertes ; si cela dure plus d'un ou deux jours, signalez-le pour corriger le connecteur. Un message « renvoie de nouveau des offres » arrive quand il refonctionne |
 
 ## Développement
 
