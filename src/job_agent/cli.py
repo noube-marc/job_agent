@@ -37,6 +37,11 @@ def _build_parser() -> argparse.ArgumentParser:
     commands.add_parser("ai-sheet", help="prépare 30 offres à annoter pour mesurer l'IA")
     commands.add_parser("ai-evaluate", help="compare l'IA et les règles sur les offres annotées")
     commands.add_parser("label-sheet", help="ajoute les nouvelles offres à la feuille d'étiquetage")
+    commands.add_parser("cloud-setup", help="installe l'agent dans le dépôt privé GitHub (secrets, tâche, mémoire)")
+    commands.add_parser("cloud-pull", help="copie sur cet ordinateur la mémoire de l'agent du cloud")
+    state_parser = commands.add_parser("cloud-state", help="(tâche cloud) chiffre ou restaure la mémoire de l'agent")
+    state_parser.add_argument("action", choices=["export", "import"])
+    state_parser.add_argument("file", help="fichier chiffré")
     letter_parser = commands.add_parser(
         "lettre", help="prépare une lettre de motivation « vous, moi, nous » et des adaptations du CV pour une offre"
     )
@@ -80,6 +85,53 @@ def _gmail_senders(config: AppConfig) -> int:
     return 0
 
 
+def _gmail_setup(args) -> int:
+    """Google authorisation; in cloud mode, the new token also goes to the cloud."""
+    import os
+
+    from job_agent.gmail.auth import REFRESH_TOKEN, gmail_setup
+
+    code = gmail_setup()
+    if code != 0:
+        return code
+    try:
+        config = load_config(args.config)
+    except ConfigError:
+        return 0
+    from dotenv import get_key
+
+    from job_agent.cloud import push_gmail_token
+
+    token = (get_key(".env", REFRESH_TOKEN) or os.environ.get(REFRESH_TOKEN, "")).strip()
+    if token:
+        push_gmail_token(config, token)
+    return 0
+
+
+def _cloud(config, args) -> int:
+    from pathlib import Path
+
+    from job_agent import cloud
+
+    if args.command == "cloud-setup":
+        return cloud.cloud_setup(config, Path(args.config))
+    if args.command == "cloud-pull":
+        return cloud.cloud_pull(config)
+    database = Path(config.storage.database_path)
+    try:
+        if args.action == "export":
+            size = cloud.export_state(database, Path(args.file))
+            print(f"Mémoire chiffrée ({size // 1024} Ko).")
+        elif cloud.import_state(Path(args.file), database):
+            print("Mémoire restaurée.")
+        else:
+            print("Pas encore de mémoire dans le cloud : premier passage.")
+    except cloud.CloudError as error:
+        print(f"Mémoire du cloud : {error}")
+        return 1
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     # Accented French messages must print correctly, even when the output
     # is redirected to a file by the Windows task scheduler.
@@ -93,9 +145,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "telegram-setup":
         return telegram_setup()
     if args.command == "gmail-setup":
-        from job_agent.gmail.auth import gmail_setup
-
-        return gmail_setup()
+        return _gmail_setup(args)
 
     try:
         config = load_config(args.config)
@@ -116,6 +166,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return label_sheet_command(storage, [*config.labelling.not_relevant_companies, *config.search.excluded_companies])
         finally:
             storage.close()
+    if args.command in ("cloud-setup", "cloud-pull", "cloud-state"):
+        return _cloud(config, args)
     if args.command == "lettre":
         from job_agent.ai.letter import letter_command
         from job_agent.storage import Storage

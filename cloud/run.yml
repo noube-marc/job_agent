@@ -1,0 +1,84 @@
+# Tâche du dépôt PRIVÉ d'exécution (installée par « uv run job-agent cloud-setup »).
+# Toutes les 2 heures du lundi au samedi ; l'agent vérifie lui-même la plage
+# horaire de config.yaml (heure de Paris). Le code vient du dépôt public ;
+# la mémoire de l'agent est gardée CHIFFRÉE dans la branche « state ».
+name: job-agent
+
+on:
+  schedule:
+    - cron: "5 5-21/2 * * 1-6"
+  workflow_dispatch:
+
+concurrency:
+  group: job-agent
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      JOB_AGENT_STATE_KEY: ${{ secrets.JOB_AGENT_STATE_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+      GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+      GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+    steps:
+      - name: Code de l'agent (dépôt public)
+        uses: actions/checkout@v4
+        with:
+          repository: noube-marc/job_agent
+          path: app
+      - name: Mémoire chiffrée (branche state)
+        uses: actions/checkout@v4
+        with:
+          ref: state
+          path: state
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: app/uv.lock
+      - name: Modèle du score CV (cache)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-multilingual-e5-small
+      - name: Configuration et CV (secrets)
+        working-directory: app
+        env:
+          CONFIG_YAML: ${{ secrets.CONFIG_YAML }}
+          CV_ANONYMIZED: ${{ secrets.CV_ANONYMIZED }}
+        run: |
+          mkdir -p private
+          printf '%s' "$CONFIG_YAML" > config.yaml
+          printf '%s' "$CV_ANONYMIZED" > private/cv_anonymized.md
+      - name: Installer
+        working-directory: app
+        run: uv sync --frozen
+      - name: Restaurer la mémoire
+        id: restore
+        working-directory: app
+        run: uv run job-agent cloud-state import ../state/state.bin
+      - name: Passage de l'agent
+        working-directory: app
+        run: uv run job-agent run
+      - name: Sauvegarder la mémoire (chiffrée)
+        # Never after a failed restore: an empty memory must not replace the real one.
+        if: always() && steps.restore.outcome == 'success'
+        working-directory: app
+        run: uv run job-agent cloud-state export ../state/state.bin
+      - name: Publier la mémoire
+        if: always() && steps.restore.outcome == 'success'
+        working-directory: state
+        run: |
+          git config user.name "job-agent"
+          git config user.email "job-agent@users.noreply.github.com"
+          git checkout --orphan next
+          git add state.bin
+          git commit -q -m "state"
+          git push -q -f origin next:state

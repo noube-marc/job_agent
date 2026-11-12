@@ -384,6 +384,13 @@ def _notify(config: AppConfig, storage: Storage, silent: bool) -> Counter[str]:
 def run(config: AppConfig, force: bool = False) -> int:
     setup_logging()
     now = utc_now()
+    from job_agent.cloud import in_cloud
+
+    if config.cloud.enabled and not in_cloud():
+        # The cloud runs the agent: a second run here would notify the same offers twice.
+        log.info("Mode cloud activé (cloud.enabled) : l'agent tourne dans %s, passage local annulé.",
+                 config.cloud.repository)
+        return 0
     if not force and not in_schedule(config.schedule, now):
         log.info("Hors de la plage horaire de config.yaml (schedule) : aucun passage.")
         return 0
