@@ -127,6 +127,12 @@ CREATE TABLE IF NOT EXISTS replies (
     written INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS skipped_offers (
+    source_name TEXT NOT NULL,
+    source_offer_id TEXT NOT NULL,
+    PRIMARY KEY (source_name, source_offer_id)
+);
+
 CREATE TABLE IF NOT EXISTS app_state (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -417,6 +423,18 @@ class Storage:
     def mark_replies_written(self, message_ids: list[str]) -> None:
         with self.transaction() as db:
             db.executemany("UPDATE replies SET written = 1 WHERE message_id = ?", [(i,) for i in message_ids])
+
+    # --- offers of other countries, opened once ---------------------------
+    def is_skipped(self, source_name: str, source_offer_id: str) -> bool:
+        row = self.connection.execute(
+            "SELECT 1 FROM skipped_offers WHERE source_name = ? AND source_offer_id = ?",
+            (source_name, source_offer_id),
+        ).fetchone()
+        return row is not None
+
+    def mark_skipped(self, source_name: str, source_offer_id: str) -> None:
+        with self.transaction() as db:
+            db.execute("INSERT OR IGNORE INTO skipped_offers VALUES (?, ?)", (source_name, source_offer_id))
 
     def delete_state(self, key: str) -> None:
         with self.transaction() as db:

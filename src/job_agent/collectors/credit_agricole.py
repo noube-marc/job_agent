@@ -3,9 +3,10 @@
 `careers_url` is the offers page of one brand of the group, for example
 "https://groupecreditagricole.jobs/fr/nos-marques/credit-agricole-assurances/nos-offres/".
 
-The pages "…/nos-offres/", "…/nos-offres/page/2/"… list every offer of
-the brand (32 per page) with title, contract, place and country: they
-are all read at each run. The list only shows an UPDATE date: the real
+The pages "…/nos-offres/", "…/nos-offres/page/2/"… list the offers of
+the brand (32 per page), newest update first, with title, contract, place
+and country. They are read until a page holds only known offers: new
+offers always come first. The list only shows an UPDATE date: the real
 publication date is on the offer page ("Publiée le 03/11/2025"), opened
 only for NEW offers whose title matches the search, with the full
 description and the application criteria.
@@ -104,6 +105,10 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
             break
         seen.update(item["id"] for item in items)
         listed += items
+        # The list is sorted by update date, newest first: new offers are on the
+        # first pages. A page holding only known offers ends the reading.
+        if all(context.is_known(source_name, item["id"]) for item in items):
+            break
 
     offers: list[Offer] = []
     # Brands watched on their own with this connector are not read twice.

@@ -181,6 +181,8 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         posting: dict = {}
         page = ""
         opaque = " " not in item["words"]  # an address without words: the title is only on the page
+        if context.is_skipped(source_name, item["id"]):
+            continue  # another country, seen before
         if not context.is_known(source_name, item["id"]) and (
             opaque or title_is_candidate(item["words"], context.config)
         ):
@@ -191,6 +193,7 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         address = _address(posting)
         code = _country_code(address)
         if code and code not in COUNTRY_CODES.get(country, {country.lower()}):
+            context.mark_skipped(source_name, item["id"])
             continue
         place = " ".join(str(address.get(key) or "") for key in ("postalCode", "addressLocality")).strip()
         zone = ZoneInfo(context.config.schedule.timezone)

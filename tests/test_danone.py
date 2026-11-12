@@ -48,3 +48,29 @@ def test_collect(config) -> None:
     assert first.published_at.year == 2026
     assert "recruteur@exemple.com" not in str(first.raw_payload)
     assert offers[1].title == "conducteur machine" and offers[1].description == ""
+
+
+def test_offer_of_another_country_is_opened_once(config) -> None:
+    opened: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path not in ("/robots.txt", "/sitemap.xml"):
+            opened.append(request.url.path)
+        return _handler(request)
+
+    skipped: set[tuple[str, str]] = set()
+    company = WatchedCompany(
+        name="Danone", sector="agriculture_agrifood", careers_url="https://careers.exemple.com", ats="danone"
+    )
+    for _ in range(2):
+        client = PoliteClient(0, 5, transport=httpx.MockTransport(handler), sleep=lambda s: None)
+        context = CollectContext(
+            client,
+            config,
+            NOW,
+            lambda s, i: i == "101",
+            lambda s, i: (s, i) in skipped,
+            lambda s, i: skipped.add((s, i)),
+        )
+        danone.collect(company, context)
+    assert opened == ["/en-global/jobs/data-scientist-h-f-102-fr-fr.html"]  # the Moroccan offer, once

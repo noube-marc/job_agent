@@ -183,6 +183,10 @@ class CollectContext:
     # is_known(source_name, source_offer_id): offer already stored, so a
     # connector can skip fetching its details again.
     is_known: Callable[[str, str], bool] = lambda source_name, offer_id: False
+    # Offers opened once and found outside the configured country: never
+    # opened again (is_skipped), and recorded by mark_skipped.
+    is_skipped: Callable[[str, str], bool] = lambda source_name, offer_id: False
+    mark_skipped: Callable[[str, str], None] = lambda source_name, offer_id: None
 
 
 class Connector(Protocol):

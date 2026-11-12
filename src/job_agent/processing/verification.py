@@ -70,6 +70,9 @@ CATCHES_EVERY_NEW_OFFER = {
 }
 # Title closeness (0 to 100) for a probable match on the title alone.
 LOOSE_TITLE_MATCH = 85
+# Lists that stop at the first page of known offers, sorted by an UPDATE date
+# (not the publication date): an offer missing from them may simply be further.
+NOT_FOR_RECHECK = {"credit_agricole_jobs"}
 RECHECK_STATE_KEY = "verification_last_recheck"
 MISSING_REASON = "absente du site carrière après {hours} h"
 
@@ -203,7 +206,7 @@ def recheck_tracked(
         return []
     gone = []
     for company_key, listing in listings.items():
-        if not listing.ok or listing.covered_since is None:
+        if not listing.ok or listing.covered_since is None or listing.ats in NOT_FOR_RECHECK:
             continue
         for member in storage.tracked_career_offers(company_key):
             if member["source_offer_id"] in listing.seen_ids or not member["published_at"]:
