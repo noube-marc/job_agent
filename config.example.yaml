@@ -550,7 +550,8 @@ storage:
 # ---------------------------------------------------------------------
 tracking:
   # Type de fichier :
-  #   google_sheets = feuille Google (mode cloud, disponible plus tard)
+  #   google_sheets = feuille Google créée par l'agent (mode cloud, voir
+  #                   « uv run job-agent sheets-import » pour y copier l'Excel)
   #   excel         = fichier Excel sur votre ordinateur
   #   csv           = fichier CSV sur votre ordinateur
   backend: excel
