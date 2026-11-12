@@ -321,6 +321,22 @@ class LabellingConfig(StrictModel):
     not_relevant_companies: list[str] = Field(default_factory=list)
 
 
+class CloudConfig(StrictModel):
+    """Run in GitHub Actions, in a private repository (cloud-setup)."""
+
+    enabled: bool = False
+    repository: str = ""
+
+    @model_validator(mode="after")
+    def _repository_when_enabled(self):
+        if self.enabled and (self.repository.count("/") != 1 or " " in self.repository):
+            raise ValueError(
+                f"cloud.repository « {self.repository} » invalide : « propriétaire/nom » attendu, "
+                "par exemple « noube-marc/job_agent-run »."
+            )
+        return self
+
+
 class ApplicationRepliesConfig(StrictModel):
     """Recruiters' replies, read ONLY in a dedicated Gmail label filled by the user."""
 
@@ -358,4 +374,5 @@ class AppConfig(StrictModel):
     notifications: NotificationsConfig
     ai: AIConfig
     labelling: LabellingConfig = Field(default_factory=LabellingConfig)
+    cloud: CloudConfig = Field(default_factory=CloudConfig)
     application_replies: ApplicationRepliesConfig = Field(default_factory=ApplicationRepliesConfig)
