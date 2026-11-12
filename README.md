@@ -263,6 +263,7 @@ Une seule lettre est demandée par offre : relancer la commande réécrit le doc
 uv run pytest
 ```
 Les tests n'appellent jamais de vrai site : ils utilisent des réponses enregistrées.
+Ils sont lancés automatiquement par GitHub (sous Windows) à chaque pull request et à chaque fusion dans `main` : voir l'onglet « Actions » du dépôt.
 
 ## Licence
 
