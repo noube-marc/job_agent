@@ -243,6 +243,19 @@ Une seule lettre est demandée par offre : relancer la commande réécrit le doc
 
 `uv run job-agent relevance-model` mesure ensuite un modèle qui apprend vos réponses (régression logistique et forêt aléatoire, calculées sur votre ordinateur) : validation croisée, part de « oui » parmi les 10 offres les mieux classées, variables les plus utiles. Le résultat est écrit dans `reports/relevance_model.md` (chiffres seulement). L'agent n'utilise pas encore ce modèle : le tri reste par date. Relancez la commande après avoir étiqueté de nouvelles offres pour voir s'il progresse.
 
+## Mode cloud (PC éteint)
+
+L'agent peut tourner dans **GitHub Actions**, dans un dépôt **privé** (journaux non publics), toutes les 2 heures du lundi au samedi, même ordinateur éteint. Le code vient de ce dépôt public ; la mémoire de l'agent est gardée **chiffrée** dans le dépôt privé entre deux passages ; le suivi est une feuille **Google Sheets** créée par l'agent.
+
+Mise en place (une fois) :
+1. Dans Google Cloud, activez l'API Google Sheets pour le projet de l'application, puis relancez `uv run job-agent gmail-setup` et acceptez la lecture seule de Gmail et l'accès aux seuls fichiers créés par l'agent.
+2. Dans `config.yaml` : `tracking.backend: google_sheets`, puis `uv run job-agent sheets-import` (crée la feuille et y copie votre fichier Excel, vos colonnes comprises).
+3. Créez un dépôt privé GitHub, puis dans `config.yaml` : `cloud.enabled: true` et `cloud.repository: "votre-compte/votre-depot-prive"`.
+4. `uv run job-agent cloud-setup` : crée la clé de chiffrement, envoie vos secrets (jamais affichés) et votre configuration, installe la tâche et dépose la mémoire actuelle, chiffrée.
+5. Supprimez la tâche planifiée Windows (`scripts\uninstall_task.ps1`) et lancez un premier passage depuis l'onglet « Actions » du dépôt privé.
+
+Ensuite : `gmail-setup`, à relancer chaque semaine tant que l'application Google est en mode Test, met aussi à jour le cloud. `uv run job-agent cloud-pull` copie la mémoire du cloud sur votre ordinateur (avant une lettre de motivation, par exemple). Après une modification de `config.yaml` ou du CV, relancez `cloud-setup`. Coût : gratuit (2 000 minutes par mois offertes pour un dépôt privé, environ 1 500 utilisées).
+
 ## Dépannage
 
 | Message | Que faire |

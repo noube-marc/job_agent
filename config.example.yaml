@@ -660,3 +660,14 @@ labelling:
     - "Eleven Strategy"
     - "Ekimetrics"
     - "Quantmetry"
+
+# ---------------------------------------------------------------------
+# MODE CLOUD (GitHub Actions, dépôt privé)
+# ---------------------------------------------------------------------
+cloud:
+  # true = l'agent tourne dans GitHub Actions, dans le dépôt PRIVÉ ci-dessous
+  # (mis en place par « uv run job-agent cloud-setup »). Un passage lancé sur
+  # votre ordinateur est alors refusé, pour ne jamais notifier deux fois.
+  # Le suivi doit être Google Sheets (tracking.backend: google_sheets).
+  enabled: false
+  repository: ""
