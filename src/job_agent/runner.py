@@ -219,6 +219,32 @@ def _collect_email_alerts(config: AppConfig, storage: Storage, run_id: int, now:
     return totals
 
 
+def _read_application_replies(config: AppConfig, storage: Storage) -> None:
+    """Recruiters' replies in the dedicated label: suggest a status (Telegram, "Réponses" sheet)."""
+    settings = config.application_replies
+    if not settings.enabled:
+        return
+    from types import SimpleNamespace
+
+    from job_agent.gmail.auth import GmailAuthError
+    from job_agent.gmail.reader import GmailLockError, GmailReader, build_service
+    from job_agent.gmail.replies import process_replies, telegram_text
+
+    try:
+        lock = SimpleNamespace(gmail_label=settings.gmail_label, start_date=settings.start_date)
+        messages = GmailReader(build_service(), lock).read_labelled(skip=storage.processed_replies())
+    except (GmailAuthError, GmailLockError) as error:
+        log.warning("  Réponses des recruteurs : %s", error)
+        return
+    except Exception as error:  # one source never stops the others
+        log.warning("  Réponses des recruteurs : erreur de lecture Gmail (%s)", type(error).__name__)
+        return
+    for reply in process_replies(storage, messages):
+        storage.add_to_outbox(f"reply:{reply.message_id}", telegram_text(reply))
+    if messages:
+        log.info("  Réponses des recruteurs : %d nouvelle(s) réponse(s) lue(s).", len(messages))
+
+
 def _queue_more_offers_link(storage: Storage, alert) -> None:
     """Queue the "see all offers" link of an alert, for the user to open."""
     from job_agent.gmail.parsers import MORE_OFFERS_LINKS
@@ -325,13 +351,15 @@ def _update_tracking(config: AppConfig, storage: Storage) -> None:
         return
     pending = storage.pending_tracking()
     events = storage.unwritten_verification_events()
-    if not pending and not events:
+    replies = storage.unwritten_replies()
+    if not pending and not events and not replies:
         return
     try:
         result = append_offers(
             config.tracking.excel.path, pending, storage.group_members,
             keep_rejected=config.tracking.keep_rejected, timezone_name=config.schedule.timezone,
             events=events,
+            replies=replies,
         )
     except TrackingFileLocked:
         log.warning(
@@ -340,6 +368,7 @@ def _update_tracking(config: AppConfig, storage: Storage) -> None:
         return
     storage.mark_tracked(result.written_ids)
     storage.mark_verification_events_written(result.events_written or [])
+    storage.mark_replies_written([row["message_id"] for row in replies])
     if pending:
         log.info("Fichier de suivi : %d offre(s) retenue(s) et %d écartée(s) ajoutées.", result.kept, result.rejected)
     if events:
@@ -405,6 +434,7 @@ def run(config: AppConfig, force: bool = False) -> int:
                              len(unavailable), ", ".join(unavailable))
                 totals.update(_collect_email_alerts(config, storage, run_id, now))
                 _verify_at_source(config, storage, listings, now)
+                _read_application_replies(config, storage)
                 _watch_silent_sources(storage, run_id)
                 totals.update(_enrich_with_ai(config, storage))
                 totals.update(_score_offers(config, storage))
