@@ -76,7 +76,11 @@ def test_setup_sends_secrets_through_stdin_only(config, tmp_path, monkeypatch, c
 
     assert cloud.cloud_setup(settings, config_path, env) == 0
     secrets = {command[3]: value for command, value in fake.calls if command[1:3] == ["secret", "set"]}
-    assert set(secrets) == {*cloud.SECRET_VARIABLES, cloud.KEY_VARIABLE, "CONFIG_YAML", "CV_ANONYMIZED"}
+    assert set(secrets) == {*cloud.SECRET_VARIABLES, cloud.KEY_VARIABLE}
+    uploads = [command for command, _ in fake.calls if "-X" in command and "PUT" in command]
+    assert any(c[4].endswith("secure/config.bin") for c in uploads) and any(
+        c[4].endswith("secure/cv.bin") for c in uploads
+    )
     assert secrets["TELEGRAM_BOT_TOKEN"] == "valeur-secrete-0"
     assert all("valeur-secrete" not in " ".join(command) for command, _ in fake.calls)  # never on the command line
     assert "valeur-secrete" not in capsys.readouterr().out  # never printed
@@ -99,3 +103,19 @@ def test_workflow_template_never_overwrites_memory_after_a_failed_restore() -> N
     workflow = (Path(__file__).resolve().parents[1] / "cloud" / "run.yml").read_text(encoding="utf-8")
     assert workflow.count("steps.restore.outcome == 'success'") == 2
     assert "secrets." in workflow and "echo $" not in workflow  # secrets never echoed
+
+
+def test_unpack_restores_config_and_cv(tmp_path, monkeypatch) -> None:
+    key = Fernet.generate_key().decode()
+    fernet = Fernet(key.encode())
+    secure = tmp_path / "secure"
+    secure.mkdir()
+    config_text = "ai:" + chr(10) + "  anonymized_cv_path: private/cv.md" + chr(10)
+    (secure / cloud.CONFIG_FILE).write_bytes(fernet.encrypt(config_text.encode()))
+    (secure / cloud.CV_FILE).write_bytes(fernet.encrypt("CV anonymisé".encode()))
+    work = tmp_path / "app"
+    work.mkdir()
+    monkeypatch.chdir(work)
+    cloud.unpack(secure, key)
+    assert (work / "config.yaml").read_text(encoding="utf-8").startswith("ai:")
+    assert (work / "private" / "cv.md").read_text(encoding="utf-8") == "CV anonymisé"

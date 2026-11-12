@@ -34,6 +34,10 @@ jobs:
         with:
           repository: noube-marc/job_agent
           path: app
+      - name: Configuration et CV chiffrés (branche main du dépôt privé)
+        uses: actions/checkout@v4
+        with:
+          path: runner
       - name: Mémoire chiffrée (branche state)
         uses: actions/checkout@v4
         with:
@@ -48,18 +52,12 @@ jobs:
         with:
           path: ~/.cache/huggingface
           key: hf-multilingual-e5-small
-      - name: Configuration et CV (secrets)
-        working-directory: app
-        env:
-          CONFIG_YAML: ${{ secrets.CONFIG_YAML }}
-          CV_ANONYMIZED: ${{ secrets.CV_ANONYMIZED }}
-        run: |
-          mkdir -p private
-          printf '%s' "$CONFIG_YAML" > config.yaml
-          printf '%s' "$CV_ANONYMIZED" > private/cv_anonymized.md
       - name: Installer
         working-directory: app
         run: uv sync --frozen
+      - name: Déchiffrer la configuration et le CV
+        working-directory: app
+        run: uv run job-agent cloud-unpack ../runner/secure
       - name: Restaurer la mémoire
         id: restore
         working-directory: app

@@ -30,6 +30,8 @@ def _build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--force", action="store_true", help="lance le passage même hors de la plage horaire")
     commands.add_parser("telegram-setup", help="aide à trouver TELEGRAM_CHAT_ID après la création du bot")
     commands.add_parser("gmail-setup", help="autorise l'accès Gmail en lecture seule")
+    unpack_parser = commands.add_parser("cloud-unpack", help="(tâche cloud) déchiffre config.yaml et le CV")
+    unpack_parser.add_argument("folder", help="dossier des fichiers chiffrés")
     commands.add_parser("ai-sheet", help="prépare 30 offres à annoter pour mesurer l'IA")
     commands.add_parser("ai-evaluate", help="compare l'IA et les règles sur les offres annotées")
     commands.add_parser("label-sheet", help="ajoute les nouvelles offres à la feuille d'étiquetage")
@@ -173,6 +175,18 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "telegram-setup":
         return telegram_setup()
+    if args.command == "cloud-unpack":  # before loading config.yaml: it creates it
+        from pathlib import Path
+
+        from job_agent.cloud import CloudError, unpack
+
+        try:
+            unpack(Path(args.folder))
+        except (CloudError, OSError, ValueError) as error:
+            print(f"Déchiffrement impossible : {type(error).__name__}")
+            return 1
+        print("Configuration et CV déchiffrés.")
+        return 0
     if args.command == "gmail-setup":
         return _gmail_setup(args)
 
