@@ -74,3 +74,17 @@ def test_collect(config) -> None:
     assert "Présentation de l'entreprise" not in first.description
     assert first.location == "PARIS" and first.contract_type_raw == "CDI" and first.reference == "2026-1"
     assert offers[1].published_at is None  # not a target title: page not opened
+
+
+def test_reading_stops_at_a_page_of_known_offers(config) -> None:
+    fake = Fake(
+        [
+            [_card("2026-1", "Data Analyst H/F"), _card("2026-2", "Gestionnaire H/F")],
+            [_card("2026-3", "Data Engineer H/F")],
+        ]
+    )
+    client = PoliteClient(0, 5, transport=httpx.MockTransport(fake), sleep=lambda s: None)
+    company = WatchedCompany(name="Assurance Exemple", sector="insurance", careers_url=SITE, ats="credit_agricole_jobs")
+    known = {"2026-1", "2026-2"}
+    credit_agricole.collect(company, CollectContext(client, config, NOW, lambda s, i: i in known))
+    assert not [p for p in fake.requests if "/page/" in p]  # page 1 only: nothing new there

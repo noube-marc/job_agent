@@ -73,10 +73,13 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         seen.add(offer_id)
         title = item.get("title") or ""
         detail: dict = {}
+        if context.is_skipped(source_name, offer_id):
+            continue  # another country, seen before
         if not context.is_known(source_name, offer_id) and title_is_candidate(title, context.config):
             detail = context.client.get(f"{API}/{job_ad_id}?domainName={domain}&locale={locale}").json()
         address = detail.get("address") or {}
         if address.get("country") and address["country"] != country:
+            context.mark_skipped(source_name, offer_id)
             continue
         parts = [html_to_text(detail.get(key) or "") for key in ("description", "profile")]
         parts += [detail.get(key) or "" for key in ("job_experience", "education_level")]

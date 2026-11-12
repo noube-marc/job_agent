@@ -70,9 +70,12 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
             continue
         seen.add(item["id"])
         details: dict = {}
+        if context.is_skipped(source_name, item["id"]):
+            continue  # another country, seen before
         if not context.is_known(source_name, item["id"]) and title_is_candidate(item["words"], context.config):
             details = parse_offer_page(context.client.get(item["url"]).text, item["id"])
             if details.get("country") and details["country"].lower() != country:
+                context.mark_skipped(source_name, item["id"])
                 continue
         published = details.get("published")
         offers.append(

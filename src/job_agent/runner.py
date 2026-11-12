@@ -67,7 +67,7 @@ def _collect_and_process(
     sectors = SectorIndex.build(config)
     settings = config.sources.career_pages
     client = PoliteClient(settings.request_delay_seconds, settings.timeout_seconds)
-    context = CollectContext(client, config, now, storage.has_offer)
+    context = CollectContext(client, config, now, storage.has_offer, storage.is_skipped, storage.mark_skipped)
     try:
         for company in config.companies.watchlist:
             connector = CONNECTORS.get(company.ats)
