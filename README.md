@@ -222,6 +222,12 @@ Chaque nouvelle offre retenue reçoit un score de 0 à 100, affiché dans le fic
 
 Seules les offres qui respectent vos critères reçoivent un score. L'expérience demandée n'entre jamais dans le score (elle est jugée par le filtre) : les phrases qui donnent un nombre d'années sont retirées avant la comparaison. Pour les offres venant d'alertes e-mail, sans description ou avec un court extrait, la proximité de sens est estimée sur l'intitulé seul (mention « score estimé sur l'intitulé » quand il n'y a aucun extrait). Le score aide à comparer les offres ; le tri reste par date de publication.
 
+## Réponses des recruteurs
+
+Créez dans Gmail un libellé **« Candidatures »** et rangez-y les réponses des recruteurs (à la main, ou avec un filtre Gmail sur leurs adresses), puis mettez `application_replies.enabled: true` dans `config.yaml`. À chaque passage, l'agent lit **uniquement** ce libellé (lecture seule, e-mails reçus après `start_date`), retrouve l'offre de votre suivi concernée (entreprise, puis intitulé) et devine le sens de la réponse par des mots-clés, **sur votre ordinateur, sans IA** : refus, entretien, accusé de réception, proposition d'embauche.
+
+Il vous envoie un message Telegram avec le statut suggéré et ajoute une ligne dans l'onglet **Réponses** du fichier de suivi. Il ne modifie jamais votre colonne « Statut » : c'est vous qui la mettez à jour. Seuls l'objet et le sens deviné sont conservés, jamais le texte de l'e-mail.
+
 ## Lettre de motivation et adaptation du CV
 
 Pour une offre qui vous intéresse, lancez (l'identifiant est dans la première colonne du fichier de suivi, et rappelé dans chaque message Telegram) :

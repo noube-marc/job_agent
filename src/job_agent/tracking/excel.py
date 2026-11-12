@@ -29,6 +29,11 @@ SHEET_TRACKING = "Suivi"
 SHEET_DESCRIPTIONS = "Descriptions"
 SHEET_REJECTED = "Écartées"
 SHEET_VERIFICATIONS = "Vérifications"
+SHEET_REPLIES = "Réponses"
+REPLY_COLUMNS = [
+    ("Date", 17), ("Identifiant", 11), ("Entreprise", 22), ("Poste", 40), ("Expéditeur", 24),
+    ("Objet", 50), ("Sens probable", 20), ("Statut suggéré", 16),
+]
 
 AGENT_COLUMNS = [
     ("Identifiant", 11),
@@ -224,6 +229,7 @@ def append_offers(
     keep_rejected: bool,
     timezone_name: str = "Europe/Paris",
     events: list[sqlite3.Row] = (),
+    replies: list[sqlite3.Row] = (),
 ) -> WriteResult:
     """Append pending offers, and verification status changes, to the tracking file.
 
@@ -245,6 +251,8 @@ def append_offers(
     if SHEET_VERIFICATIONS not in workbook.sheetnames:  # files created before this sheet existed
         _write_header(workbook.create_sheet(SHEET_VERIFICATIONS), VERIFICATION_COLUMNS, _AGENT_FILL)
     verifications = workbook[SHEET_VERIFICATIONS]
+    if replies and SHEET_REPLIES not in workbook.sheetnames:
+        _write_header(workbook.create_sheet(SHEET_REPLIES), REPLY_COLUMNS, _USER_FILL)
     written: list[int] = []
     kept = rejected = 0
 
@@ -291,6 +299,14 @@ def append_offers(
                 event["detail"],
             ],
         )
+
+    for row in replies:
+        reply = json.loads(row["reply"])
+        received = datetime.fromisoformat(reply["received_at"]).astimezone(timezone).replace(tzinfo=None)
+        _append(workbook[SHEET_REPLIES], [
+            received.replace(second=0, microsecond=0), reply["offer_id"], reply["company"], reply["title"],
+            reply["sender_name"], reply["subject"], reply["meaning"], reply["suggested_status"],
+        ])
 
     for sheet in workbook.worksheets:
         sheet.auto_filter.ref = f"A1:{get_column_letter(sheet.max_column)}{max(sheet.max_row, 1)}"

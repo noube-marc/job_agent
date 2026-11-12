@@ -121,6 +121,12 @@ CREATE TABLE IF NOT EXISTS letters (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS replies (
+    message_id TEXT PRIMARY KEY,
+    reply TEXT NOT NULL,
+    written INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS app_state (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -390,6 +396,27 @@ class Storage:
     def get_state(self, key: str) -> str | None:
         row = self.connection.execute("SELECT value FROM app_state WHERE key = ?", (key,)).fetchone()
         return row[0] if row else None
+
+    # --- recruiters' replies -------------------------------------------
+    def tracked_offers(self) -> list[sqlite3.Row]:
+        """Kept offers already written to the tracking file."""
+        return self.connection.execute(
+            "SELECT o.* FROM offers o JOIN tracking t ON t.offer_id = o.id WHERE o.kept = 1 ORDER BY o.id DESC"
+        ).fetchall()
+
+    def processed_replies(self) -> set[str]:
+        return {row[0] for row in self.connection.execute("SELECT message_id FROM replies")}
+
+    def save_reply(self, message_id: str, reply: str) -> None:
+        with self.transaction() as db:
+            db.execute("INSERT OR IGNORE INTO replies (message_id, reply) VALUES (?, ?)", (message_id, reply))
+
+    def unwritten_replies(self) -> list[sqlite3.Row]:
+        return self.connection.execute("SELECT * FROM replies WHERE written = 0 ORDER BY rowid").fetchall()
+
+    def mark_replies_written(self, message_ids: list[str]) -> None:
+        with self.transaction() as db:
+            db.executemany("UPDATE replies SET written = 1 WHERE message_id = ?", [(i,) for i in message_ids])
 
     def delete_state(self, key: str) -> None:
         with self.transaction() as db:

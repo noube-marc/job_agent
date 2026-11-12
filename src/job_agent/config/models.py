@@ -321,6 +321,23 @@ class LabellingConfig(StrictModel):
     not_relevant_companies: list[str] = Field(default_factory=list)
 
 
+class ApplicationRepliesConfig(StrictModel):
+    """Recruiters' replies, read ONLY in a dedicated Gmail label filled by the user."""
+
+    enabled: bool = False
+    gmail_label: str = Field(default="Candidatures", min_length=1)
+    start_date: date | None = None
+
+    @model_validator(mode="after")
+    def _start_date_when_enabled(self):
+        if self.enabled and self.start_date is None:
+            raise ValueError(
+                "application_replies est activé : indiquez start_date (format \"AAAA-MM-JJ\"), "
+                "seuls les e-mails reçus à partir de cette date sont lus."
+            )
+        return self
+
+
 class AppConfig(StrictModel):
     config_version: Literal[1]
     profile_name: str = Field(min_length=1)
@@ -341,3 +358,4 @@ class AppConfig(StrictModel):
     notifications: NotificationsConfig
     ai: AIConfig
     labelling: LabellingConfig = Field(default_factory=LabellingConfig)
+    application_replies: ApplicationRepliesConfig = Field(default_factory=ApplicationRepliesConfig)
