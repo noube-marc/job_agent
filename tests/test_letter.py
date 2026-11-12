@@ -22,8 +22,10 @@ DRAFT = {
     "moi": "J'ai construit des tableaux de bord Power BI et des requêtes SQL.",
     "nous": "Ensemble, nous fiabiliserons vos indicateurs.",
     "conclusion": "Je serais heureux d'en discuter lors d'un entretien.",
-    "adaptations_cv": [{"suggestion": "Mettre Power BI en premier", "raison": "Exigé par l'offre", "a_verifier": False},
-                       {"suggestion": "Ajouter dbt", "raison": "Cité dans l'offre", "a_verifier": True}],
+    "adaptations_cv": [
+        {"suggestion": "Mettre Power BI en premier", "raison": "Exigé par l'offre", "a_verifier": False},
+        {"suggestion": "Ajouter dbt", "raison": "Cité dans l'offre", "a_verifier": True},
+    ],
     "points_a_verifier": ["Vérifier le nombre de clients cité."],
 }
 
@@ -42,15 +44,30 @@ def _setup(config, tmp_path, monkeypatch):
     private = tmp_path / "private"
     private.mkdir()
     (private / "cv_anonymized.md").write_text(
-        "Data Analyst junior. SQL, Power BI, Python. Contact : moi@exemple.fr, 06 12 34 56 78.", encoding="utf-8")
+        "Data Analyst junior. SQL, Power BI, Python. Contact : moi@exemple.fr, 06 12 34 56 78.", encoding="utf-8"
+    )
     (private / "lettre_entete.md").write_text(
-        "Prénom Nom : Camille Exemple\nCode postal et ville : 75011 Paris\nTéléphone : 06 00 00 00 00\n", encoding="utf-8")
+        "Prénom Nom : Camille Exemple\nCode postal et ville : 75011 Paris\nTéléphone : 06 00 00 00 00\n",
+        encoding="utf-8",
+    )
     (private / "entreprises").mkdir()
-    (private / "entreprises" / "Isagri.md").write_text("Isagri lance une plateforme de données agricoles.", encoding="utf-8")
+    (private / "entreprises" / "Isagri.md").write_text(
+        "Isagri lance une plateforme de données agricoles.", encoding="utf-8"
+    )
     storage = Storage(private / "job_agent.db")
-    process_offers([make_offer(company="Isagri", title="Data Analyst H/F",
-                               description="Vous construisez des tableaux de bord pour nos clients agriculteurs. " * 5)],
-                   config, storage, SectorIndex.build(config, ROOT / "sectors.yaml"), NOW)
+    process_offers(
+        [
+            make_offer(
+                company="Isagri",
+                title="Data Analyst H/F",
+                description="Vous construisez des tableaux de bord pour nos clients agriculteurs. " * 5,
+            )
+        ],
+        config,
+        storage,
+        SectorIndex.build(config, ROOT / "sectors.yaml"),
+        NOW,
+    )
     fake = FakeModels()
     extractor = GeminiExtractor("key", ["m1"], pause_seconds=0, client=SimpleNamespace(models=fake))
     return storage, fake, extractor

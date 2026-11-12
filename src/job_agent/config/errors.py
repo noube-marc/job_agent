@@ -67,7 +67,7 @@ def _describe(error: dict[str, Any]) -> str:
     if kind in {"bool_parsing", "bool_type"}:
         return f"valeur « {value} » invalide : true ou false attendu."
     if kind.startswith("date"):
-        return f"valeur « {value} » invalide : date au format \"AAAA-MM-JJ\" attendue."
+        return f'valeur « {value} » invalide : date au format "AAAA-MM-JJ" attendue.'
     if kind in {"string_type"}:
         return f"valeur « {value} » invalide : texte attendu."
     if kind in {"list_type"}:

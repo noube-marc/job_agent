@@ -51,10 +51,22 @@ def session(page_html: str) -> tuple[str, str, int]:
 
 def search_body(site_id: int, culture_id: int, language: str, page: int) -> dict:
     return {
-        "careerSiteId": site_id, "careerSitePageId": site_id, "pageNumber": page, "pageSize": PAGE_SIZE,
-        "cultureId": culture_id, "searchText": "", "cultureName": language, "states": [], "countryCodes": [],
-        "cities": [], "placeID": "", "radius": None, "postingsWithinDays": None,
-        "customFieldCheckboxKeys": [], "customFieldDropdowns": [], "customFieldRadios": [],
+        "careerSiteId": site_id,
+        "careerSitePageId": site_id,
+        "pageNumber": page,
+        "pageSize": PAGE_SIZE,
+        "cultureId": culture_id,
+        "searchText": "",
+        "cultureName": language,
+        "states": [],
+        "countryCodes": [],
+        "cities": [],
+        "placeID": "",
+        "radius": None,
+        "postingsWithinDays": None,
+        "customFieldCheckboxKeys": [],
+        "customFieldDropdowns": [],
+        "customFieldRadios": [],
     }
 
 
@@ -117,8 +129,12 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
                 published_at=published,
                 published_at_source="career_site" if published else None,
                 first_seen_at=context.now,
-                raw_payload={"requisitionId": offer_id, "date": item.get("postingEffectiveDate"),
-                             "locations": locations, "title": title},
+                raw_payload={
+                    "requisitionId": offer_id,
+                    "date": item.get("postingEffectiveDate"),
+                    "locations": locations,
+                    "title": title,
+                },
             )
         )
     return offers

@@ -79,12 +79,16 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
                 f'&finder=ById;Id="{offer_id}",siteNumber={site}'
             ).json()
             detail = (answer.get("items") or [{}])[0]
-        parts_text = [html_to_text(detail.get(key) or "")
-                      for key in ("ExternalDescriptionStr", "ExternalResponsibilitiesStr", "ExternalQualificationsStr")]
+        parts_text = [
+            html_to_text(detail.get(key) or "")
+            for key in ("ExternalDescriptionStr", "ExternalResponsibilitiesStr", "ExternalQualificationsStr")
+        ]
         description = "\n".join(part for part in parts_text if part)
         place = detail.get("PrimaryLocation") or item.get("PrimaryLocation")
         code = _DEPARTMENT.search(place or "")
-        published = _date(detail.get("ExternalPostedStartDate")) or _date(item.get("PostedDate") and item["PostedDate"] + "T00:00:00+00:00")
+        published = _date(detail.get("ExternalPostedStartDate")) or _date(
+            item.get("PostedDate") and item["PostedDate"] + "T00:00:00+00:00"
+        )
         url = f"{host}/hcmUI/CandidateExperience/{language}/sites/{site}/job/{offer_id}"
         offers.append(
             Offer(
@@ -104,7 +108,11 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
                 published_at=published,
                 published_at_source="career_site" if published else None,
                 first_seen_at=context.now,
-                raw_payload={"Id": offer_id, "PostedDate": item.get("PostedDate"), "country": item.get("PrimaryLocationCountry")},
+                raw_payload={
+                    "Id": offer_id,
+                    "PostedDate": item.get("PostedDate"),
+                    "country": item.get("PrimaryLocationCountry"),
+                },
             )
         )
     return offers

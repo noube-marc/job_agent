@@ -42,8 +42,13 @@ def complete_offer(offer: Offer) -> Offer:
 
 def _signature_of_row(row) -> object:
     return signature(
-        row["company_key"], row["title"], row["department_code"], row["contract_type"],
-        row["description"], row["reference"], row["location"],
+        row["company_key"],
+        row["title"],
+        row["department_code"],
+        row["contract_type"],
+        row["description"],
+        row["reference"],
+        row["location"],
     )
 
 
@@ -74,8 +79,13 @@ def process_offers(
         result = evaluate(offer, config, now)
 
         new_signature = signature(
-            company_key, offer.title, offer.department_code, offer.contract_type,
-            offer.description, offer.reference, offer.location,
+            company_key,
+            offer.title,
+            offer.department_code,
+            offer.contract_type,
+            offer.description,
+            offer.reference,
+            offer.location,
         )
         best_score, best_group = 0.0, None
         for row in storage.offers_of_company(company_key):
@@ -113,8 +123,7 @@ def process_offers(
             "first_seen_at": offer.first_seen_at,
             "last_seen_at": offer.first_seen_at,
             "verification": (
-                initial_status(config, company_key)[0]
-                if group_id is None and offer.source != "career_page" else None
+                initial_status(config, company_key)[0] if group_id is None and offer.source != "career_page" else None
             ),
             "kept": result.kept,
             "reasons": result.reasons,
@@ -128,9 +137,12 @@ def process_offers(
             continue
         if offer.source == "career_page":
             on_career_match(storage, group_id, now)
-            if offer.published_at is not None and result.effective_date:
-                if _apply_career_date(storage, group_id, offer, result.effective_date, config, now):
-                    counts["date_corrections"] += 1
+            if (
+                offer.published_at is not None
+                and result.effective_date
+                and _apply_career_date(storage, group_id, offer, result.effective_date, config, now)
+            ):
+                counts["date_corrections"] += 1
     return counts
 
 

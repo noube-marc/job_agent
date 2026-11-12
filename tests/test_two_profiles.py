@@ -30,13 +30,21 @@ def _communication_profile(tmp_path: Path):
 OFFERS = {
     "data": make_offer(source_offer_id="1", title="Data Analyst H/F", location="Paris (75)", contract_type="permanent"),
     "communication": make_offer(
-        source_offer_id="2", title="Chargé de communication en alternance H/F", company="Entreprise Exemple",
-        location="Lyon (69)", contract_type=None, contract_type_raw="Alternance",
+        source_offer_id="2",
+        title="Chargé de communication en alternance H/F",
+        company="Entreprise Exemple",
+        location="Lyon (69)",
+        contract_type=None,
+        contract_type_raw="Alternance",
         description="Alternance de 12 mois au service communication, à Lyon. Réseaux sociaux et événements.",
     ),
     "communication_paris": make_offer(
-        source_offer_id="3", title="Chargé de communication en alternance H/F", company="Entreprise Exemple",
-        location="Paris (75)", contract_type=None, contract_type_raw="Alternance",
+        source_offer_id="3",
+        title="Chargé de communication en alternance H/F",
+        company="Entreprise Exemple",
+        location="Paris (75)",
+        contract_type=None,
+        contract_type_raw="Alternance",
         description="Alternance de 12 mois au service communication, à Paris.",
     ),
 }

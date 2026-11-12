@@ -23,8 +23,10 @@ from job_agent.tracking.excel import (
     AGENT_COLUMNS,
     DESCRIPTION_COLUMNS,
     REJECTED_COLUMNS,
+    REPLY_COLUMNS,
     SHEET_DESCRIPTIONS,
     SHEET_REJECTED,
+    SHEET_REPLIES,
     SHEET_TRACKING,
     SHEET_VERIFICATIONS,
     STATUS_CHOICES,
@@ -43,6 +45,7 @@ SHEETS = {
     SHEET_DESCRIPTIONS: DESCRIPTION_COLUMNS,
     SHEET_REJECTED: REJECTED_COLUMNS,
     SHEET_VERIFICATIONS: VERIFICATION_COLUMNS,
+    SHEET_REPLIES: REPLY_COLUMNS,
 }
 
 
@@ -84,23 +87,48 @@ def create_spreadsheet(service, sheets: dict = SHEETS) -> str:
     requests = []
     for name, columns in sheets.items():
         requests.append({"setBasicFilter": {"filter": {"range": {"sheetId": ids[name]}}}})
-        requests.append({"repeatCell": {
-            "range": {"sheetId": ids[name], "startRowIndex": 0, "endRowIndex": 1},
-            "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
-            "fields": "userEnteredFormat.textFormat.bold",
-        }})
+        requests.append(
+            {
+                "repeatCell": {
+                    "range": {"sheetId": ids[name], "startRowIndex": 0, "endRowIndex": 1},
+                    "cell": {"userEnteredFormat": {"textFormat": {"bold": True}}},
+                    "fields": "userEnteredFormat.textFormat.bold",
+                }
+            }
+        )
         for index, (_title, width) in enumerate(columns):
-            requests.append({"updateDimensionProperties": {
-                "range": {"sheetId": ids[name], "dimension": "COLUMNS", "startIndex": index, "endIndex": index + 1},
-                "properties": {"pixelSize": int(width * 7)}, "fields": "pixelSize",
-            }})
+            requests.append(
+                {
+                    "updateDimensionProperties": {
+                        "range": {
+                            "sheetId": ids[name],
+                            "dimension": "COLUMNS",
+                            "startIndex": index,
+                            "endIndex": index + 1,
+                        },
+                        "properties": {"pixelSize": int(width * 7)},
+                        "fields": "pixelSize",
+                    }
+                }
+            )
     status_column = len(AGENT_COLUMNS)
-    requests.append({"setDataValidation": {
-        "range": {"sheetId": ids[SHEET_TRACKING], "startRowIndex": 1, "startColumnIndex": status_column,
-                  "endColumnIndex": status_column + 1},
-        "rule": {"condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": s} for s in STATUS_CHOICES]},
-                 "strict": False, "showCustomUi": True},
-    }})
+    requests.append(
+        {
+            "setDataValidation": {
+                "range": {
+                    "sheetId": ids[SHEET_TRACKING],
+                    "startRowIndex": 1,
+                    "startColumnIndex": status_column,
+                    "endColumnIndex": status_column + 1,
+                },
+                "rule": {
+                    "condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": s} for s in STATUS_CHOICES]},
+                    "strict": False,
+                    "showCustomUi": True,
+                },
+            }
+        }
+    )
     service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body={"requests": requests}).execute()
     for name, columns in sheets.items():
         append_rows(service, spreadsheet_id, name, [[title for title, _ in columns]])
@@ -123,8 +151,11 @@ def append_rows(service, spreadsheet_id: str, sheet: str, rows: list[list[object
     if not rows:
         return
     service.spreadsheets().values().append(
-        spreadsheetId=spreadsheet_id, range=f"'{sheet}'!A1", valueInputOption="USER_ENTERED",
-        insertDataOption="INSERT_ROWS", body={"values": _rows(rows)},
+        spreadsheetId=spreadsheet_id,
+        range=f"'{sheet}'!A1",
+        valueInputOption="USER_ENTERED",
+        insertDataOption="INSERT_ROWS",
+        body={"values": _rows(rows)},
     ).execute()
 
 
@@ -136,6 +167,7 @@ def append_offers(
     keep_rejected: bool,
     timezone_name: str = "Europe/Paris",
     events: list[sqlite3.Row] = (),
+    replies: list[sqlite3.Row] = (),
 ) -> WriteResult:
     """Append pending offers and verification changes. Raises SheetsUnavailable."""
     timezone = ZoneInfo(timezone_name)
@@ -148,25 +180,56 @@ def append_offers(
             descriptions.append([main["id"], main["company"], main["title"], main["description"]])
             kept += 1
         elif keep_rejected:
-            rejected_rows.append([
-                main["id"], main["company"], main["title"], main["location"],
-                CONTRACT_LABELS.get(main["contract_type"] or "", ""), main["source_name"],
-                _local(main["published_at"], timezone), _local(main["first_seen_at"], timezone),
-                "; ".join(json.loads(main["reasons"])), main["apply_url"] or main["url"],
-            ])
+            rejected_rows.append(
+                [
+                    main["id"],
+                    main["company"],
+                    main["title"],
+                    main["location"],
+                    CONTRACT_LABELS.get(main["contract_type"] or "", ""),
+                    main["source_name"],
+                    _local(main["published_at"], timezone),
+                    _local(main["first_seen_at"], timezone),
+                    "; ".join(json.loads(main["reasons"])),
+                    main["apply_url"] or main["url"],
+                ]
+            )
             rejected += 1
         written.append(main["id"])
     for event in events:
-        verification_rows.append([
-            _local(event["at"], timezone), event["group_id"], event["company"] or event["company_key"],
-            event["title"], VERIFICATION_LABELS.get(event["old_status"] or "", ""),
-            VERIFICATION_LABELS.get(event["new_status"], event["new_status"]), event["detail"],
-        ])
+        verification_rows.append(
+            [
+                _local(event["at"], timezone),
+                event["group_id"],
+                event["company"] or event["company_key"],
+                event["title"],
+                VERIFICATION_LABELS.get(event["old_status"] or "", ""),
+                VERIFICATION_LABELS.get(event["new_status"], event["new_status"]),
+                event["detail"],
+            ]
+        )
+    reply_rows = []
+    for row in replies:
+        reply = json.loads(row["reply"])
+        received = datetime.fromisoformat(reply["received_at"]).astimezone(timezone).replace(tzinfo=None)
+        reply_rows.append(
+            [
+                received,
+                reply["offer_id"],
+                reply["company"],
+                reply["title"],
+                reply["sender_name"],
+                reply["subject"],
+                reply["meaning"],
+                reply["suggested_status"],
+            ]
+        )
     try:
         append_rows(service, spreadsheet_id, SHEET_TRACKING, tracking)
         append_rows(service, spreadsheet_id, SHEET_DESCRIPTIONS, descriptions)
         append_rows(service, spreadsheet_id, SHEET_REJECTED, rejected_rows)
         append_rows(service, spreadsheet_id, SHEET_VERIFICATIONS, verification_rows)
+        append_rows(service, spreadsheet_id, SHEET_REPLIES, reply_rows)
     except Exception as error:  # quota, network, permission: retried at the next run
         raise SheetsUnavailable(f"écriture Google Sheets impossible ({type(error).__name__})") from None
     return WriteResult(written, kept, rejected, [event["id"] for event in events])
@@ -182,8 +245,11 @@ def import_excel(service, spreadsheet_id: str, excel_path) -> dict[str, int]:
     for name in SHEETS:
         if name not in workbook.sheetnames:
             continue
-        rows = [list(row) for row in workbook[name].iter_rows(min_row=2, values_only=True)
-                if any(value not in (None, "") for value in row)]
+        rows = [
+            list(row)
+            for row in workbook[name].iter_rows(min_row=2, values_only=True)
+            if any(value not in (None, "") for value in row)
+        ]
         append_rows(service, spreadsheet_id, name, rows)
         copied[name] = len(rows)
     return copied

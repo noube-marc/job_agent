@@ -2,7 +2,7 @@
 label, the start date and the allowed senders."""
 
 import base64
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 
@@ -19,18 +19,22 @@ def _ms(day: datetime) -> str:
 def _message(message_id: str, sender: str, labels: list[str], received: datetime) -> dict:
     html = base64.urlsafe_b64encode(b"<p>Offre</p>").decode().rstrip("=")
     return {
-        "id": message_id, "labelIds": labels, "internalDate": _ms(received),
-        "payload": {"mimeType": "multipart/alternative",
-                    "headers": [{"name": "From", "value": sender}, {"name": "Subject", "value": "Alerte"}],
-                    "parts": [{"mimeType": "text/html", "body": {"data": html}}]},
+        "id": message_id,
+        "labelIds": labels,
+        "internalDate": _ms(received),
+        "payload": {
+            "mimeType": "multipart/alternative",
+            "headers": [{"name": "From", "value": sender}, {"name": "Subject", "value": "Alerte"}],
+            "parts": [{"mimeType": "text/html", "body": {"data": html}}],
+        },
     }
 
 
 MESSAGES = {
-    "ok": _message("ok", "LinkedIn <jobalerts-noreply@linkedin.com>", [LABEL_ID], datetime(2026, 11, 10, tzinfo=timezone.utc)),
-    "other-sender": _message("other-sender", "RH <rh@entreprise.fr>", [LABEL_ID], datetime(2026, 11, 10, tzinfo=timezone.utc)),
-    "no-label": _message("no-label", "jobalerts-noreply@linkedin.com", ["INBOX"], datetime(2026, 11, 10, tzinfo=timezone.utc)),
-    "too-old": _message("too-old", "jobalerts-noreply@linkedin.com", [LABEL_ID], datetime(2026, 10, 1, tzinfo=timezone.utc)),
+    "ok": _message("ok", "LinkedIn <jobalerts-noreply@linkedin.com>", [LABEL_ID], datetime(2026, 11, 10, tzinfo=UTC)),
+    "other-sender": _message("other-sender", "RH <rh@entreprise.fr>", [LABEL_ID], datetime(2026, 11, 10, tzinfo=UTC)),
+    "no-label": _message("no-label", "jobalerts-noreply@linkedin.com", ["INBOX"], datetime(2026, 11, 10, tzinfo=UTC)),
+    "too-old": _message("too-old", "jobalerts-noreply@linkedin.com", [LABEL_ID], datetime(2026, 10, 1, tzinfo=UTC)),
 }
 
 
@@ -74,7 +78,9 @@ class FakeGmail:
 
 def _settings(**overrides) -> EmailAlertsSource:
     values = {
-        "enabled": True, "gmail_label": "Alertes-emploi", "start_date": date(2026, 11, 9),
+        "enabled": True,
+        "gmail_label": "Alertes-emploi",
+        "start_date": date(2026, 11, 9),
         "providers": {"linkedin": {"enabled": True, "allowed_senders": ["jobalerts-noreply@linkedin.com"]}},
     }
     values.update(overrides)

@@ -11,8 +11,34 @@ import unicodedata
 
 # Words ignored when comparing job titles or phrases.
 _STOP_WORDS = frozenset(
-    {"de", "d", "des", "du", "la", "le", "l", "les", "en", "et", "a", "au", "aux",
-     "h", "f", "hf", "fh", "x", "m", "w", "the", "of", "and", "pour", "un", "une"}
+    {
+        "de",
+        "d",
+        "des",
+        "du",
+        "la",
+        "le",
+        "l",
+        "les",
+        "en",
+        "et",
+        "a",
+        "au",
+        "aux",
+        "h",
+        "f",
+        "hf",
+        "fh",
+        "x",
+        "m",
+        "w",
+        "the",
+        "of",
+        "and",
+        "pour",
+        "un",
+        "une",
+    }
 )
 _NON_ALNUM = re.compile(r"[^a-z0-9+#]+")
 
@@ -48,11 +74,7 @@ def stem(word: str) -> str:
 def tokens(text: str) -> list[str]:
     """Comparable words of a text, in order."""
     # Single letters are dropped (gender marks, "(e)"), except the R language.
-    return [
-        stem(word)
-        for word in plain(text).split()
-        if word == "r" or (len(word) > 1 and word not in _STOP_WORDS)
-    ]
+    return [stem(word) for word in plain(text).split() if word == "r" or (len(word) > 1 and word not in _STOP_WORDS)]
 
 
 def contains_phrase(text_tokens: list[str], phrase: str) -> bool:

@@ -16,7 +16,7 @@ import json
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -121,6 +121,12 @@ CREATE TABLE IF NOT EXISTS letters (
     created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS replies (
+    message_id TEXT PRIMARY KEY,
+    reply TEXT NOT NULL,
+    written INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS app_state (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -129,7 +135,7 @@ CREATE TABLE IF NOT EXISTS app_state (
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _iso(value: datetime | None) -> str | None:
@@ -137,8 +143,8 @@ def _iso(value: datetime | None) -> str | None:
     if value is None:
         return None
     if value.tzinfo is None:
-        value = value.replace(tzinfo=timezone.utc)
-    return value.astimezone(timezone.utc).isoformat(timespec="seconds")
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(UTC).isoformat(timespec="seconds")
 
 
 class Storage:
@@ -267,9 +273,7 @@ class Storage:
             db.executemany("UPDATE verification_events SET written = 1 WHERE id = ?", [(i,) for i in event_ids])
 
     def group_members(self, group_id: int) -> list[sqlite3.Row]:
-        return self.connection.execute(
-            "SELECT * FROM offers WHERE group_id = ? ORDER BY id", (group_id,)
-        ).fetchall()
+        return self.connection.execute("SELECT * FROM offers WHERE group_id = ? ORDER BY id", (group_id,)).fetchall()
 
     def add_flag(self, offer_id: int, flag: str) -> None:
         row = self.connection.execute("SELECT flags FROM offers WHERE id = ?", (offer_id,)).fetchone()
@@ -302,9 +306,7 @@ class Storage:
             )
 
     def is_notified(self, group_id: int) -> bool:
-        row = self.connection.execute(
-            "SELECT 1 FROM notifications WHERE group_id = ?", (group_id,)
-        ).fetchone()
+        row = self.connection.execute("SELECT 1 FROM notifications WHERE group_id = ?", (group_id,)).fetchone()
         return row is not None
 
     # --- tracking file ------------------------------------------------
@@ -333,9 +335,7 @@ class Storage:
 
     def start_run(self, silent: bool) -> int:
         with self.transaction() as db:
-            cursor = db.execute(
-                "INSERT INTO runs (started_at, silent) VALUES (?, ?)", (_iso(utc_now()), int(silent))
-            )
+            cursor = db.execute("INSERT INTO runs (started_at, silent) VALUES (?, ?)", (_iso(utc_now()), int(silent)))
         return int(cursor.lastrowid)
 
     def record_source(self, run_id: int, source_name: str, collected: int, error: str | None) -> None:
@@ -353,8 +353,12 @@ class Storage:
             )
 
     def sources_of_run(self, run_id: int) -> list[str]:
-        return [row[0] for row in self.connection.execute(
-            "SELECT source_name FROM source_runs WHERE run_id = ? ORDER BY source_name", (run_id,))]
+        return [
+            row[0]
+            for row in self.connection.execute(
+                "SELECT source_name FROM source_runs WHERE run_id = ? ORDER BY source_name", (run_id,)
+            )
+        ]
 
     def last_error(self, source_name: str) -> str | None:
         row = self.connection.execute(
@@ -383,7 +387,8 @@ class Storage:
     def mark_email_processed(self, message_id: str, provider: str, offers: int) -> None:
         with self.transaction() as db:
             db.execute(
-                "INSERT OR REPLACE INTO email_messages (message_id, provider, offers, processed_at) VALUES (?, ?, ?, ?)",
+                "INSERT OR REPLACE INTO email_messages (message_id, provider, offers, processed_at) "
+                "VALUES (?, ?, ?, ?)",
                 (message_id, provider, offers, _iso(utc_now())),
             )
 
@@ -391,6 +396,27 @@ class Storage:
     def get_state(self, key: str) -> str | None:
         row = self.connection.execute("SELECT value FROM app_state WHERE key = ?", (key,)).fetchone()
         return row[0] if row else None
+
+    # --- recruiters' replies -------------------------------------------
+    def tracked_offers(self) -> list[sqlite3.Row]:
+        """Kept offers already written to the tracking file."""
+        return self.connection.execute(
+            "SELECT o.* FROM offers o JOIN tracking t ON t.offer_id = o.id WHERE o.kept = 1 ORDER BY o.id DESC"
+        ).fetchall()
+
+    def processed_replies(self) -> set[str]:
+        return {row[0] for row in self.connection.execute("SELECT message_id FROM replies")}
+
+    def save_reply(self, message_id: str, reply: str) -> None:
+        with self.transaction() as db:
+            db.execute("INSERT OR IGNORE INTO replies (message_id, reply) VALUES (?, ?)", (message_id, reply))
+
+    def unwritten_replies(self) -> list[sqlite3.Row]:
+        return self.connection.execute("SELECT * FROM replies WHERE written = 0 ORDER BY rowid").fetchall()
+
+    def mark_replies_written(self, message_ids: list[str]) -> None:
+        with self.transaction() as db:
+            db.executemany("UPDATE replies SET written = 1 WHERE message_id = ?", [(i,) for i in message_ids])
 
     def delete_state(self, key: str) -> None:
         with self.transaction() as db:

@@ -661,3 +661,17 @@ labelling:
     - "Eleven Strategy"
     - "Ekimetrics"
     - "Quantmetry"
+
+# ---------------------------------------------------------------------
+# RÉPONSES DES RECRUTEURS (libellé Gmail dédié)
+# ---------------------------------------------------------------------
+application_replies:
+  # true = l'agent lit les réponses des recruteurs que VOUS rangez dans le
+  # libellé ci-dessous (à la main ou par un filtre Gmail), en lecture
+  # seule, et vous propose un statut (Telegram et onglet « Réponses »).
+  # Aucun autre e-mail n'est lu ; le texte des e-mails n'est jamais
+  # envoyé à une IA ni conservé.
+  enabled: false
+  gmail_label: "Candidatures"
+  # Seuls les e-mails de ce libellé reçus à partir de cette date sont lus.
+  start_date: "2026-11-12"

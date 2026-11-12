@@ -13,15 +13,27 @@ SITE = "https://recrute.exemple.fr/fr/annonces"
 
 
 def _item(job_ad_id: int, title: str) -> dict:
-    return {"id": f"{job_ad_id}-1", "job_ad_id": job_ad_id, "title": title, "contract": "CDI", "location": "Paris",
-            "url": f"{job_ad_id}-slug", "career_domain": "recrutement.enseigne.fr"}
+    return {
+        "id": f"{job_ad_id}-1",
+        "job_ad_id": job_ad_id,
+        "title": title,
+        "contract": "CDI",
+        "location": "Paris",
+        "url": f"{job_ad_id}-slug",
+        "career_domain": "recrutement.enseigne.fr",
+    }
 
 
 DETAIL = {
-    "description": "<div>Vous analysez les ventes avec <b>SQL</b>.</div>", "profile": "<div>Rigueur.</div>",
-    "job_experience": "Au moins 2 ans d'expérience", "education_level": "Bac +5",
-    "republished_at": "2026-11-10 08:00:00", "location": "75008 Paris", "brand_name": "Enseigne",
-    "address": {"zip": "75008", "city": "Paris", "country": "France"}, "apply_email": None,
+    "description": "<div>Vous analysez les ventes avec <b>SQL</b>.</div>",
+    "profile": "<div>Rigueur.</div>",
+    "job_experience": "Au moins 2 ans d'expérience",
+    "education_level": "Bac +5",
+    "republished_at": "2026-11-10 08:00:00",
+    "location": "75008 Paris",
+    "brand_name": "Enseigne",
+    "address": {"zip": "75008", "city": "Paris", "country": "France"},
+    "apply_email": None,
 }
 
 
@@ -39,8 +51,9 @@ class Fake:
             self.pages += 1
             assert json.loads(request.content) == {"filters": {}}
             limit, page = int(request.url.params["limit"]), int(request.url.params["page"])
-            return httpx.Response(200, json={"count": len(self.items),
-                                             "items": self.items[(page - 1) * limit:page * limit]})
+            return httpx.Response(
+                200, json={"count": len(self.items), "items": self.items[(page - 1) * limit : page * limit]}
+            )
         self.details.append(request.url.path.rsplit("/", 1)[-1])
         return httpx.Response(200, json=DETAIL)
 

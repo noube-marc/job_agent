@@ -34,7 +34,9 @@ class FakeSheets:
 
     def create(self, body):
         self.created.append(body)
-        sheets_ = [{"properties": {"title": s["properties"]["title"], "sheetId": i}} for i, s in enumerate(body["sheets"])]
+        sheets_ = [
+            {"properties": {"title": s["properties"]["title"], "sheetId": i}} for i, s in enumerate(body["sheets"])
+        ]
         return Call({"spreadsheetId": "sheet-123", "sheets": sheets_})
 
     def batchUpdate(self, spreadsheetId, body):  # noqa: N802 (Google API name)
@@ -51,9 +53,14 @@ class FakeSheets:
 def _storage(config, tmp_path) -> Storage:
     storage = Storage(tmp_path / "t.db")
     process_offers(
-        [make_offer(source_offer_id="1", title="Data Analyst H/F", description="Texte. " * 10000),
-         make_offer(source_offer_id="2", title="Comptable H/F")],
-        config, storage, SectorIndex.build(config, ROOT / "sectors.yaml"), NOW,
+        [
+            make_offer(source_offer_id="1", title="Data Analyst H/F", description="Texte. " * 10000),
+            make_offer(source_offer_id="2", title="Comptable H/F"),
+        ],
+        config,
+        storage,
+        SectorIndex.build(config, ROOT / "sectors.yaml"),
+        NOW,
     )
     return storage
 
@@ -98,3 +105,27 @@ def test_excel_file_is_copied_with_the_user_columns(tmp_path) -> None:
     copied = sheets.import_excel(fake, "sheet-123", path)
     assert copied == {SHEET_TRACKING: 1}
     assert "postulé" in fake.rows[SHEET_TRACKING][0] and "relancer lundi" in fake.rows[SHEET_TRACKING][0]
+
+
+def test_replies_are_appended_to_their_sheet(config, tmp_path) -> None:
+    import json
+
+    from job_agent.tracking.excel import SHEET_REPLIES
+
+    storage = _storage(config, tmp_path)
+    reply = {
+        "received_at": "2026-11-12T09:00:00+00:00",
+        "offer_id": 1,
+        "company": "AXA",
+        "title": "Data Analyst H/F",
+        "sender_name": "Recrutement",
+        "subject": "Votre candidature",
+        "meaning": "refus",
+        "suggested_status": "refusé",
+    }
+    storage.save_reply("m1", json.dumps(reply))
+    fake = FakeSheets()
+    sheets.append_offers(fake, "sheet-123", [], storage.group_members, True, replies=storage.unwritten_replies())
+    [row] = fake.rows[SHEET_REPLIES]
+    assert row[0] == "12/11/2026 10:00" and row[-1] == "refusé"
+    storage.close()

@@ -24,8 +24,14 @@ SHEET_PATH = Path("private/annotation_ia.xlsx")
 REPORT_PATH = Path("reports/ai_evaluation.md")
 SAMPLE_SIZE = 30
 
-CONTRACTS = {"permanent": "CDI", "fixed_term": "CDD", "internship": "stage", "apprenticeship": "alternance",
-             "freelance": "freelance", "interim": "intérim"}
+CONTRACTS = {
+    "permanent": "CDI",
+    "fixed_term": "CDD",
+    "internship": "stage",
+    "apprenticeship": "alternance",
+    "freelance": "freelance",
+    "interim": "intérim",
+}
 WORK_MODES = {"onsite": "sur site", "hybrid": "hybride", "full_remote": "télétravail complet"}
 LEVELS = {"junior": "junior", "confirmed": "confirmé", "senior": "senior", "lead_or_manager": "encadrement"}
 UNKNOWN = "non précisé"
@@ -109,7 +115,7 @@ def write_sheet(storage: Storage, path: Path = SHEET_PATH, size: int = SAMPLE_SI
         for field, rules in _rules_answers(row).items():
             hidden.append([row["id"], field, rules])
 
-    for index, (title, choices) in enumerate(FIELDS.values()):
+    for index, (_title, choices) in enumerate(FIELDS.values()):
         column = chr(ord("F") + index)
         if choices:
             validation = DataValidation(type="list", formula1='"' + ",".join(choices) + '"', allow_blank=True)
@@ -125,7 +131,9 @@ def sheet_offer_ids(path: Path = SHEET_PATH) -> list[int]:
     return [row[0] for row in sheet.iter_rows(min_row=2, values_only=True) if row[0] is not None]
 
 
-def ai_answers_for(storage: Storage, offer_ids: list[int], extractor: GeminiExtractor | None) -> dict[int, AIExtraction]:
+def ai_answers_for(
+    storage: Storage, offer_ids: list[int], extractor: GeminiExtractor | None
+) -> dict[int, AIExtraction]:
     """AI answers from the cache; missing ones are asked if the quota allows."""
     answers: dict[int, AIExtraction] = {}
     for offer_id in offer_ids:
@@ -193,7 +201,10 @@ def write_report(results: dict, model: str, path: Path = REPORT_PATH) -> None:
             f"| {FIELD_NAMES[field]} | {values['annotated']} | {values['compared']} "
             f"| {values['rules']:.0%} | {values['ai']:.0%} |"
         )
-    lines += ["", "Les règles simples ne détectent le niveau que par les mots « junior » ou « débutant » de l'intitulé."]
+    lines += [
+        "",
+        "Les règles simples ne détectent le niveau que par les mots « junior » ou « débutant » de l'intitulé.",
+    ]
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(NEWLINE.join(lines) + NEWLINE, encoding="utf-8")
 
@@ -205,7 +216,9 @@ def ai_sheet_command(storage: Storage) -> int:
         print(f"Feuille non créée : {error}")
         return 1
     print(f"{count} offres à annoter dans {SHEET_PATH}.")
-    print("Remplissez les colonnes vertes d'après le texte de chaque offre, puis lancez « uv run job-agent ai-evaluate ».")
+    print(
+        "Remplissez les colonnes vertes d'après le texte de chaque offre, puis lancez « uv run job-agent ai-evaluate »."
+    )
     return 0
 
 
@@ -222,8 +235,10 @@ def ai_evaluate_command(storage: Storage, preferred_model: str) -> int:
     results = evaluate_sheet(SHEET_PATH, answers)
     print(f"{'Champ':<22}{'Annotées':>10}{'Comparées':>11}{'Règles':>9}{'IA':>7}")
     for field, values in results.items():
-        print(f"{FIELD_NAMES[field]:<22}{values['annotated']:>10}{values['compared']:>11}"
-              f"{values['rules']:>9.0%}{values['ai']:>7.0%}")
+        print(
+            f"{FIELD_NAMES[field]:<22}{values['annotated']:>10}{values['compared']:>11}"
+            f"{values['rules']:>9.0%}{values['ai']:>7.0%}"
+        )
     missing = len(ids) - len(answers)
     if missing:
         print(f"{missing} offre(s) pas encore lue(s) par l'IA (quota gratuit du jour) : relancez la commande demain.")
