@@ -77,20 +77,41 @@ def test_errors_name_key_and_expected_value(tmp_path: Path) -> None:
 
 
 CROSS_FIELD_CASES = [
-    (lambda d: d["schedule"].update(start_hour=20, end_hour=8), "schedule : start_hour (20) doit être inférieur à end_hour"),
+    (
+        lambda d: d["schedule"].update(start_hour=20, end_hour=8),
+        "schedule : start_hour (20) doit être inférieur à end_hour",
+    ),
     (lambda d: d["schedule"].update(timezone="Europe/Pariss"), "fuseau horaire « Europe/Pariss » inconnu"),
-    (lambda d: d["source_verification"].update(match_threshold=0.6, probable_match_threshold=0.7),
-     "probable_match_threshold (0.7) doit être inférieur ou égal à match_threshold"),
-    (lambda d: d["technical_profile"].update(technical_gap_threshold=3, too_advanced_threshold=3),
-     "technical_gap_threshold (3) doit être inférieur à too_advanced_threshold"),
-    (lambda d: d["companies"]["watchlist"].append(dict(d["companies"]["watchlist"][0])), "apparaît deux fois dans watchlist"),
-    (lambda d: d["companies"]["watchlist"][0].update(careers_url="recrutement.exemple.fr"), "adresse complète attendue"),
-    (lambda d: (d["sources"]["email_alerts"].update(enabled=True),
-                [block.update(allowed_senders=[]) for block in d["sources"]["email_alerts"]["providers"].values()]),
-     "aucun site n'a d'expéditeur autorisé"),
-    (lambda d: (d["sources"]["email_alerts"].update(enabled=True),
-                d["sources"]["email_alerts"]["providers"]["linkedin"].update(enabled=True, allowed_senders=["linkedin"])),
-     "« linkedin » n'est pas une adresse e-mail complète"),
+    (
+        lambda d: d["source_verification"].update(match_threshold=0.6, probable_match_threshold=0.7),
+        "probable_match_threshold (0.7) doit être inférieur ou égal à match_threshold",
+    ),
+    (
+        lambda d: d["technical_profile"].update(technical_gap_threshold=3, too_advanced_threshold=3),
+        "technical_gap_threshold (3) doit être inférieur à too_advanced_threshold",
+    ),
+    (
+        lambda d: d["companies"]["watchlist"].append(dict(d["companies"]["watchlist"][0])),
+        "apparaît deux fois dans watchlist",
+    ),
+    (
+        lambda d: d["companies"]["watchlist"][0].update(careers_url="recrutement.exemple.fr"),
+        "adresse complète attendue",
+    ),
+    (
+        lambda d: (
+            d["sources"]["email_alerts"].update(enabled=True),
+            [block.update(allowed_senders=[]) for block in d["sources"]["email_alerts"]["providers"].values()],
+        ),
+        "aucun site n'a d'expéditeur autorisé",
+    ),
+    (
+        lambda d: (
+            d["sources"]["email_alerts"].update(enabled=True),
+            d["sources"]["email_alerts"]["providers"]["linkedin"].update(enabled=True, allowed_senders=["linkedin"]),
+        ),
+        "« linkedin » n'est pas une adresse e-mail complète",
+    ),
 ]
 
 

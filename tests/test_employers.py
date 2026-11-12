@@ -12,14 +12,27 @@ def test_excluded_company_by_name(config) -> None:
 
 
 def test_ordinary_company_is_kept(config) -> None:
-    for company in ("AXA France", "Natixis", "Conseil régional Exemple", "Lasecurecrute.fr",
-                    "EY Consulting", "Deloitte", "PwC France", "KPMG", "Forvis Mazars", "Wavestone"):
+    for company in (
+        "AXA France",
+        "Natixis",
+        "Conseil régional Exemple",
+        "Lasecurecrute.fr",
+        "EY Consulting",
+        "Deloitte",
+        "PwC France",
+        "KPMG",
+        "Forvis Mazars",
+        "Wavestone",
+    ):
         assert evaluate(make_offer(company=company), config, NOW).kept, company
 
 
 def test_intermediary_detected_in_description(config) -> None:
-    offer = make_offer(source="email_alert", company="Société Exemple",
-                       description="Pour le compte de notre client, un grand groupe bancaire, nous recherchons un Data Analyst.")
+    offer = make_offer(
+        source="email_alert",
+        company="Société Exemple",
+        description="Pour le compte de notre client, un grand groupe bancaire, nous recherchons un Data Analyst.",
+    )
     result = evaluate(offer, config, NOW)
     assert not result.kept and "intermédiaire" in result.reasons[0]
 

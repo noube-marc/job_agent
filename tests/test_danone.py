@@ -16,9 +16,11 @@ SITE_MAP = """<urlset>
 
 
 def _page(job_id: str, title: str, country: str) -> str:
-    return (f'<article jobid="{job_id}" title="{title}" country="{country}" city="Paris" posted="1793191140000" '
-            'positiontype="Permanent (Full Time)" workfromhome="Hybrid" recruiteremail="recruteur@exemple.com" '
-            'description="&lt;p&gt;Analyse des ventes avec &lt;b&gt;SQL&lt;/b&gt;.&lt;/p&gt;"></article>')
+    return (
+        f'<article jobid="{job_id}" title="{title}" country="{country}" city="Paris" posted="1793191140000" '
+        'positiontype="Permanent (Full Time)" workfromhome="Hybrid" recruiteremail="recruteur@exemple.com" '
+        'description="&lt;p&gt;Analyse des ventes avec &lt;b&gt;SQL&lt;/b&gt;.&lt;/p&gt;"></article>'
+    )
 
 
 def _handler(request: httpx.Request) -> httpx.Response:
@@ -34,8 +36,9 @@ def _handler(request: httpx.Request) -> httpx.Response:
 
 def test_collect(config) -> None:
     client = PoliteClient(0, 5, transport=httpx.MockTransport(_handler), sleep=lambda s: None)
-    company = WatchedCompany(name="Danone", sector="agriculture_agrifood",
-                             careers_url="https://careers.exemple.com", ats="danone")
+    company = WatchedCompany(
+        name="Danone", sector="agriculture_agrifood", careers_url="https://careers.exemple.com", ats="danone"
+    )
     offers = danone.collect(company, CollectContext(client, config, NOW))
 
     assert [o.source_offer_id for o in offers] == ["101", "103"]  # the Moroccan offer is skipped

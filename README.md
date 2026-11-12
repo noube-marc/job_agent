@@ -265,6 +265,7 @@ uv run pytest
 ```
 Les tests n'appellent jamais de vrai site : ils utilisent des réponses enregistrées.
 Ils sont lancés automatiquement par GitHub (sous Windows) à chaque pull request et à chaque fusion dans `main` : voir l'onglet « Actions » du dépôt.
+Le style du code est vérifié par Ruff (`uv run ruff check` et `uv run ruff format`), aussi à chaque pull request.
 
 ## Licence
 

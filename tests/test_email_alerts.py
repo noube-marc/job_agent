@@ -1,6 +1,6 @@
 """E-mail alert readers and their integration in a run (no real Gmail)."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from conftest import NOW, ROOT
@@ -12,20 +12,31 @@ from job_agent.processing.pipeline import complete_offer
 from job_agent.storage import Storage
 
 FIXTURE = Path(__file__).parent / "fixtures" / "linkedin_alert.txt"
-RECEIVED = datetime(2026, 11, 10, 9, 0, tzinfo=timezone.utc)
+RECEIVED = datetime(2026, 11, 10, 9, 0, tzinfo=UTC)
 
 
 def _alert(message_id: str = "m1") -> AlertEmail:
-    return AlertEmail(message_id, "linkedin", "jobalerts-noreply@linkedin.com", "Alerte",
-                      RECEIVED, "", FIXTURE.read_text(encoding="utf-8"))
+    return AlertEmail(
+        message_id,
+        "linkedin",
+        "jobalerts-noreply@linkedin.com",
+        "Alerte",
+        RECEIVED,
+        "",
+        FIXTURE.read_text(encoding="utf-8"),
+    )
 
 
 def test_linkedin_alert() -> None:
     offers = parse_linkedin(_alert())
     assert [(o.source_offer_id, o.title, o.company, o.location) for o in offers] == [
         ("1000000001", "Data Analyst H/F", "Banque Exemple", "Paris, Île-de-France, France"),
-        ("1000000002", "CDD - Business Analyst - Performance (F/H/X)", "Média Exemple",
-         "Issy-les-Moulineaux, Île-de-France, France"),
+        (
+            "1000000002",
+            "CDD - Business Analyst - Performance (F/H/X)",
+            "Média Exemple",
+            "Issy-les-Moulineaux, Île-de-France, France",
+        ),
         ("1000000003", "Data Engineer (H/F)", "Conseil Exemple", "Toulouse et périphérie"),
     ]
     first = offers[0]
@@ -56,7 +67,12 @@ class FakeReader:
 
 def _enable_alerts(config):
     alerts = config.sources.email_alerts.model_copy(update={"enabled": True})
-    sources = config.sources.model_copy(update={"email_alerts": alerts, "career_pages": config.sources.career_pages.model_copy(update={"enabled": False})})
+    sources = config.sources.model_copy(
+        update={
+            "email_alerts": alerts,
+            "career_pages": config.sources.career_pages.model_copy(update={"enabled": False}),
+        }
+    )
     return config.model_copy(update={"sources": sources})
 
 
@@ -67,7 +83,7 @@ def test_run_reads_each_email_once(config, tmp_path, monkeypatch) -> None:
     (tmp_path / "sectors.yaml").write_text((ROOT / "sectors.yaml").read_text(encoding="utf-8"), encoding="utf-8")
     monkeypatch.setattr(reader_module, "GmailReader", FakeReader)
     monkeypatch.setattr(reader_module, "build_service", lambda: object())
-    monkeypatch.setattr(runner, "telegram_sender_from_env", lambda: (lambda text: None))
+    monkeypatch.setattr(runner, "telegram_sender_from_env", lambda: lambda text: None)
     monkeypatch.setattr(runner, "internet_available", lambda: True, raising=False)
     FakeReader.alerts = [_alert("m1")]
     config = _enable_alerts(config)
@@ -129,8 +145,14 @@ def _career_copy(days_ago: int):
 
     from conftest import make_offer
 
-    return make_offer(source_offer_id="cs-1", title="Data Analyst H/F", company="Banque Exemple",
-                      location="Paris", published_at=NOW - timedelta(days=days_ago), contract_type=None)
+    return make_offer(
+        source_offer_id="cs-1",
+        title="Data Analyst H/F",
+        company="Banque Exemple",
+        location="Paris",
+        published_at=NOW - timedelta(days=days_ago),
+        contract_type=None,
+    )
 
 
 def test_career_site_date_replaces_alert_date(config, tmp_path) -> None:

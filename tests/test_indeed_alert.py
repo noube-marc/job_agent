@@ -1,6 +1,6 @@
 """Indeed alert e-mails (anonymised fixture, no real Gmail)."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from job_agent.gmail.indeed import parse_indeed, published_from
@@ -10,12 +10,19 @@ from job_agent.processing.filters import evaluate
 from job_agent.processing.pipeline import complete_offer
 
 FIXTURE = Path(__file__).parent / "fixtures" / "indeed_alert.txt"
-RECEIVED = datetime(2026, 11, 11, 15, 0, tzinfo=timezone.utc)
+RECEIVED = datetime(2026, 11, 11, 15, 0, tzinfo=UTC)
 
 
 def _alert(message_id: str = "i1") -> AlertEmail:
-    return AlertEmail(message_id, "indeed", "donotreply@jobalert.indeed.com", "Alerte",
-                      RECEIVED, "", FIXTURE.read_text(encoding="utf-8"))
+    return AlertEmail(
+        message_id,
+        "indeed",
+        "donotreply@jobalert.indeed.com",
+        "Alerte",
+        RECEIVED,
+        "",
+        FIXTURE.read_text(encoding="utf-8"),
+    )
 
 
 def test_indeed_alert_blocks() -> None:

@@ -22,5 +22,9 @@ jobs:
           enable-cache: true
       - name: Installer Python et les dépendances
         run: uv sync --frozen
+      - name: Vérifier le style du code (Ruff)
+        run: |
+          uv run ruff check
+          uv run ruff format --check
       - name: Lancer les tests
         run: uv run pytest -q

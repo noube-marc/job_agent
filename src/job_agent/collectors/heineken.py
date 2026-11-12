@@ -10,7 +10,6 @@ JobPosting data (title, date such as "Nov 05 2026", description).
 robots.txt asks for 5 s between two requests, which the client respects.
 """
 
-import re
 from datetime import datetime
 from urllib.parse import urljoin, urlsplit
 from zoneinfo import ZoneInfo

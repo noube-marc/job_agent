@@ -32,8 +32,16 @@ _LD_JSON = re.compile(r"<script[^>]+application/ld\+json[^>]*>(.*?)</script>", r
 _ID_SEGMENT = re.compile(r"^\d{4,}$")
 _EDGE_ID = re.compile(r"^(\d{4,})-|-(\d{4,})$")
 COUNTRY_CODES = {"FR": {"fr", "fra", "france"}, "BE": {"be", "bel", "belgique", "belgium"}}
-CONTRACTS = {"FULL_TIME": None, "PART_TIME": None, "CONTRACTOR": "freelance", "TEMPORARY": None,
-             "INTERN": "stage", "PER_DIEM": None, "VOLUNTEER": None, "OTHER": None}
+CONTRACTS = {
+    "FULL_TIME": None,
+    "PART_TIME": None,
+    "CONTRACTOR": "freelance",
+    "TEMPORARY": None,
+    "INTERN": "stage",
+    "PER_DIEM": None,
+    "VOLUNTEER": None,
+    "OTHER": None,
+}
 
 
 def _address_parts(url: str) -> tuple[str | None, str]:
@@ -173,7 +181,9 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         posting: dict = {}
         page = ""
         opaque = " " not in item["words"]  # an address without words: the title is only on the page
-        if not context.is_known(source_name, item["id"]) and (opaque or title_is_candidate(item["words"], context.config)):
+        if not context.is_known(source_name, item["id"]) and (
+            opaque or title_is_candidate(item["words"], context.config)
+        ):
             page = context.client.get(item["url"]).text
             posting = job_posting(page)
             if not posting:
@@ -203,8 +213,12 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
                 published_at=published,
                 published_at_source="career_site" if published else None,
                 first_seen_at=context.now,
-                raw_payload={"address_words": item["words"], "datePosted": posting.get("datePosted"),
-                             "employmentType": posting.get("employmentType"), "address": address},
+                raw_payload={
+                    "address_words": item["words"],
+                    "datePosted": posting.get("datePosted"),
+                    "employmentType": posting.get("employmentType"),
+                    "address": address,
+                },
             )
         )
     return offers

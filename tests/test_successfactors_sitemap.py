@@ -18,8 +18,10 @@ SITE_MAP = """<?xml version="1.0"?><urlset>
 
 def _field(label: str, value: str, lang: str, prop: str = "") -> str:
     attribute = f' itemprop="{prop}"' if prop else ""
-    return (f'<div class="col-xs-12">{label}: <span class="rtltextaligneligible" lang="{lang}"{attribute}>'
-            f"{value}</span></div>")
+    return (
+        f'<div class="col-xs-12">{label}: <span class="rtltextaligneligible" lang="{lang}"{attribute}>'
+        f"{value}</span></div>"
+    )
 
 
 FRENCH = (

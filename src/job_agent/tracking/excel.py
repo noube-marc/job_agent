@@ -31,29 +31,62 @@ SHEET_REJECTED = "Écartées"
 SHEET_VERIFICATIONS = "Vérifications"
 
 AGENT_COLUMNS = [
-    ("Identifiant", 11), ("Entreprise", 22), ("Poste", 40), ("Lieu", 18), ("Contrat", 9),
-    ("Secteur", 16), ("Source", 22), ("Première source", 22), ("Toutes les sources", 30),
-    ("Date de publication", 17), ("Date de collecte", 17), ("Délai de détection (h)", 12),
-    ("Lien de candidature", 40), ("Autres liens", 40), ("Statut de vérification", 16),
-    ("Alertes", 40), ("Score de correspondance", 12),
+    ("Identifiant", 11),
+    ("Entreprise", 22),
+    ("Poste", 40),
+    ("Lieu", 18),
+    ("Contrat", 9),
+    ("Secteur", 16),
+    ("Source", 22),
+    ("Première source", 22),
+    ("Toutes les sources", 30),
+    ("Date de publication", 17),
+    ("Date de collecte", 17),
+    ("Délai de détection (h)", 12),
+    ("Lien de candidature", 40),
+    ("Autres liens", 40),
+    ("Statut de vérification", 16),
+    ("Alertes", 40),
+    ("Score de correspondance", 12),
 ]
 USER_COLUMNS = [
-    ("Statut", 14), ("Date de candidature", 14), ("Lettre envoyée", 12),
-    ("Version du CV", 14), ("Contact", 22), ("Notes", 40),
+    ("Statut", 14),
+    ("Date de candidature", 14),
+    ("Lettre envoyée", 12),
+    ("Version du CV", 14),
+    ("Contact", 22),
+    ("Notes", 40),
 ]
 STATUS_CHOICES = ["à postuler", "postulé", "relancé", "entretien", "refusé", "offre reçue"]
 DESCRIPTION_COLUMNS = [("Identifiant", 11), ("Entreprise", 22), ("Poste", 40), ("Description", 120)]
 REJECTED_COLUMNS = [
-    ("Identifiant", 11), ("Entreprise", 22), ("Poste", 40), ("Lieu", 18), ("Contrat", 9),
-    ("Source", 22), ("Date de publication", 17), ("Date de collecte", 17), ("Raisons", 60), ("Lien", 40),
+    ("Identifiant", 11),
+    ("Entreprise", 22),
+    ("Poste", 40),
+    ("Lieu", 18),
+    ("Contrat", 9),
+    ("Source", 22),
+    ("Date de publication", 17),
+    ("Date de collecte", 17),
+    ("Raisons", 60),
+    ("Lien", 40),
 ]
 VERIFICATION_COLUMNS = [
-    ("Date", 17), ("Identifiant", 11), ("Entreprise", 22), ("Poste", 40),
-    ("Ancien statut", 24), ("Nouveau statut", 24), ("Détail", 60),
+    ("Date", 17),
+    ("Identifiant", 11),
+    ("Entreprise", 22),
+    ("Poste", 40),
+    ("Ancien statut", 24),
+    ("Nouveau statut", 24),
+    ("Détail", 60),
 ]
 SECTOR_LABELS = {
-    "insurance": "Assurance", "banking": "Banque", "agriculture_agrifood": "Agro-industrie",
-    "consumer_goods": "Grande consommation", "retail": "Distribution", "other": "Autre",
+    "insurance": "Assurance",
+    "banking": "Banque",
+    "agriculture_agrifood": "Agro-industrie",
+    "consumer_goods": "Grande consommation",
+    "retail": "Distribution",
+    "other": "Autre",
 }
 
 _HEADER_FONT = Font(bold=True, color="FFFFFF")
@@ -100,8 +133,11 @@ def _create_workbook(path: Path) -> None:
 
     status_column = get_column_letter(len(AGENT_COLUMNS) + 1)
     validation = DataValidation(
-        type="list", formula1='"' + ",".join(STATUS_CHOICES) + '"', allow_blank=True,
-        errorTitle="Statut", error="Choisissez un statut dans la liste.",
+        type="list",
+        formula1='"' + ",".join(STATUS_CHOICES) + '"',
+        allow_blank=True,
+        errorTitle="Statut",
+        error="Choisissez un statut dans la liste.",
     )
     tracking.add_data_validation(validation)
     validation.add(f"{status_column}2:{status_column}{_MAX_VALIDATED_ROWS}")
@@ -146,10 +182,22 @@ def _tracking_row(main: sqlite3.Row, members: list[sqlite3.Row], timezone: ZoneI
     sources = list(dict.fromkeys(row["source_name"] for row in members))
     main_link, other_links = _links(members)
     return [
-        main["id"], main["company"] or main["company_key"], main["title"], main["location"],
-        CONTRACT_LABELS.get(main["contract_type"] or "", ""), SECTOR_LABELS.get(main["sector"] or "", ""),
-        main["source_name"], sources[0], ", ".join(sources), published, collected, delay,
-        main_link, "\n".join(other_links), status_label(main), "; ".join(flags),
+        main["id"],
+        main["company"] or main["company_key"],
+        main["title"],
+        main["location"],
+        CONTRACT_LABELS.get(main["contract_type"] or "", ""),
+        SECTOR_LABELS.get(main["sector"] or "", ""),
+        main["source_name"],
+        sources[0],
+        ", ".join(sources),
+        published,
+        collected,
+        delay,
+        main_link,
+        "\n".join(other_links),
+        status_label(main),
+        "; ".join(flags),
         main["match_score"] if "match_score" in main.keys() else None,
     ]
 
@@ -214,10 +262,16 @@ def append_offers(
             _append(
                 rejected_sheet,
                 [
-                    main["id"], main["company"], main["title"], main["location"],
-                    CONTRACT_LABELS.get(main["contract_type"] or "", ""), main["source_name"],
-                    _local(main["published_at"], timezone), _local(main["first_seen_at"], timezone),
-                    "; ".join(json.loads(main["reasons"])), main["apply_url"] or main["url"],
+                    main["id"],
+                    main["company"],
+                    main["title"],
+                    main["location"],
+                    CONTRACT_LABELS.get(main["contract_type"] or "", ""),
+                    main["source_name"],
+                    _local(main["published_at"], timezone),
+                    _local(main["first_seen_at"], timezone),
+                    "; ".join(json.loads(main["reasons"])),
+                    main["apply_url"] or main["url"],
                 ],
                 link_columns=(10,),
             )
@@ -225,11 +279,18 @@ def append_offers(
         written.append(main["id"])
 
     for event in events:
-        _append(verifications, [
-            _local(event["at"], timezone), event["group_id"], event["company"] or event["company_key"],
-            event["title"], VERIFICATION_LABELS.get(event["old_status"] or "", ""),
-            VERIFICATION_LABELS.get(event["new_status"], event["new_status"]), event["detail"],
-        ])
+        _append(
+            verifications,
+            [
+                _local(event["at"], timezone),
+                event["group_id"],
+                event["company"] or event["company_key"],
+                event["title"],
+                VERIFICATION_LABELS.get(event["old_status"] or "", ""),
+                VERIFICATION_LABELS.get(event["new_status"], event["new_status"]),
+                event["detail"],
+            ],
+        )
 
     for sheet in workbook.worksheets:
         sheet.auto_filter.ref = f"A1:{get_column_letter(sheet.max_column)}{max(sheet.max_row, 1)}"

@@ -123,8 +123,13 @@ def test_pipeline_groups_duplicates(config, tmp_path) -> None:
     storage = Storage(tmp_path / "test.db")
     sectors = SectorIndex.build(config, ROOT / "sectors.yaml")
     first = make_offer(source_offer_id="1", title="Data Analyst H/F", location="Paris 8e")
-    same = make_offer(source="email_alert", source_name="email:apec", source_offer_id="A",
-                      title="Data Analyst (F/H)", location="Paris")
+    same = make_offer(
+        source="email_alert",
+        source_name="email:apec",
+        source_offer_id="A",
+        title="Data Analyst (F/H)",
+        location="Paris",
+    )
     other = make_offer(source_offer_id="2", title="Data Engineer H/F")
 
     counts = process_offers([first, same, other], config, storage, sectors, NOW)
@@ -142,16 +147,26 @@ def test_pipeline_groups_duplicates(config, tmp_path) -> None:
 @pytest.mark.parametrize(
     ("first", "second"),
     [
-        (("Conseiller commercial F/H", "Clermont-Ferrand", "fixed_term", None),
-         ("Conseiller Commercial - LAON F/H", "LAON", "fixed_term", None)),
-        (("Gestionnaire indemnisation CDD - Rouen F/H", "rouen", "fixed_term", None),
-         ("Gestionnaire Indemnisation CDD - Montauban F/H", "montauban", "fixed_term", None)),
-        (("Juriste Conseil - CDI - Rouen F/H", "Rouen", "permanent", None),
-         ("Juriste Conseil - CDD 6 mois - Rouen F/H", "Rouen", "fixed_term", None)),
-        (("CEO Founder Associate", "Paris, France", None, None),
-         ("CTO Founder Associate", "Paris, France", None, None)),
-        (("Conseiller commercial", "Lyon", "permanent", "2026-1"),
-         ("Conseiller commercial", "Lyon", "permanent", "2026-2")),
+        (
+            ("Conseiller commercial F/H", "Clermont-Ferrand", "fixed_term", None),
+            ("Conseiller Commercial - LAON F/H", "LAON", "fixed_term", None),
+        ),
+        (
+            ("Gestionnaire indemnisation CDD - Rouen F/H", "rouen", "fixed_term", None),
+            ("Gestionnaire Indemnisation CDD - Montauban F/H", "montauban", "fixed_term", None),
+        ),
+        (
+            ("Juriste Conseil - CDI - Rouen F/H", "Rouen", "permanent", None),
+            ("Juriste Conseil - CDD 6 mois - Rouen F/H", "Rouen", "fixed_term", None),
+        ),
+        (
+            ("CEO Founder Associate", "Paris, France", None, None),
+            ("CTO Founder Associate", "Paris, France", None, None),
+        ),
+        (
+            ("Conseiller commercial", "Lyon", "permanent", "2026-1"),
+            ("Conseiller commercial", "Lyon", "permanent", "2026-2"),
+        ),
     ],
 )
 def test_different_offers_are_not_merged(config, first, second) -> None:
@@ -175,8 +190,12 @@ def test_experience_range_with_unicode_dash() -> None:
 
 @pytest.mark.parametrize(
     ("text", "expected"),
-    [("Poste en CDI basé à Paris.", "permanent"), ("CDD de 6 mois.", "fixed_term"),
-     ("CDI ou CDD selon profil.", None), ("Rejoignez-nous !", None)],
+    [
+        ("Poste en CDI basé à Paris.", "permanent"),
+        ("CDD de 6 mois.", "fixed_term"),
+        ("CDI ou CDD selon profil.", None),
+        ("Rejoignez-nous !", None),
+    ],
 )
 def test_contract_from_description(text, expected) -> None:
     from job_agent.processing.extract import contract_from_description
@@ -186,8 +205,13 @@ def test_contract_from_description(text, expected) -> None:
 
 @pytest.mark.parametrize(
     ("title", "expected"),
-    [("Data Analyst Marketing F/H", True), ("Business Analyst", True), ("Comptable", False),
-     ("Stage Data Analyst", False), ("Consultant Data Engineer", False)],
+    [
+        ("Data Analyst Marketing F/H", True),
+        ("Business Analyst", True),
+        ("Comptable", False),
+        ("Stage Data Analyst", False),
+        ("Consultant Data Engineer", False),
+    ],
 )
 def test_title_is_candidate(config, title, expected) -> None:
     from job_agent.processing.filters import title_is_candidate
@@ -199,7 +223,9 @@ def test_title_is_candidate(config, title, expected) -> None:
     "title", ["Data Engineer / Architecte Data Junior F/H", "Lead Data Analyst débutant", "Data Engineer Junior"]
 )
 def test_junior_titles_are_never_too_advanced(config, title) -> None:
-    offer = make_offer(title=title, description="Stack : Kafka, Scala et Kubernetes. Encadrement d'équipe. 2 ans d'expérience.")
+    offer = make_offer(
+        title=title, description="Stack : Kafka, Scala et Kubernetes. Encadrement d'équipe. 2 ans d'expérience."
+    )
     result = evaluate(offer, config, NOW)
     assert result.kept and result.junior
     assert "poste junior" in result.flags
@@ -218,9 +244,13 @@ def test_junior_offers_come_first_on_the_same_day(config, tmp_path) -> None:
     sectors = SectorIndex.build(config, ROOT / "sectors.yaml")
     day = NOW - timedelta(hours=10)
     offers = [
-        make_offer(source_offer_id="1", title="Data Analyst", company="Inconnue", published_at=day + timedelta(hours=3)),
+        make_offer(
+            source_offer_id="1", title="Data Analyst", company="Inconnue", published_at=day + timedelta(hours=3)
+        ),
         make_offer(source_offer_id="2", title="Data Engineer Junior", company="Autre", published_at=day),
-        make_offer(source_offer_id="3", title="Data Scientist", company="Société X", published_at=NOW - timedelta(days=2)),
+        make_offer(
+            source_offer_id="3", title="Data Scientist", company="Société X", published_at=NOW - timedelta(days=2)
+        ),
     ]
     process_offers(offers, config, storage, sectors, NOW)
     titles = [row["title"] for row in storage.pending_notifications()]

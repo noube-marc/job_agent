@@ -61,15 +61,17 @@ def parse_search_page(html: str) -> list[dict]:
             date = datetime.strptime(raw_date, "%d-%m-%Y").date()
         except ValueError:
             date = None
-        offers.append({
-            "id": match.group(1),
-            "title": _text(link),
-            "url": url,
-            "date": date,
-            "country": _text(article.select_one(".list-item-jobCountry")),
-            "contract": _text(article.select_one(".list-item-employmentType")) or None,
-            "employer": _text(article.select_one(".list-item-jobEmployerCompany")) or None,
-        })
+        offers.append(
+            {
+                "id": match.group(1),
+                "title": _text(link),
+                "url": url,
+                "date": date,
+                "country": _text(article.select_one(".list-item-jobCountry")),
+                "contract": _text(article.select_one(".list-item-employmentType")) or None,
+                "employer": _text(article.select_one(".list-item-jobEmployerCompany")) or None,
+            }
+        )
     return offers
 
 

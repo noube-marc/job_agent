@@ -1,6 +1,6 @@
 """Shared test helpers."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +12,7 @@ from job_agent.offer import Offer
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE_CONFIG = ROOT / "config.example.yaml"
-NOW = datetime(2026, 11, 10, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)
 
 
 @pytest.fixture(autouse=True)

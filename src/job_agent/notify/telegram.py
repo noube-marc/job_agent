@@ -15,6 +15,7 @@ import json
 import os
 import sqlite3
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -52,10 +53,8 @@ class TelegramClient:
             raise NotificationError(f"Telegram injoignable ({type(error).__name__})") from None
         if response.status_code != 200:
             description = ""
-            try:
+            with suppress(ValueError):
                 description = response.json().get("description", "")
-            except ValueError:
-                pass
             raise NotificationError(f"Telegram a refusé l'envoi (HTTP {response.status_code}) {description}".strip())
         return response.json().get("result", {})
 
@@ -132,9 +131,12 @@ def format_offer(main: sqlite3.Row, members: list[sqlite3.Row], config: AppConfi
         remarks.append("⭐ secteur prioritaire")
     if "experience_flag" in fields and FLAG_EXPERIENCE_UNSPECIFIED in flags:
         remarks.append("expérience non précisée")
-    remarks += [flag for flag in flags
-                if flag.startswith(("écart technique", "expérience incohérente", "doublon probable", "IA :"))
-                or flag.endswith("(non bloquant : poste junior)")]
+    remarks += [
+        flag
+        for flag in flags
+        if flag.startswith(("écart technique", "expérience incohérente", "doublon probable", "IA :"))
+        or flag.endswith("(non bloquant : poste junior)")
+    ]
     if remarks:
         lines.append("ℹ️ " + e(" · ".join(remarks)))
     if "url" in fields:
@@ -234,7 +236,10 @@ def telegram_setup() -> int:
         if "id" in chat:
             chats[str(chat["id"])] = chat.get("first_name") or chat.get("title") or chat.get("type", "")
     if not chats:
-        print("Aucun message reçu. Envoyez un message (par exemple « bonjour ») à votre bot, puis relancez cette commande.")
+        print(
+            "Aucun message reçu. Envoyez un message (par exemple « bonjour ») à votre bot, "
+            "puis relancez cette commande."
+        )
         return 1
     for chat_id, name in chats.items():
         print(f"  Conversation « {name} » : TELEGRAM_CHAT_ID={chat_id}")

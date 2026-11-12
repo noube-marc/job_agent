@@ -27,12 +27,8 @@ def _build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True, metavar="commande")
     commands.add_parser("check-config", help="vérifie le fichier de configuration")
     run_parser = commands.add_parser("run", help="lance un passage de collecte")
-    run_parser.add_argument(
-        "--force", action="store_true", help="lance le passage même hors de la plage horaire"
-    )
-    commands.add_parser(
-        "telegram-setup", help="aide à trouver TELEGRAM_CHAT_ID après la création du bot"
-    )
+    run_parser.add_argument("--force", action="store_true", help="lance le passage même hors de la plage horaire")
+    commands.add_parser("telegram-setup", help="aide à trouver TELEGRAM_CHAT_ID après la création du bot")
     commands.add_parser("gmail-setup", help="autorise l'accès Gmail en lecture seule")
     commands.add_parser("ai-sheet", help="prépare 30 offres à annoter pour mesurer l'IA")
     commands.add_parser("ai-evaluate", help="compare l'IA et les règles sur les offres annotées")
@@ -45,9 +41,7 @@ def _build_parser() -> argparse.ArgumentParser:
     commands.add_parser(
         "relevance-model", help="mesure un modèle « offre pertinente pour moi » sur la feuille d'étiquetage"
     )
-    commands.add_parser(
-        "gmail-senders", help="liste les expéditeurs des e-mails du libellé (pour allowed_senders)"
-    )
+    commands.add_parser("gmail-senders", help="liste les expéditeurs des e-mails du libellé (pour allowed_senders)")
     return parser
 
 
@@ -113,7 +107,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         storage = Storage(config.storage.database_path)
         try:
-            return label_sheet_command(storage, [*config.labelling.not_relevant_companies, *config.search.excluded_companies])
+            return label_sheet_command(
+                storage, [*config.labelling.not_relevant_companies, *config.search.excluded_companies]
+            )
         finally:
             storage.close()
     if args.command == "lettre":
@@ -131,9 +127,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         storage = Storage(config.storage.database_path)
         try:
-            return relevance_command(
-                storage, config.ai.anonymized_cv_path, config.technical_profile.mastered_skills
-            )
+            return relevance_command(storage, config.ai.anonymized_cv_path, config.technical_profile.mastered_skills)
         finally:
             storage.close()
     if args.command in ("ai-sheet", "ai-evaluate"):

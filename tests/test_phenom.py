@@ -13,15 +13,28 @@ SITE = "https://careers.exemple.com/global/en/search-results?qcountry=France"
 
 
 def _job(job_id: int, title: str, country: str = "France", posted: str = "2026-11-10T09:00:00.000+0000") -> dict:
-    return {"jobId": str(job_id), "title": title, "country": country, "postedDate": posted,
-            "location": "Saint-Ouen, France, 93400", "remote": "Hybrid working",
-            "recAction": "recruteur@exemple.com"}
+    return {
+        "jobId": str(job_id),
+        "title": title,
+        "country": country,
+        "postedDate": posted,
+        "location": "Saint-Ouen, France, 93400",
+        "remote": "Hybrid working",
+        "recAction": "recruteur@exemple.com",
+    }
 
 
 def _detail_page(contract: str) -> str:
-    data = {"jobDetail": {"data": {"job": {
-        "employmentType": contract, "description": "<p>Tableaux de bord <b>Power BI</b> et SQL.</p>",
-    }}}}
+    data = {
+        "jobDetail": {
+            "data": {
+                "job": {
+                    "employmentType": contract,
+                    "description": "<p>Tableaux de bord <b>Power BI</b> et SQL.</p>",
+                }
+            }
+        }
+    }
     return f"<script>phApp.ddo = {json.dumps(data)}; phApp.sessionParams = {{}};</script>"
 
 
@@ -38,7 +51,7 @@ class PhenomFake:
             body = json.loads(request.content)
             assert body["selected_fields"] == {"country": ["France"]} and body["lang"] == "en_global"
             start = body["from"]
-            page = self.jobs[start:start + body["size"]]
+            page = self.jobs[start : start + body["size"]]
             return httpx.Response(200, json={"refineSearch": {"totalHits": len(self.jobs), "data": {"jobs": page}}})
         job_id = request.url.path.rsplit("/", 1)[-1]
         return httpx.Response(200, text=_detail_page(self.contracts.get(job_id, "Permanent")))
@@ -47,8 +60,13 @@ class PhenomFake:
 def test_phenom_collect(config, monkeypatch) -> None:
     monkeypatch.setattr(phenom, "PAGE_SIZE", 2)
     fake = PhenomFake(
-        [_job(1, "Data Analyst H/F"), _job(2, "Comptable"), _job(3, "Data Engineer", country="Germany"),
-         _job(4, "Data Scientist"), _job(5, "BI Analyst")],
+        [
+            _job(1, "Data Analyst H/F"),
+            _job(2, "Comptable"),
+            _job(3, "Data Engineer", country="Germany"),
+            _job(4, "Data Scientist"),
+            _job(5, "BI Analyst"),
+        ],
         {"5": "Temporary"},
     )
     client = PoliteClient(0, 5, transport=httpx.MockTransport(fake), sleep=lambda s: None)
@@ -75,8 +93,15 @@ def test_reposted_offer_keeps_the_older_jobposting_date(config) -> None:
         if request.url.path == "/robots.txt":
             return httpx.Response(404)
         if request.url.path == "/widgets":
-            return httpx.Response(200, json={"refineSearch": {"totalHits": 1, "data": {"jobs": [
-                _job(1, "Data Analyst H/F", posted="2026-11-10T11:21:42.000+0000")]}}})
+            return httpx.Response(
+                200,
+                json={
+                    "refineSearch": {
+                        "totalHits": 1,
+                        "data": {"jobs": [_job(1, "Data Analyst H/F", posted="2026-11-10T11:21:42.000+0000")]},
+                    }
+                },
+            )
         posting = '<script type="application/ld+json">{"@type": "JobPosting", "datePosted": "2026-11-02"}</script>'
         return httpx.Response(200, text=_detail_page("Permanent") + posting)
 

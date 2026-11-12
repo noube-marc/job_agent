@@ -11,7 +11,6 @@ Every model forbids unknown keys (extra="forbid"), so a typo such as
 from datetime import date
 from pathlib import Path
 from typing import Literal
-
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -19,15 +18,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # ---------------------------------------------------------------------
 # Closed lists of allowed values
 # ---------------------------------------------------------------------
-ContractType = Literal[
-    "permanent", "fixed_term", "internship", "apprenticeship", "freelance"
-]
+ContractType = Literal["permanent", "fixed_term", "internship", "apprenticeship", "freelance"]
 WorkMode = Literal["onsite", "hybrid", "full_remote"]
-PrioritySector = Literal[
-    "insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail"
-]
+PrioritySector = Literal["insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail"]
 CompanySector = Literal[
-    "insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail",
+    "insurance",
+    "banking",
+    "agriculture_agrifood",
+    "consumer_goods",
+    "retail",
     "other",
 ]
 DateSource = Literal["career_site", "job_board", "first_seen"]
@@ -35,8 +34,16 @@ Weekday = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 TrackingBackend = Literal["google_sheets", "excel", "csv"]
 NotificationChannel = Literal["telegram", "email", "none"]
 NotificationField = Literal[
-    "title", "company", "location", "contract", "publication_date", "url",
-    "experience_flag", "priority_flag", "verification_status", "match_score",
+    "title",
+    "company",
+    "location",
+    "contract",
+    "publication_date",
+    "url",
+    "experience_flag",
+    "priority_flag",
+    "verification_status",
+    "match_score",
 ]
 AIProvider = Literal["gemini"]
 
@@ -148,7 +155,9 @@ class CompaniesConfig(StrictModel):
         for company in self.watchlist:
             key = company.name.strip().lower()
             if key in seen:
-                raise ValueError(f"l'entreprise « {company.name} » apparaît deux fois dans watchlist : gardez une seule ligne.")
+                raise ValueError(
+                    f"l'entreprise « {company.name} » apparaît deux fois dans watchlist : gardez une seule ligne."
+                )
             seen.add(key)
             if company.careers_url and not company.careers_url.startswith(("https://", "http://")):
                 raise ValueError(

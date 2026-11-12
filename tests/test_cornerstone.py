@@ -15,9 +15,13 @@ PAGE = '<script>var csod = {"token":"anonymous-token","cultureID":13,"endpoints"
 
 
 def _requisition(rid: int, title: str, country: str = "FR", date: str = "10/11/2026") -> dict:
-    return {"requisitionId": rid, "displayJobTitle": title, "postingEffectiveDate": date,
-            "locations": [{"city": "PARIS", "country": country}],
-            "externalDescription": "<p>Analyse des ventes avec <b>SQL</b>. CDI.</p>"}
+    return {
+        "requisitionId": rid,
+        "displayJobTitle": title,
+        "postingEffectiveDate": date,
+        "locations": [{"city": "PARIS", "country": country}],
+        "externalDescription": "<p>Analyse des ventes avec <b>SQL</b>. CDI.</p>",
+    }
 
 
 class Fake:
@@ -34,14 +38,20 @@ class Fake:
         body = json.loads(request.content)
         self.searches.append(body)
         start = (body["pageNumber"] - 1) * body["pageSize"]
-        page = self.requisitions[start:start + body["pageSize"]]
+        page = self.requisitions[start : start + body["pageSize"]]
         return httpx.Response(200, json={"data": {"totalCount": len(self.requisitions), "requisitions": page}})
 
 
 def test_cornerstone_collect(config, monkeypatch) -> None:
     monkeypatch.setattr(cornerstone, "PAGE_SIZE", 2)
-    fake = Fake([_requisition(1, "Data Analyst F/H"), _requisition(2, "CDD - Opérateur"),
-                 _requisition(3, "Data Engineer", country="ES"), _requisition(4, "Data Scientist")])
+    fake = Fake(
+        [
+            _requisition(1, "Data Analyst F/H"),
+            _requisition(2, "CDD - Opérateur"),
+            _requisition(3, "Data Engineer", country="ES"),
+            _requisition(4, "Data Scientist"),
+        ]
+    )
     pauses: list[float] = []
     client = PoliteClient(0, 5, transport=httpx.MockTransport(fake), sleep=pauses.append)
     company = WatchedCompany(name="Exemple", sector="agriculture_agrifood", careers_url=SITE, ats="cornerstone")

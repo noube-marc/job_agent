@@ -24,8 +24,7 @@ from job_agent.text import plain, tokens
 _WEIGHTS = {"title": 0.5, "department": 0.2, "contract": 0.1, "description": 0.2}
 # Words that do not describe the job itself.
 _TITLE_NOISE = frozenset(
-    tokens("cdi cdd interim stage internship alternance mois months freelance "
-           "france remote teletravail hybride")
+    tokens("cdi cdd interim stage internship alternance mois months freelance france remote teletravail hybride")
 )
 _PLACE_NOISE = frozenset({"france", "cedex", "metropolitan", "remote"})
 
@@ -54,8 +53,7 @@ def signature(
 ) -> OfferSignature:
     place_words = frozenset(w for w in plain(location or "").split() if len(w) > 2 and not w.isdigit()) - _PLACE_NOISE
     title_words = frozenset(
-        w for w in tokens(title)
-        if not any(ch.isdigit() for ch in w) and w not in _TITLE_NOISE and w not in place_words
+        w for w in tokens(title) if not any(ch.isdigit() for ch in w) and w not in _TITLE_NOISE and w not in place_words
     )
     return OfferSignature(
         company_key=company_key,

@@ -1,5 +1,6 @@
 """Relevance model study, on synthetic offers (no real label, no model download)."""
 
+import pytest
 from openpyxl import load_workbook
 
 from conftest import NOW, ROOT, make_offer
@@ -8,7 +9,6 @@ from job_agent.ai.relevance import build_dataset, read_labels, run_study, write_
 from job_agent.processing.pipeline import process_offers
 from job_agent.processing.sectors import SectorIndex
 from job_agent.storage import Storage
-import pytest
 
 
 @pytest.fixture(autouse=True)
@@ -30,11 +30,14 @@ def _labelled(config, tmp_path):
     offers = []
     for i in range(30):
         relevant = i % 2 == 0
-        offers.append(make_offer(
-            source_offer_id=str(i), company=f"Société {i}",
-            title="Data Analyst junior" if relevant else "Data Engineer",
-            description=("Requêtes SQL et Power BI. " if relevant else "Plateforme Kafka et Spark. ") * 30,
-        ))
+        offers.append(
+            make_offer(
+                source_offer_id=str(i),
+                company=f"Société {i}",
+                title="Data Analyst junior" if relevant else "Data Engineer",
+                description=("Requêtes SQL et Power BI. " if relevant else "Plateforme Kafka et Spark. ") * 30,
+            )
+        )
     process_offers(offers, config, storage, SectorIndex.build(config, ROOT / "sectors.yaml"), NOW)
     path = tmp_path / "etiquetage.xlsx"
     update_sheet(storage, path)

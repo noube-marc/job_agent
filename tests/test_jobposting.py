@@ -22,11 +22,23 @@ OPAQUE = """<urlset><url><loc>https://emplois.exemple.fr/offre/tq3g3vmorv</loc><
 
 
 def _page(title: str, country: str = "FR", kind: object = "PERMANENT") -> str:
-    posting = {"@context": "https://schema.org", "@type": "JobPosting", "title": title,
-               "datePosted": "2026-11-05T08:36:23.676Z", "employmentType": kind,
-               "description": "<p>Modèles de prévision en <b>Python</b>.</p>",
-               "jobLocation": {"@type": "Place", "address": {"@type": "PostalAddress", "postalCode": "60000",
-                                                             "addressLocality": "Beauvais", "addressCountry": country}}}
+    posting = {
+        "@context": "https://schema.org",
+        "@type": "JobPosting",
+        "title": title,
+        "datePosted": "2026-11-05T08:36:23.676Z",
+        "employmentType": kind,
+        "description": "<p>Modèles de prévision en <b>Python</b>.</p>",
+        "jobLocation": {
+            "@type": "Place",
+            "address": {
+                "@type": "PostalAddress",
+                "postalCode": "60000",
+                "addressLocality": "Beauvais",
+                "addressCountry": country,
+            },
+        },
+    }
     return f'<script type="application/ld+json">{json.dumps(posting)}</script>'
 
 
@@ -65,8 +77,11 @@ def test_collect(config) -> None:
     # Category and presentation pages are not offers; the Belgian offer and the page
     # without JobPosting are skipped.
     assert [o.source_offer_id for o in offers] == ["1001", "1002"]
-    assert fake.opened == ["/jobs/data-analyst-h-f-paris-1001", "/emploi/paris/data-scientist-f-h/3441/46789675648",
-                           "/jobs/data-engineer-h-f-bruxelles-1004"]
+    assert fake.opened == [
+        "/jobs/data-analyst-h-f-paris-1001",
+        "/emploi/paris/data-scientist-f-h/3441/46789675648",
+        "/jobs/data-engineer-h-f-bruxelles-1004",
+    ]
     first = offers[0]
     assert first.title == "Data Scientist (H/F)" and first.location == "60000 Beauvais"
     assert first.description == "Modèles de prévision en Python." and first.contract_type_raw is None
@@ -105,7 +120,7 @@ def test_older_date_written_on_the_page_wins() -> None:
     from zoneinfo import ZoneInfo
 
     zone = ZoneInfo("Europe/Paris")
-    page = '<li><svg></svg><span>Publié le 16/10/2026</span></li>' + _page("Data Scientist (H/F)")
+    page = "<li><svg></svg><span>Publié le 16/10/2026</span></li>" + _page("Data Scientist (H/F)")
     posted = jobposting._date(jobposting.job_posting(page)["datePosted"], zone)  # 05/11: a republication
     published = jobposting.earliest(posted, jobposting.visible_date(page, zone))
     assert published.date().isoformat() == "2026-10-16"

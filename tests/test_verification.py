@@ -10,7 +10,14 @@ from conftest import NOW, ROOT, make_offer
 from job_agent.processing.pipeline import process_offers
 from job_agent.processing.sectors import SectorIndex
 from job_agent.processing.verification import (
-    DISAPPEARED, MISSING, PENDING, UNVERIFIABLE, VERIFIED, Listing, check_pending, recheck_tracked,
+    DISAPPEARED,
+    MISSING,
+    PENDING,
+    UNVERIFIABLE,
+    VERIFIED,
+    Listing,
+    check_pending,
+    recheck_tracked,
 )
 from job_agent.storage import Storage
 from job_agent.tracking.excel import SHEET_TRACKING, SHEET_VERIFICATIONS, append_offers
@@ -25,18 +32,34 @@ def vconfig(config):
 
 
 def _alert(**overrides):
-    values = dict(source="email_alert", source_name="email:linkedin", source_offer_id="a1",
-                  url="https://www.linkedin.com/jobs/view/1/", company="Alan", title="Data Analyst H/F",
-                  location="Paris", description="", contract_type=None, published_at=None,
-                  published_at_source=None)
+    values = dict(
+        source="email_alert",
+        source_name="email:linkedin",
+        source_offer_id="a1",
+        url="https://www.linkedin.com/jobs/view/1/",
+        company="Alan",
+        title="Data Analyst H/F",
+        location="Paris",
+        description="",
+        contract_type=None,
+        published_at=None,
+        published_at_source=None,
+    )
     values.update(overrides)
     return make_offer(**values)
 
 
 def _career(**overrides):
-    values = dict(source="career_page", source_name="ashby:Alan", source_offer_id="c1", company="Alan",
-                  url="https://jobs.ashbyhq.com/alan/1", title="Data Analyst H/F", location="Paris",
-                  description="")
+    values = dict(
+        source="career_page",
+        source_name="ashby:Alan",
+        source_offer_id="c1",
+        company="Alan",
+        url="https://jobs.ashbyhq.com/alan/1",
+        title="Data Analyst H/F",
+        location="Paris",
+        description="",
+    )
     values.update(overrides)
     return make_offer(**values)
 
@@ -55,11 +78,15 @@ def _alan_ok():
 
 def test_initial_status(vconfig, tmp_path) -> None:
     storage = Storage(tmp_path / "t.db")
-    _process(vconfig, storage, [
-        _alert(),  # Alan: watched, with a connector
-        _alert(source_offer_id="a2", company="BNP Paribas", title="Data Engineer"),  # watched, no connector
-        _alert(source_offer_id="a3", company="Société Inconnue", title="Data Scientist"),  # not watched
-    ])
+    _process(
+        vconfig,
+        storage,
+        [
+            _alert(),  # Alan: watched, with a connector
+            _alert(source_offer_id="a2", company="BNP Paribas", title="Data Engineer"),  # watched, no connector
+            _alert(source_offer_id="a3", company="Société Inconnue", title="Data Scientist"),  # not watched
+        ],
+    )
     statuses = [row["verification"] for row in storage.connection.execute("SELECT * FROM offers ORDER BY id")]
     assert statuses == [PENDING, UNVERIFIABLE, UNVERIFIABLE]
     storage.close()
@@ -137,11 +164,15 @@ def test_close_title_on_career_site_is_a_probable_match(vconfig, tmp_path) -> No
 
 def test_recheck_marks_disappeared_offers(vconfig, tmp_path) -> None:
     storage = Storage(tmp_path / "t.db")
-    _process(vconfig, storage, [
-        _career(source_offer_id="c1", published_at=NOW - timedelta(days=2)),
-        _career(source_offer_id="c2", title="Data Engineer", published_at=NOW - timedelta(days=1)),
-        _career(source_offer_id="c3", title="Data Scientist", published_at=NOW - timedelta(days=40)),
-    ])
+    _process(
+        vconfig,
+        storage,
+        [
+            _career(source_offer_id="c1", published_at=NOW - timedelta(days=2)),
+            _career(source_offer_id="c2", title="Data Engineer", published_at=NOW - timedelta(days=1)),
+            _career(source_offer_id="c3", title="Data Scientist", published_at=NOW - timedelta(days=40)),
+        ],
+    )
     storage.mark_tracked([1, 2, 3])
     storage.mark_notified([1, 2, 3], "telegram")
     # This run, the site lists c2 only, back to 10 days ago: c1 is gone, c3 is too old to judge.

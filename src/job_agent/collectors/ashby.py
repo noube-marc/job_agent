@@ -4,7 +4,7 @@
 "https://jobs.ashbyhq.com/alan". Only offers located in France are kept.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from urllib.parse import urlsplit
 
 from job_agent.collectors.base import CollectContext, SourceError, html_to_text

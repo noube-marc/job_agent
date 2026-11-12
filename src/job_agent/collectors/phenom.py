@@ -20,7 +20,6 @@ import json
 import re
 from datetime import datetime
 from urllib.parse import urlsplit
-
 from zoneinfo import ZoneInfo
 
 from job_agent.collectors.base import CollectContext, SourceError, html_to_text
@@ -33,11 +32,30 @@ from job_agent.processing.filters import title_is_candidate
 PAGE_SIZE = 100
 MAX_PAGES = 20
 COUNTRY_NAMES = {"FR": "France", "BE": "Belgium", "CH": "Switzerland", "LU": "Luxembourg"}
-WORK_MODES = {"hybrid working": "hybrid", "hybrid": "hybrid", "in-office": "onsite", "on-site": "onsite",
-              "remote": "full_remote", "fully remote": "full_remote"}
+WORK_MODES = {
+    "hybrid working": "hybrid",
+    "hybrid": "hybrid",
+    "in-office": "onsite",
+    "on-site": "onsite",
+    "remote": "full_remote",
+    "fully remote": "full_remote",
+}
 _DDO = re.compile(r"phApp\.ddo\s*=\s*(\{.*?\});\s*phApp", re.S)
-KEPT_FIELDS = ("jobId", "title", "postedDate", "location", "city", "state", "country", "remote",
-               "employmentType", "type", "category", "employingEntity", "jobLevel")
+KEPT_FIELDS = (
+    "jobId",
+    "title",
+    "postedDate",
+    "location",
+    "city",
+    "state",
+    "country",
+    "remote",
+    "employmentType",
+    "type",
+    "category",
+    "employingEntity",
+    "jobLevel",
+)
 
 
 def site_parts(careers_url: str) -> tuple[str, str, str]:
@@ -51,8 +69,14 @@ def site_parts(careers_url: str) -> tuple[str, str, str]:
 
 def search_body(site_country: str, language: str, country_name: str, start: int) -> dict:
     return {
-        "lang": f"{language}_{site_country}", "country": site_country, "ddoKey": "refineSearch",
-        "from": start, "size": PAGE_SIZE, "jobs": True, "keywords": "", "global": True,
+        "lang": f"{language}_{site_country}",
+        "country": site_country,
+        "ddoKey": "refineSearch",
+        "from": start,
+        "size": PAGE_SIZE,
+        "jobs": True,
+        "keywords": "",
+        "global": True,
         "selected_fields": {"country": [country_name]},
     }
 
@@ -66,7 +90,7 @@ def page_data(html: str) -> dict:
 
 
 def _utc(value: str | None) -> datetime | None:
-    """"2026-11-10T09:12:00.000+0000" as an aware datetime."""
+    """ "2026-11-10T09:12:00.000+0000" as an aware datetime."""
     if not value:
         return None
     try:
@@ -114,7 +138,9 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         # "postedDate" is the LAST posting (a reposted offer looks new): the JobPosting date
         # of the offer page is older in that case, and the oldest one is kept.
         posting_date = (job_posting(page).get("datePosted") or "") if page else ""
-        published = earliest(_utc(job.get("postedDate")), _date(posting_date, ZoneInfo(context.config.schedule.timezone)))
+        published = earliest(
+            _utc(job.get("postedDate")), _date(posting_date, ZoneInfo(context.config.schedule.timezone))
+        )
         offers.append(
             Offer(
                 source="career_page",

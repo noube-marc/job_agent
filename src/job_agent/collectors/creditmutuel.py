@@ -39,8 +39,9 @@ def parse_site_map(xml: str) -> list[dict]:
         url = loc.group(1).replace("&amp;", "&")
         offer_id = (parse_qs(urlsplit(url).query).get("annonce") or [None])[0]
         if offer_id:
-            offers.append({"id": offer_id, "url": url,
-                           "date": date.fromisoformat(lastmod.group(1)) if lastmod else None})
+            offers.append(
+                {"id": offer_id, "url": url, "date": date.fromisoformat(lastmod.group(1)) if lastmod else None}
+            )
     return offers
 
 
@@ -56,8 +57,11 @@ def parse_offer_page(html: str) -> dict:
                 fields[icon["title"].strip()] = value
     title_tag = soup.select_one("h1") or soup.title
     # The offer text: the longest block that holds neither the fields nor the other offers.
-    blocks = [block for block in soup.find_all("div")
-              if not block.select("span.ei_root_icon[title]") and "Ces autres offres" not in block.get_text(" ")]
+    blocks = [
+        block
+        for block in soup.find_all("div")
+        if not block.select("span.ei_root_icon[title]") and "Ces autres offres" not in block.get_text(" ")
+    ]
     longest = max(blocks, key=lambda block: len(block.get_text(" ", strip=True)), default=None)
     return {
         "title": title_tag.get_text(" ", strip=True) if title_tag else "",
@@ -84,12 +88,19 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         day = item["date"]
         if context.is_known(source_name, item["id"]):
             # Still listed: reported (not read again), so the daily recheck sees it online.
-            offers.append(Offer(
-                source="career_page", source_name=source_name, source_offer_id=item["id"], url=item["url"],
-                title=item["id"], company=company.name, first_seen_at=context.now,
-                published_at=datetime(day.year, day.month, day.day, tzinfo=zone) if day else None,
-                published_at_source="career_site" if day else None,
-            ))
+            offers.append(
+                Offer(
+                    source="career_page",
+                    source_name=source_name,
+                    source_offer_id=item["id"],
+                    url=item["url"],
+                    title=item["id"],
+                    company=company.name,
+                    first_seen_at=context.now,
+                    published_at=datetime(day.year, day.month, day.day, tzinfo=zone) if day else None,
+                    published_at_source="career_site" if day else None,
+                )
+            )
             continue
         if item["date"] is not None and item["date"] < window_start:
             continue  # too old to be notified: not read

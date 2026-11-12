@@ -1,22 +1,29 @@
 """Hellowork alert e-mails (anonymised fixture, no real Gmail)."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from conftest import NOW
-from job_agent.gmail.parsers import PARSERS
 from job_agent.gmail.hellowork import parse_hellowork
+from job_agent.gmail.parsers import PARSERS
 from job_agent.gmail.reader import AlertEmail
 from job_agent.processing.filters import evaluate
 from job_agent.processing.pipeline import complete_offer
 
 FIXTURE = Path(__file__).parent / "fixtures" / "hellowork_alert.html"
-RECEIVED = datetime(2026, 11, 11, 7, 0, tzinfo=timezone.utc)
+RECEIVED = datetime(2026, 11, 11, 7, 0, tzinfo=UTC)
 
 
 def _alert(message_id: str = "h1") -> AlertEmail:
-    return AlertEmail(message_id, "hellowork", "alerte@emails.hellowork.com", "Alerte",
-                      RECEIVED, FIXTURE.read_text(encoding="utf-8"), "")
+    return AlertEmail(
+        message_id,
+        "hellowork",
+        "alerte@emails.hellowork.com",
+        "Alerte",
+        RECEIVED,
+        FIXTURE.read_text(encoding="utf-8"),
+        "",
+    )
 
 
 def test_hellowork_alert_cards() -> None:

@@ -12,7 +12,7 @@ agent only reads: it never modifies, moves or deletes an e-mail.
 import base64
 from collections import Counter
 from dataclasses import dataclass
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 from email.utils import parseaddr
 from typing import Any
 
@@ -58,7 +58,7 @@ def _header(message: dict, name: str) -> str:
 
 
 def _received_at(message: dict) -> datetime:
-    return datetime.fromtimestamp(int(message.get("internalDate", "0")) / 1000, tz=timezone.utc)
+    return datetime.fromtimestamp(int(message.get("internalDate", "0")) / 1000, tz=UTC)
 
 
 def _bodies(part: dict, found: dict[str, str]) -> None:
@@ -79,7 +79,7 @@ class GmailReader:
         if not label:
             raise GmailLockError("aucun libellé Gmail configuré (gmail_label) : aucune lecture.")
         self._label_id = self._find_label(label)
-        self._start = datetime.combine(settings.start_date, time(0, 0), timezone.utc)
+        self._start = datetime.combine(settings.start_date, time(0, 0), UTC)
 
     def _find_label(self, name: str) -> str:
         labels = self._labels.list(userId="me").execute().get("labels") or []
@@ -125,12 +125,17 @@ class GmailReader:
                 continue
             bodies: dict[str, str] = {}
             _bodies(message.get("payload") or {}, bodies)
-            alerts.append(AlertEmail(
-                message_id=message_id, provider=provider,
-                sender=parseaddr(_header(message, "From"))[1].lower(),
-                subject=_header(message, "Subject"), received_at=_received_at(message),
-                html=bodies.get("text/html", ""), text=bodies.get("text/plain", ""),
-            ))
+            alerts.append(
+                AlertEmail(
+                    message_id=message_id,
+                    provider=provider,
+                    sender=parseaddr(_header(message, "From"))[1].lower(),
+                    subject=_header(message, "Subject"),
+                    received_at=_received_at(message),
+                    html=bodies.get("text/html", ""),
+                    text=bodies.get("text/plain", ""),
+                )
+            )
         return alerts
 
     def sender_summary(self) -> Counter[str]:

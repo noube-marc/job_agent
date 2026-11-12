@@ -100,8 +100,10 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
                 published_at=published,
                 published_at_source="career_site" if published else None,
                 first_seen_at=context.now,
-                raw_payload={"listing": {k: item.get(k) for k in ("id", "title", "contract", "location", "career_domain")},
-                             "brand": detail.get("brand_name")},
+                raw_payload={
+                    "listing": {k: item.get(k) for k in ("id", "title", "contract", "location", "career_domain")},
+                    "brand": detail.get("brand_name"),
+                },
             )
         )
     return offers
