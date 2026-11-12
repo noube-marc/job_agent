@@ -12,7 +12,7 @@ agent only reads: it never modifies, moves or deletes an e-mail.
 import base64
 from collections import Counter
 from dataclasses import dataclass
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 from email.utils import parseaddr
 from typing import Any
 
@@ -58,7 +58,7 @@ def _header(message: dict, name: str) -> str:
 
 
 def _received_at(message: dict) -> datetime:
-    return datetime.fromtimestamp(int(message.get("internalDate", "0")) / 1000, tz=timezone.utc)
+    return datetime.fromtimestamp(int(message.get("internalDate", "0")) / 1000, tz=UTC)
 
 
 def _bodies(part: dict, found: dict[str, str]) -> None:
@@ -79,7 +79,7 @@ class GmailReader:
         if not label:
             raise GmailLockError("aucun libellé Gmail configuré (gmail_label) : aucune lecture.")
         self._label_id = self._find_label(label)
-        self._start = datetime.combine(settings.start_date, time(0, 0), timezone.utc)
+        self._start = datetime.combine(settings.start_date, time(0, 0), UTC)
 
     def _find_label(self, name: str) -> str:
         labels = self._labels.list(userId="me").execute().get("labels") or []
@@ -125,13 +125,43 @@ class GmailReader:
                 continue
             bodies: dict[str, str] = {}
             _bodies(message.get("payload") or {}, bodies)
-            alerts.append(AlertEmail(
-                message_id=message_id, provider=provider,
-                sender=parseaddr(_header(message, "From"))[1].lower(),
-                subject=_header(message, "Subject"), received_at=_received_at(message),
-                html=bodies.get("text/html", ""), text=bodies.get("text/plain", ""),
-            ))
+            alerts.append(
+                AlertEmail(
+                    message_id=message_id,
+                    provider=provider,
+                    sender=parseaddr(_header(message, "From"))[1].lower(),
+                    subject=_header(message, "Subject"),
+                    received_at=_received_at(message),
+                    html=bodies.get("text/html", ""),
+                    text=bodies.get("text/plain", ""),
+                )
+            )
         return alerts
+
+    def read_labelled(self, skip: set[str] = frozenset()) -> list[AlertEmail]:
+        """Every message of the label received after start_date (lock: label and
+        date only). Used ONLY for the dedicated label of recruiters' replies."""
+        messages = []
+        for message_id in self._list(f"after:{self._settings.start_date:%Y/%m/%d}"):
+            if message_id in skip:
+                continue
+            message = self._messages.get(userId="me", id=message_id, format="full").execute()
+            if self._passes_lock(message, None) is None:
+                continue
+            bodies: dict[str, str] = {}
+            _bodies(message.get("payload") or {}, bodies)
+            messages.append(
+                AlertEmail(
+                    message_id=message_id,
+                    provider="reply",
+                    sender=_header(message, "From"),
+                    subject=_header(message, "Subject"),
+                    received_at=_received_at(message),
+                    html=bodies.get("text/html", ""),
+                    text=bodies.get("text/plain", ""),
+                )
+            )
+        return messages
 
     def sender_summary(self) -> Counter[str]:
         """Senders of the labelled e-mails (headers only), to fill allowed_senders."""

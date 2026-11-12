@@ -27,12 +27,8 @@ def _build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True, metavar="commande")
     commands.add_parser("check-config", help="vérifie le fichier de configuration")
     run_parser = commands.add_parser("run", help="lance un passage de collecte")
-    run_parser.add_argument(
-        "--force", action="store_true", help="lance le passage même hors de la plage horaire"
-    )
-    commands.add_parser(
-        "telegram-setup", help="aide à trouver TELEGRAM_CHAT_ID après la création du bot"
-    )
+    run_parser.add_argument("--force", action="store_true", help="lance le passage même hors de la plage horaire")
+    commands.add_parser("telegram-setup", help="aide à trouver TELEGRAM_CHAT_ID après la création du bot")
     commands.add_parser("gmail-setup", help="autorise l'accès Gmail en lecture seule")
     commands.add_parser("ai-sheet", help="prépare 30 offres à annoter pour mesurer l'IA")
     commands.add_parser("ai-evaluate", help="compare l'IA et les règles sur les offres annotées")
@@ -42,6 +38,9 @@ def _build_parser() -> argparse.ArgumentParser:
     state_parser = commands.add_parser("cloud-state", help="(tâche cloud) chiffre ou restaure la mémoire de l'agent")
     state_parser.add_argument("action", choices=["export", "import"])
     state_parser.add_argument("file", help="fichier chiffré")
+    commands.add_parser(
+        "sheets-import", help="crée le suivi Google Sheets et y copie le fichier Excel actuel (une seule fois)"
+    )
     letter_parser = commands.add_parser(
         "lettre", help="prépare une lettre de motivation « vous, moi, nous » et des adaptations du CV pour une offre"
     )
@@ -50,9 +49,7 @@ def _build_parser() -> argparse.ArgumentParser:
     commands.add_parser(
         "relevance-model", help="mesure un modèle « offre pertinente pour moi » sur la feuille d'étiquetage"
     )
-    commands.add_parser(
-        "gmail-senders", help="liste les expéditeurs des e-mails du libellé (pour allowed_senders)"
-    )
+    commands.add_parser("gmail-senders", help="liste les expéditeurs des e-mails du libellé (pour allowed_senders)")
     return parser
 
 
@@ -132,6 +129,38 @@ def _cloud(config, args) -> int:
     return 0
 
 
+def _sheets_import(config) -> int:
+    from job_agent.gmail.auth import GmailAuthError
+    from job_agent.storage import Storage
+    from job_agent.tracking import sheets
+
+    storage = Storage(config.storage.database_path)
+    try:
+        service = sheets.build_service()
+        target = sheets.spreadsheet_id(service, storage, config.tracking.google_sheets.spreadsheet_id)
+        existing = (
+            service.spreadsheets()
+            .values()
+            .get(spreadsheetId=target, range=f"'{sheets.SHEET_TRACKING}'!A2:A2")
+            .execute()
+        )
+        if existing.get("values"):
+            print("La feuille Google contient déjà des offres : copie annulée pour éviter les doublons.")
+        else:
+            copied = sheets.import_excel(service, target, config.tracking.excel.path)
+            print("Copié : " + ", ".join(f"{name} {count} ligne(s)" for name, count in copied.items()))
+        print(f"Suivi Google Sheets : https://docs.google.com/spreadsheets/d/{target}/edit")
+        return 0
+    except GmailAuthError as error:
+        print(f"Autorisation Google : {error}")
+        return 1
+    except FileNotFoundError:
+        print(f"Fichier Excel introuvable : {config.tracking.excel.path}")
+        return 1
+    finally:
+        storage.close()
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     # Accented French messages must print correctly, even when the output
     # is redirected to a file by the Windows task scheduler.
@@ -163,11 +192,15 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         storage = Storage(config.storage.database_path)
         try:
-            return label_sheet_command(storage, [*config.labelling.not_relevant_companies, *config.search.excluded_companies])
+            return label_sheet_command(
+                storage, [*config.labelling.not_relevant_companies, *config.search.excluded_companies]
+            )
         finally:
             storage.close()
     if args.command in ("cloud-setup", "cloud-pull", "cloud-state"):
         return _cloud(config, args)
+    if args.command == "sheets-import":
+        return _sheets_import(config)
     if args.command == "lettre":
         from job_agent.ai.letter import letter_command
         from job_agent.storage import Storage
@@ -183,9 +216,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         storage = Storage(config.storage.database_path)
         try:
-            return relevance_command(
-                storage, config.ai.anonymized_cv_path, config.technical_profile.mastered_skills
-            )
+            return relevance_command(storage, config.ai.anonymized_cv_path, config.technical_profile.mastered_skills)
         finally:
             storage.close()
     if args.command in ("ai-sheet", "ai-evaluate"):

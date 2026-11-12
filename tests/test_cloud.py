@@ -35,8 +35,9 @@ def test_local_run_is_refused_in_cloud_mode(config, tmp_path, monkeypatch) -> No
     monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     called = []
     monkeypatch.setattr(runner, "internet_available", lambda: called.append("network") or True)
-    cloud_on = config.model_copy(update={"cloud": config.cloud.model_copy(update={"enabled": True,
-                                                                                    "repository": "moi/prive"})})
+    cloud_on = config.model_copy(
+        update={"cloud": config.cloud.model_copy(update={"enabled": True, "repository": "moi/prive"})}
+    )
     assert runner.run(cloud_on, force=True) == 0
     assert called == []  # nothing collected, nothing notified
 
@@ -58,15 +59,18 @@ def test_setup_sends_secrets_through_stdin_only(config, tmp_path, monkeypatch, c
     (tmp_path / "private").mkdir()
     (tmp_path / "private" / "cv_anonymized.md").write_text("CV anonymisé", encoding="utf-8")
     env = tmp_path / ".env"
-    env.write_text("".join(f"{name}=valeur-secrete-{i}\n" for i, name in enumerate(cloud.SECRET_VARIABLES)),
-                   encoding="utf-8")
+    env.write_text(
+        "".join(f"{name}=valeur-secrete-{i}\n" for i, name in enumerate(cloud.SECRET_VARIABLES)), encoding="utf-8"
+    )
     config_path = tmp_path / "config.yaml"
     config_path.write_text("profil: test\n", encoding="utf-8")
-    settings = config.model_copy(update={
-        "cloud": config.cloud.model_copy(update={"enabled": True, "repository": "moi/prive"}),
-        "tracking": config.tracking.model_copy(update={"backend": "google_sheets"}),
-        "storage": config.storage.model_copy(update={"database_path": tmp_path / "absente.db"}),
-    })
+    settings = config.model_copy(
+        update={
+            "cloud": config.cloud.model_copy(update={"enabled": True, "repository": "moi/prive"}),
+            "tracking": config.tracking.model_copy(update={"backend": "google_sheets"}),
+            "storage": config.storage.model_copy(update={"database_path": tmp_path / "absente.db"}),
+        }
+    )
     fake = FakeGh()
     monkeypatch.setattr(subprocess, "run", fake)
 
@@ -84,8 +88,9 @@ def test_new_gmail_token_also_goes_to_the_cloud(config, monkeypatch) -> None:
     monkeypatch.setattr(subprocess, "run", fake)
     cloud.push_gmail_token(config, "jeton")  # cloud disabled: nothing sent
     assert fake.calls == []
-    settings = config.model_copy(update={"cloud": config.cloud.model_copy(update={"enabled": True,
-                                                                                   "repository": "moi/prive"})})
+    settings = config.model_copy(
+        update={"cloud": config.cloud.model_copy(update={"enabled": True, "repository": "moi/prive"})}
+    )
     cloud.push_gmail_token(settings, "jeton")
     assert fake.calls == [(["gh", "secret", "set", "GMAIL_REFRESH_TOKEN", "--repo", "moi/prive"], "jeton")]
 

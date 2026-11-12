@@ -6,9 +6,9 @@ configured time zone) and that no other run is in progress.
 """
 
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timedelta
-from collections.abc import Iterator
 from pathlib import Path
 from zoneinfo import ZoneInfo
 

@@ -36,6 +36,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "pytest>=9.2.0",
+    "ruff>=0.17.4",
 ]
 
 # On Linux (GitHub Actions), torch comes from the CPU-only index: the default
@@ -47,3 +48,17 @@ torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# Errors, pyflakes, imports order, modern Python, bugbear, simplifications.
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+# B008: pydantic Field() defaults; SIM118: sqlite3.Row needs .keys() ("in row" tests values);
+# B905: zip() pairs lists of equal length by construction; SIM108: if/else kept when clearer.
+ignore = ["B008", "SIM118", "B905", "SIM108"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["job_agent", "conftest"]

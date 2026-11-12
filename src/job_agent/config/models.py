@@ -11,7 +11,6 @@ Every model forbids unknown keys (extra="forbid"), so a typo such as
 from datetime import date
 from pathlib import Path
 from typing import Literal
-
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -19,15 +18,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # ---------------------------------------------------------------------
 # Closed lists of allowed values
 # ---------------------------------------------------------------------
-ContractType = Literal[
-    "permanent", "fixed_term", "internship", "apprenticeship", "freelance"
-]
+ContractType = Literal["permanent", "fixed_term", "internship", "apprenticeship", "freelance"]
 WorkMode = Literal["onsite", "hybrid", "full_remote"]
-PrioritySector = Literal[
-    "insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail"
-]
+PrioritySector = Literal["insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail"]
 CompanySector = Literal[
-    "insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail",
+    "insurance",
+    "banking",
+    "agriculture_agrifood",
+    "consumer_goods",
+    "retail",
     "other",
 ]
 DateSource = Literal["career_site", "job_board", "first_seen"]
@@ -35,8 +34,16 @@ Weekday = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 TrackingBackend = Literal["google_sheets", "excel", "csv"]
 NotificationChannel = Literal["telegram", "email", "none"]
 NotificationField = Literal[
-    "title", "company", "location", "contract", "publication_date", "url",
-    "experience_flag", "priority_flag", "verification_status", "match_score",
+    "title",
+    "company",
+    "location",
+    "contract",
+    "publication_date",
+    "url",
+    "experience_flag",
+    "priority_flag",
+    "verification_status",
+    "match_score",
 ]
 AIProvider = Literal["gemini"]
 
@@ -148,7 +155,9 @@ class CompaniesConfig(StrictModel):
         for company in self.watchlist:
             key = company.name.strip().lower()
             if key in seen:
-                raise ValueError(f"l'entreprise « {company.name} » apparaît deux fois dans watchlist : gardez une seule ligne.")
+                raise ValueError(
+                    f"l'entreprise « {company.name} » apparaît deux fois dans watchlist : gardez une seule ligne."
+                )
             seen.add(key)
             if company.careers_url and not company.careers_url.startswith(("https://", "http://")):
                 raise ValueError(
@@ -328,6 +337,23 @@ class CloudConfig(StrictModel):
         return self
 
 
+class ApplicationRepliesConfig(StrictModel):
+    """Recruiters' replies, read ONLY in a dedicated Gmail label filled by the user."""
+
+    enabled: bool = False
+    gmail_label: str = Field(default="Candidatures", min_length=1)
+    start_date: date | None = None
+
+    @model_validator(mode="after")
+    def _start_date_when_enabled(self):
+        if self.enabled and self.start_date is None:
+            raise ValueError(
+                'application_replies est activé : indiquez start_date (format "AAAA-MM-JJ"), '
+                "seuls les e-mails reçus à partir de cette date sont lus."
+            )
+        return self
+
+
 class AppConfig(StrictModel):
     config_version: Literal[1]
     profile_name: str = Field(min_length=1)
@@ -349,3 +375,4 @@ class AppConfig(StrictModel):
     ai: AIConfig
     labelling: LabellingConfig = Field(default_factory=LabellingConfig)
     cloud: CloudConfig = Field(default_factory=CloudConfig)
+    application_replies: ApplicationRepliesConfig = Field(default_factory=ApplicationRepliesConfig)

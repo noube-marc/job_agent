@@ -550,7 +550,8 @@ storage:
 # ---------------------------------------------------------------------
 tracking:
   # Type de fichier :
-  #   google_sheets = feuille Google (mode cloud, disponible plus tard)
+  #   google_sheets = feuille Google créée par l'agent (mode cloud, voir
+  #                   « uv run job-agent sheets-import » pour y copier l'Excel)
   #   excel         = fichier Excel sur votre ordinateur
   #   csv           = fichier CSV sur votre ordinateur
   backend: excel
@@ -671,3 +672,18 @@ cloud:
   # Le suivi doit être Google Sheets (tracking.backend: google_sheets).
   enabled: false
   repository: ""
+
+
+# ---------------------------------------------------------------------
+# RÉPONSES DES RECRUTEURS (libellé Gmail dédié)
+# ---------------------------------------------------------------------
+application_replies:
+  # true = l'agent lit les réponses des recruteurs que VOUS rangez dans le
+  # libellé ci-dessous (à la main ou par un filtre Gmail), en lecture
+  # seule, et vous propose un statut (Telegram et onglet « Réponses »).
+  # Aucun autre e-mail n'est lu ; le texte des e-mails n'est jamais
+  # envoyé à une IA ni conservé.
+  enabled: false
+  gmail_label: "Candidatures"
+  # Seuls les e-mails de ce libellé reçus à partir de cette date sont lus.
+  start_date: "2026-11-12"

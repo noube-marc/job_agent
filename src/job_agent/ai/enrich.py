@@ -12,7 +12,7 @@ accurate than the simple rules on every field. So:
 import json
 import sqlite3
 from collections import Counter
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from job_agent.ai.extraction import AIExtraction, AIUnavailable, GeminiExtractor
 from job_agent.config.models import AppConfig
@@ -88,12 +88,16 @@ def compare_with_rules(row: sqlite3.Row, ai: AIExtraction, config: AppConfig) ->
     flags = []
     accepted = set(config.contracts.accepted)
     if row["contract_type"] and ai.contract_type not in ("unknown", *accepted):
-        flags.append(f"IA : {CONTRACT_LABELS.get(ai.contract_type, ai.contract_type)} selon la description (à vérifier)")
+        flags.append(
+            f"IA : {CONTRACT_LABELS.get(ai.contract_type, ai.contract_type)} selon la description (à vérifier)"
+        )
 
     threshold = config.experience.exclude_if_min_years_at_least
     rules_years = row["min_experience_years"]
-    if ai.min_experience_years is not None and ai.min_experience_years >= threshold and (
-        rules_years is not None and rules_years < threshold
+    if (
+        ai.min_experience_years is not None
+        and ai.min_experience_years >= threshold
+        and (rules_years is not None and rules_years < threshold)
     ):
         flags.append(f"IA : {ai.min_experience_years} ans d'expérience minimum (à vérifier)")
 
@@ -105,7 +109,8 @@ def compare_with_rules(row: sqlite3.Row, ai: AIExtraction, config: AppConfig) ->
     if any(flag.startswith("écart technique") for flag in rule_flags):
         required = [tokens(skill) for skill in ai.required_skills]
         blocking_required = [
-            tech for tech in config.technical_profile.blocking_technologies
+            tech
+            for tech in config.technical_profile.blocking_technologies
             if any(contains_phrase(skill, tech) for skill in required)
         ]
         if not blocking_required:
@@ -117,7 +122,7 @@ def enrich_new_offers(
     storage: Storage, config: AppConfig, extractor: GeminiExtractor, limit: int = MAX_PER_RUN
 ) -> Counter[str]:
     counts: Counter[str] = Counter()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     extractor.models, reset = available_models(storage, extractor.models, now)
     if not extractor.models:
         counts["quota"] += 1

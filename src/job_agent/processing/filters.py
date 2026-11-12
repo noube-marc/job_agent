@@ -7,7 +7,7 @@ carry warnings ("expérience non précisée", "écart technique"...).
 
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from job_agent.config.models import AppConfig
 from job_agent.offer import Offer
@@ -111,8 +111,7 @@ def _required_technologies(description: str, config: AppConfig) -> list[str]:
         if not clauses_with_tech:
             continue
         optional_everywhere = all(
-            any(contains_phrase(c, marker) for marker in profile.optional_markers)
-            for c in clauses_with_tech
+            any(contains_phrase(c, marker) for marker in profile.optional_markers) for c in clauses_with_tech
         )
         if not optional_everywhere:
             required.append(technology)
@@ -226,7 +225,7 @@ def _check_freshness(offer: Offer, config: AppConfig, now: datetime, result: Eva
     if chosen is None:
         chosen = offer.published_at or offer.first_seen_at
     if chosen.tzinfo is None:
-        chosen = chosen.replace(tzinfo=timezone.utc)
+        chosen = chosen.replace(tzinfo=UTC)
     result.effective_date = chosen
 
     age = now - chosen

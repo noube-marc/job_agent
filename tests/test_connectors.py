@@ -1,6 +1,6 @@
 """Connectors read recorded (synthetic) responses: no network call."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -28,11 +28,29 @@ def _context(config, routes: dict[str, httpx.Response]) -> CollectContext:
 
 
 def test_registry() -> None:
-    assert set(CONNECTORS) == {"talentsoft_rss", "ashby", "workday", "successfactors_search", "avature", "phenom", "credit_agricole_jobs", "cornerstone", "digitalrecruiters", "successfactors_sitemap", "jobposting", "danone", "heineken", "oracle", "creditmutuel"}
+    assert set(CONNECTORS) == {
+        "talentsoft_rss",
+        "ashby",
+        "workday",
+        "successfactors_search",
+        "avature",
+        "phenom",
+        "credit_agricole_jobs",
+        "cornerstone",
+        "digitalrecruiters",
+        "successfactors_sitemap",
+        "jobposting",
+        "danone",
+        "heineken",
+        "oracle",
+        "creditmutuel",
+    }
 
 
 def test_talentsoft_feed(config) -> None:
-    company = WatchedCompany(name="Exemple", sector="insurance", careers_url="https://recrutement.exemple.fr", ats="talentsoft_rss")
+    company = WatchedCompany(
+        name="Exemple", sector="insurance", careers_url="https://recrutement.exemple.fr", ats="talentsoft_rss"
+    )
     feed = (FIXTURES / "talentsoft_feed.xml").read_text(encoding="utf-8")
     url = "https://recrutement.exemple.fr/handlers/offerRss.ashx?LCID=1036"
     offers = talentsoft.collect(company, _context(config, {url: httpx.Response(200, text=feed)}))
@@ -43,13 +61,15 @@ def test_talentsoft_feed(config) -> None:
     assert first.reference == "2026-101" and first.source_offer_id == "101"
     assert first.contract_type_raw == "Contrat à durée indéterminée"
     assert first.location == "Niort (79)"
-    assert first.published_at == datetime(2026, 11, 10, 9, 30, tzinfo=timezone.utc)
+    assert first.published_at == datetime(2026, 11, 10, 9, 30, tzinfo=UTC)
     assert "Power BI" in first.description and "<b>" not in first.description
     assert first.source_name == "talentsoft:Exemple" and not first.description_is_partial
 
 
 def test_ashby_keeps_listed_offers_in_france(config) -> None:
-    company = WatchedCompany(name="Exemple", sector="banking", careers_url="https://jobs.ashbyhq.com/exemple", ats="ashby")
+    company = WatchedCompany(
+        name="Exemple", sector="banking", careers_url="https://jobs.ashbyhq.com/exemple", ats="ashby"
+    )
     board = (FIXTURES / "ashby_board.json").read_text(encoding="utf-8")
     url = "https://api.ashbyhq.com/posting-api/job-board/exemple"
     offers = ashby.collect(company, _context(config, {url: httpx.Response(200, text=board)}))
@@ -77,15 +97,21 @@ WD_API = "https://exemple.wd3.myworkdayjobs.com/wday/cxs/exemple/Carrieres"
 
 
 def _posting(path: str, title: str, posted: str = "Offre publiée hier") -> dict:
-    return {"title": title, "externalPath": path, "locationsText": "Paris", "postedOn": posted,
-            "bulletFields": ["REQ-" + path[-3:]]}
+    return {
+        "title": title,
+        "externalPath": path,
+        "locationsText": "Paris",
+        "postedOn": posted,
+        "bulletFields": ["REQ-" + path[-3:]],
+    }
 
 
 class WorkdayFake:
     """Answers like a Workday site; records the requests made."""
 
-    def __init__(self, pages: list[list[dict]], facet_name: str | None = "locationCountry",
-                 reject_unknown_facet: bool = False) -> None:
+    def __init__(
+        self, pages: list[list[dict]], facet_name: str | None = "locationCountry", reject_unknown_facet: bool = False
+    ) -> None:
         self.pages = pages
         self.total = sum(len(p) for p in pages)
         self.facet_name = facet_name
@@ -108,15 +134,29 @@ class WorkdayFake:
             listed = [] if not facets and self.facet_name else self.pages
             index = body["offset"] // 20
             page = listed[index] if index < len(listed) else []
-            facet_list = [{"facetParameter": self.facet_name,
-                           "values": [{"descriptor": "France", "id": "FR-ID"}]}] if self.facet_name else []
+            facet_list = (
+                [{"facetParameter": self.facet_name, "values": [{"descriptor": "France", "id": "FR-ID"}]}]
+                if self.facet_name
+                else []
+            )
             return httpx.Response(200, json={"total": self.total, "jobPostings": page, "facets": facet_list})
         path = request.url.path.split("/Carrieres", 1)[1]
-        return httpx.Response(200, json={"jobPostingInfo": {
-            "title": "Data Analyst H/F", "jobDescription": "<p>CDI. SQL et Power BI.</p>",
-            "startDate": "2026-11-09", "postedOn": "Offre publiée hier", "location": "Paris",
-            "timeType": "Temps complet", "jobReqId": "REQ-001", "remoteType": "Hybride",
-            "externalUrl": f"https://exemple.wd3.myworkdayjobs.com/Carrieres{path}"}})
+        return httpx.Response(
+            200,
+            json={
+                "jobPostingInfo": {
+                    "title": "Data Analyst H/F",
+                    "jobDescription": "<p>CDI. SQL et Power BI.</p>",
+                    "startDate": "2026-11-09",
+                    "postedOn": "Offre publiée hier",
+                    "location": "Paris",
+                    "timeType": "Temps complet",
+                    "jobReqId": "REQ-001",
+                    "remoteType": "Hybride",
+                    "externalUrl": f"https://exemple.wd3.myworkdayjobs.com/Carrieres{path}",
+                }
+            },
+        )
 
 
 def _workday_context(config, fake: WorkdayFake, known: set[str] = frozenset()) -> CollectContext:
@@ -125,11 +165,15 @@ def _workday_context(config, fake: WorkdayFake, known: set[str] = frozenset()) -
 
 
 def test_workday_fetches_details_only_for_new_target_offers(config) -> None:
-    fake = WorkdayFake([[
-        _posting("/job/Paris/Data-Analyst_REQ-001", "Data Analyst H/F"),
-        _posting("/job/Paris/Comptable_REQ-002", "Comptable H/F"),
-        _posting("/job/Paris/Data-Engineer_REQ-003", "Data Engineer H/F"),
-    ]])
+    fake = WorkdayFake(
+        [
+            [
+                _posting("/job/Paris/Data-Analyst_REQ-001", "Data Analyst H/F"),
+                _posting("/job/Paris/Comptable_REQ-002", "Comptable H/F"),
+                _posting("/job/Paris/Data-Engineer_REQ-003", "Data Engineer H/F"),
+            ]
+        ]
+    )
     company = WatchedCompany(name="Exemple", sector="other", careers_url=WD_SITE, ats="workday")
     context = _workday_context(config, fake, known={"/job/Paris/Data-Engineer_REQ-003"})
 
@@ -155,8 +199,10 @@ def test_workday_finds_differently_named_country_filter(config) -> None:
 
 def test_workday_stops_on_a_page_of_old_offers(config) -> None:
     recent = [_posting(f"/job/x/Comptable_R-{i:03d}", "Comptable") for i in range(20)]
-    old = [_posting(f"/job/x/Comptable_R-{i:03d}", "Comptable", "Offre publiée il y a 30 jours ou plus")
-           for i in range(20, 40)]
+    old = [
+        _posting(f"/job/x/Comptable_R-{i:03d}", "Comptable", "Offre publiée il y a 30 jours ou plus")
+        for i in range(20, 40)
+    ]
     never = [_posting(f"/job/x/Comptable_R-{i:03d}", "Comptable") for i in range(40, 60)]
     fake = WorkdayFake([recent, old, never])
     company = WatchedCompany(name="Exemple", sector="other", careers_url=WD_SITE, ats="workday")
@@ -166,16 +212,22 @@ def test_workday_stops_on_a_page_of_old_offers(config) -> None:
 
 @pytest.mark.parametrize(
     ("text", "days"),
-    [("Offre publiée aujourd'hui", 0), ("Posted Yesterday", 1), ("Offre publiée il y a 3 jours", 3),
-     ("Posted 30+ Days Ago", 30), (None, None)],
+    [
+        ("Offre publiée aujourd'hui", 0),
+        ("Posted Yesterday", 1),
+        ("Offre publiée il y a 3 jours", 3),
+        ("Posted 30+ Days Ago", 30),
+        (None, None),
+    ],
 )
 def test_posted_days_ago(text, days) -> None:
     assert workday.posted_days_ago(text) == days
 
 
 def test_workday_without_country_filter_reads_everything(config) -> None:
-    fake = WorkdayFake([[_posting("/job/Lille/Comptable_REQ-020", "Comptable")]],
-                       facet_name=None, reject_unknown_facet=True)
+    fake = WorkdayFake(
+        [[_posting("/job/Lille/Comptable_REQ-020", "Comptable")]], facet_name=None, reject_unknown_facet=True
+    )
     company = WatchedCompany(name="Exemple", sector="other", careers_url=WD_SITE, ats="workday")
     offers = workday.collect(company, _workday_context(config, fake))
     assert [o.source_offer_id for o in offers] == ["/job/Lille/Comptable_REQ-020"]
@@ -186,9 +238,11 @@ SF_SITE = "https://emplois.exemple.fr"
 
 
 def _sf_row(offer_id: str, title: str, location: str = "PARIS, FR, 75008") -> str:
-    return (f'<tr class="data-row"><td class="colTitle"><span class="jobTitle hidden-phone">'
-            f'<a class="jobTitle-link" href="/job/PARIS-{offer_id}/{offer_id}/">{title}</a></span></td>'
-            f'<td class="colLocation"><span class="jobLocation"> {location} </span></td></tr>')
+    return (
+        f'<tr class="data-row"><td class="colTitle"><span class="jobTitle hidden-phone">'
+        f'<a class="jobTitle-link" href="/job/PARIS-{offer_id}/{offer_id}/">{title}</a></span></td>'
+        f'<td class="colLocation"><span class="jobLocation"> {location} </span></td></tr>'
+    )
 
 
 def _sf_page(rows: list[str]) -> str:
@@ -232,15 +286,17 @@ def test_successfactors_parses_offer_page() -> None:
     details = successfactors.parse_offer_page(SF_OFFER)
     assert details["description"] == "Analyse des ventes avec SQL.\n- Power BI"
     assert details["contract"] == "CDI DUREE INDETERMINEE" and details["reference"] == "4242"
-    assert details["published_at"] == datetime(2026, 11, 9, 2, 0, tzinfo=timezone.utc)
+    assert details["published_at"] == datetime(2026, 11, 9, 2, 0, tzinfo=UTC)
 
 
 def test_successfactors_collect(config) -> None:
-    fake = SuccessFactorsFake([
-        [_sf_row("1000001", "Data Analyst H/F"), _sf_row("1000002", "Comptable H/F")],
-        [_sf_row("1000003", "Data Engineer H/F", "LONDON, GB, SW1"), _sf_row("1000004", "Data Scientist")],
-        [_sf_row("1000005", "Data Analyst Senior")],
-    ])
+    fake = SuccessFactorsFake(
+        [
+            [_sf_row("1000001", "Data Analyst H/F"), _sf_row("1000002", "Comptable H/F")],
+            [_sf_row("1000003", "Data Engineer H/F", "LONDON, GB, SW1"), _sf_row("1000004", "Data Scientist")],
+            [_sf_row("1000005", "Data Analyst Senior")],
+        ]
+    )
     company = WatchedCompany(name="Exemple", sector="other", careers_url=SF_SITE, ats="successfactors_search")
     offers = successfactors.collect(company, _sf_context(config, fake))
 
@@ -254,10 +310,12 @@ def test_successfactors_collect(config) -> None:
 
 
 def test_successfactors_stops_on_known_page(config) -> None:
-    fake = SuccessFactorsFake([
-        [_sf_row("2000001", "Comptable"), _sf_row("2000002", "Comptable")],
-        [_sf_row("2000003", "Comptable"), _sf_row("2000004", "Comptable")],
-    ])
+    fake = SuccessFactorsFake(
+        [
+            [_sf_row("2000001", "Comptable"), _sf_row("2000002", "Comptable")],
+            [_sf_row("2000003", "Comptable"), _sf_row("2000004", "Comptable")],
+        ]
+    )
     company = WatchedCompany(name="Exemple", sector="other", careers_url=SF_SITE, ats="successfactors_search")
     offers = successfactors.collect(company, _sf_context(config, fake, known={"2000001", "2000002"}))
     assert len(offers) == 2 and len(fake.requests) == 1

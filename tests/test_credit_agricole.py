@@ -51,17 +51,21 @@ class Fake:
 
 
 def test_collect(config) -> None:
-    fake = Fake([
-        [_card("2026-1", "Data Analyst H/F"), _card("2026-2", "Gestionnaire de sinistres H/F")],
-        [_card("2026-3", "Data Engineer H/F", country="Irlande"), _card("2026-4", "Data Scientist H/F")],
-    ])
+    fake = Fake(
+        [
+            [_card("2026-1", "Data Analyst H/F"), _card("2026-2", "Gestionnaire de sinistres H/F")],
+            [_card("2026-3", "Data Engineer H/F", country="Irlande"), _card("2026-4", "Data Scientist H/F")],
+        ]
+    )
     client = PoliteClient(0, 5, transport=httpx.MockTransport(fake), sleep=lambda s: None)
     company = WatchedCompany(name="Assurance Exemple", sector="insurance", careers_url=SITE, ats="credit_agricole_jobs")
     offers = credit_agricole.collect(company, CollectContext(client, config, NOW, lambda s, i: i == "2026-4"))
 
     assert [o.source_offer_id for o in offers] == ["2026-1", "2026-2", "2026-4"]  # Irish offer skipped
     assert [p for p in fake.requests if "/page/" in p] == [
-        "/fr/nos-marques/assurance-exemple/nos-offres/page/2/", "/fr/nos-marques/assurance-exemple/nos-offres/page/3/"]
+        "/fr/nos-marques/assurance-exemple/nos-offres/page/2/",
+        "/fr/nos-marques/assurance-exemple/nos-offres/page/3/",
+    ]
     assert len([p for p in fake.requests if "/nos-offres-emploi/" in p]) == 1  # only the new Data Analyst
     first = offers[0]
     # The real publication date of the offer page, not the update date of the list.

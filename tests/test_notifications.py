@@ -36,8 +36,7 @@ def _offers(count: int) -> list:
     titles = ["Data Analyst", "Data Engineer", "Analytics Engineer", "BI Analyst", "Statisticien"]
     companies = ["AXA", "MAIF", "Danone", "Carrefour", "Qonto", "Alan", "Bel"]
     return [
-        make_offer(source_offer_id=str(i), title=titles[i % 5], company=f"{companies[i % 7]} {i}")
-        for i in range(count)
+        make_offer(source_offer_id=str(i), title=titles[i % 5], company=f"{companies[i % 7]} {i}") for i in range(count)
     ]
 
 
@@ -56,8 +55,15 @@ def test_same_offer_from_two_sources_is_notified_once(env) -> None:
     sender = FakeSender()
     collect(make_offer(title="Data Analyst H/F", location="Paris 8e"))
     notify_pending(storage, config, sender, silent=False)
-    collect(make_offer(source="email_alert", source_name="email:apec", source_offer_id="X",
-                       title="Data Analyst (F/H)", location="Paris"))
+    collect(
+        make_offer(
+            source="email_alert",
+            source_name="email:apec",
+            source_offer_id="X",
+            title="Data Analyst (F/H)",
+            location="Paris",
+        )
+    )
     notify_pending(storage, config, sender, silent=False)
     assert len(sender.messages) == 1
 
@@ -108,15 +114,37 @@ def test_message_tells_where_the_date_comes_from(config, tmp_path) -> None:
     from job_agent.notify.telegram import format_offer
 
     storage = Storage(tmp_path / "t.db")
-    process_offers([
-        make_offer(source_offer_id="c1", title="Data Scientist (H/F)", company="Isagri"),
-        make_offer(source="email_alert", source_name="email:linkedin", source_offer_id="a1", title="Data Analyst",
-                   company="Société Inconnue", published_at=None, published_at_source=None),
-        make_offer(source="email_alert", source_name="email:indeed", source_offer_id="i1", title="Data Engineer",
-                   company="Autre Société", published_at=NOW - timedelta(days=1), published_at_source="job_board"),
-    ], config, storage, SectorIndex.build(config, ROOT / "sectors.yaml"), NOW)
-    messages = {row["title"]: format_offer(row, storage.group_members(row["group_id"]), config)
-                for row in storage.pending_notifications()}
+    process_offers(
+        [
+            make_offer(source_offer_id="c1", title="Data Scientist (H/F)", company="Isagri"),
+            make_offer(
+                source="email_alert",
+                source_name="email:linkedin",
+                source_offer_id="a1",
+                title="Data Analyst",
+                company="Société Inconnue",
+                published_at=None,
+                published_at_source=None,
+            ),
+            make_offer(
+                source="email_alert",
+                source_name="email:indeed",
+                source_offer_id="i1",
+                title="Data Engineer",
+                company="Autre Société",
+                published_at=NOW - timedelta(days=1),
+                published_at_source="job_board",
+            ),
+        ],
+        config,
+        storage,
+        SectorIndex.build(config, ROOT / "sectors.yaml"),
+        NOW,
+    )
+    messages = {
+        row["title"]: format_offer(row, storage.group_members(row["group_id"]), config)
+        for row in storage.pending_notifications()
+    }
     assert "(date du site carrière)" in messages["Data Scientist (H/F)"]
     assert "lue directement sur le site carrière" in messages["Data Scientist (H/F)"]
     assert "(date estimée : réception de l'alerte)" in messages["Data Analyst"]

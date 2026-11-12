@@ -10,6 +10,7 @@ allows /fr_FR/careers/SearchJobs/ and forbids everything else.
 """
 
 import re
+from contextlib import suppress
 from dataclasses import dataclass, field
 from urllib.parse import unquote, urlsplit
 
@@ -58,10 +59,8 @@ class RobotRules:
             if key in ("allow", "disallow") and value:
                 current.rules.append((key == "allow", unquote(value)))
             elif key == "crawl-delay":
-                try:
+                with suppress(ValueError):  # an unreadable delay is ignored
                     current.crawl_delay = float(value)
-                except ValueError:
-                    pass
         return groups
 
     def _groups_for(self, agent: str) -> list[_Group]:

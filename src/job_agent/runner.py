@@ -89,7 +89,11 @@ def _collect_and_process(
             totals.update(counts)
             log.info(
                 "  %s : %d collectée(s), %d nouvelle(s) retenue(s), %d écartée(s), %d doublon(s)",
-                source_name, len(offers), counts["kept"], counts["rejected"], counts["duplicates"],
+                source_name,
+                len(offers),
+                counts["kept"],
+                counts["rejected"],
+                counts["duplicates"],
             )
             streak = storage.zero_streak(source_name)
             if streak >= ZERO_STREAK_ALERT:
@@ -114,12 +118,15 @@ def _watch_silent_sources(storage: Storage, run_id: int) -> None:
             storage.add_to_outbox(
                 f"silent:{source_name}:{run_id}",
                 f"⚠️ Le site carrière de {site} ne renvoie plus aucune offre depuis {streak} passages.{detail} "
-                "Ses offres restent couvertes par vos alertes e-mail ; si cela dure, signalez-le pour corriger le connecteur.",
+                "Ses offres restent couvertes par vos alertes e-mail ; "
+                "si cela dure, signalez-le pour corriger le connecteur.",
             )
             storage.set_state(key, str(run_id))
             log.warning("  %s : muet depuis %d passages, signalé sur Telegram.", source_name, streak)
         elif streak == 0 and reported:
-            storage.add_to_outbox(f"back:{source_name}:{run_id}", f"✅ Le site carrière de {site} renvoie de nouveau des offres.")
+            storage.add_to_outbox(
+                f"back:{source_name}:{run_id}", f"✅ Le site carrière de {site} renvoie de nouveau des offres."
+            )
             storage.delete_state(key)
 
 
@@ -133,7 +140,9 @@ def _verify_at_source(config: AppConfig, storage: Storage, listings: dict, now: 
     if any(counts.values()):
         log.info(
             "Vérification à la source : %d vérifiée(s), %d absente(s) du site carrière, %d non vérifiable(s).",
-            counts[VERIFIED], counts[MISSING], counts[UNVERIFIABLE],
+            counts[VERIFIED],
+            counts[MISSING],
+            counts[UNVERIFIABLE],
         )
     gone = recheck_tracked(storage, config, listings, now, now)
     if gone:
@@ -152,9 +161,12 @@ def _warn_gmail_authorisation(config: AppConfig, storage: Storage, now: datetime
     try:
         telegram_sender_from_env()(
             "⚠️ job-agent : l'accès Gmail a expiré (c'est normal chaque semaine tant que "
-            "l'application Google est en mode Test)." + NEWLINE
-            + "Pour le renouveler, lancez dans le dossier du projet :" + NEWLINE
-            + "uv run job-agent gmail-setup" + NEWLINE
+            "l'application Google est en mode Test)."
+            + NEWLINE
+            + "Pour le renouveler, lancez dans le dossier du projet :"
+            + NEWLINE
+            + "uv run job-agent gmail-setup"
+            + NEWLINE
             + "Les sites carrière continuent d'être lus normalement."
         )
     except NotificationError as error:
@@ -219,6 +231,32 @@ def _collect_email_alerts(config: AppConfig, storage: Storage, run_id: int, now:
     return totals
 
 
+def _read_application_replies(config: AppConfig, storage: Storage) -> None:
+    """Recruiters' replies in the dedicated label: suggest a status (Telegram, "Réponses" sheet)."""
+    settings = config.application_replies
+    if not settings.enabled:
+        return
+    from types import SimpleNamespace
+
+    from job_agent.gmail.auth import GmailAuthError
+    from job_agent.gmail.reader import GmailLockError, GmailReader, build_service
+    from job_agent.gmail.replies import process_replies, telegram_text
+
+    try:
+        lock = SimpleNamespace(gmail_label=settings.gmail_label, start_date=settings.start_date)
+        messages = GmailReader(build_service(), lock).read_labelled(skip=storage.processed_replies())
+    except (GmailAuthError, GmailLockError) as error:
+        log.warning("  Réponses des recruteurs : %s", error)
+        return
+    except Exception as error:  # one source never stops the others
+        log.warning("  Réponses des recruteurs : erreur de lecture Gmail (%s)", type(error).__name__)
+        return
+    for reply in process_replies(storage, messages):
+        storage.add_to_outbox(f"reply:{reply.message_id}", telegram_text(reply))
+    if messages:
+        log.info("  Réponses des recruteurs : %d nouvelle(s) réponse(s) lue(s).", len(messages))
+
+
 def _queue_more_offers_link(storage: Storage, alert) -> None:
     """Queue the "see all offers" link of an alert, for the user to open."""
     from job_agent.gmail.parsers import MORE_OFFERS_LINKS
@@ -231,7 +269,8 @@ def _queue_more_offers_link(storage: Storage, alert) -> None:
     storage.add_to_outbox(
         f"more:{alert.message_id}",
         f"🔎 Alerte {alert.provider.capitalize()} : l'e-mail n'affiche qu'une partie des offres "
-        f"({html.escape(subject[:120])})." + NEWLINE
+        f"({html.escape(subject[:120])})."
+        + NEWLINE
         + f'<a href="{html.escape(link, quote=True)}">Voir toutes les offres</a> '
         "(lien à ouvrir vous-même : l'agent ne l'ouvre jamais).",
     )
@@ -264,11 +303,17 @@ def _enrich_with_ai(config: AppConfig, storage: Storage) -> Counter[str]:
         return Counter()
     counts = enrich_new_offers(storage, config, extractor)
     if counts["analysed"]:
-        log.info("IA : %d offre(s) analysée(s), %d écartée(s) d'après l'IA, %d remarque(s) ajoutée(s).",
-                 counts["analysed"], counts["rejected"], counts["flags"])
+        log.info(
+            "IA : %d offre(s) analysée(s), %d écartée(s) d'après l'IA, %d remarque(s) ajoutée(s).",
+            counts["analysed"],
+            counts["rejected"],
+            counts["flags"],
+        )
     if counts["unavailable"] or counts["quota"]:
-        log.warning("IA indisponible pour l'instant (%s) : les offres seront analysées plus tard.",
-                    storage.get_state("ai_last_error"))
+        log.warning(
+            "IA indisponible pour l'instant (%s) : les offres seront analysées plus tard.",
+            storage.get_state("ai_last_error"),
+        )
     return Counter(ai_analysed=counts["analysed"], kept=-counts["rejected"], rejected=counts["rejected"])
 
 
@@ -315,23 +360,73 @@ def _update_labelling_sheet(config: AppConfig, storage: Storage) -> None:
         log.info("Feuille d'étiquetage ouverte dans Excel : mise à jour au prochain passage.")
         return
     if added or prefilled:
-        log.info("Feuille d'étiquetage : %d offre(s) ajoutée(s), %d « non » évident(s) mis par l'agent "
-                 "(%d étiquetée(s) au total).", added, prefilled, labelled)
+        log.info(
+            "Feuille d'étiquetage : %d offre(s) ajoutée(s), %d « non » évident(s) mis par l'agent "
+            "(%d étiquetée(s) au total).",
+            added,
+            prefilled,
+            labelled,
+        )
+
+
+def _update_google_sheets(config: AppConfig, storage: Storage) -> None:
+    from job_agent.gmail.auth import GmailAuthError
+    from job_agent.tracking import sheets
+
+    pending = storage.pending_tracking()
+    events = storage.unwritten_verification_events()
+    replies = storage.unwritten_replies()
+    if not pending and not events and not replies:
+        return
+    try:
+        service = sheets.build_service()
+        target = sheets.spreadsheet_id(service, storage, config.tracking.google_sheets.spreadsheet_id)
+        result = sheets.append_offers(
+            service,
+            target,
+            pending,
+            storage.group_members,
+            keep_rejected=config.tracking.keep_rejected,
+            timezone_name=config.schedule.timezone,
+            events=events,
+            replies=replies,
+        )
+    except GmailAuthError as error:
+        log.warning("Suivi Google Sheets : %s. Les offres seront ajoutées au prochain passage.", error)
+        return
+    except Exception as error:  # quota, network: nothing is lost, the offers stay in the database
+        log.warning(
+            "Suivi Google Sheets indisponible (%s) : offres ajoutées au prochain passage.",
+            type(error).__name__ if not isinstance(error, sheets.SheetsUnavailable) else error,
+        )
+        return
+    storage.mark_tracked(result.written_ids)
+    storage.mark_verification_events_written(result.events_written or [])
+    storage.mark_replies_written([row["message_id"] for row in replies])
+    log.info("Suivi Google Sheets : %d offre(s) retenue(s) et %d écartée(s) ajoutées.", result.kept, result.rejected)
 
 
 def _update_tracking(config: AppConfig, storage: Storage) -> None:
+    if config.tracking.backend == "google_sheets":
+        _update_google_sheets(config, storage)
+        return
     if config.tracking.backend != "excel":
         log.warning("Suivi « %s » pas encore disponible : seul excel est géré.", config.tracking.backend)
         return
     pending = storage.pending_tracking()
     events = storage.unwritten_verification_events()
-    if not pending and not events:
+    replies = storage.unwritten_replies()
+    if not pending and not events and not replies:
         return
     try:
         result = append_offers(
-            config.tracking.excel.path, pending, storage.group_members,
-            keep_rejected=config.tracking.keep_rejected, timezone_name=config.schedule.timezone,
+            config.tracking.excel.path,
+            pending,
+            storage.group_members,
+            keep_rejected=config.tracking.keep_rejected,
+            timezone_name=config.schedule.timezone,
             events=events,
+            replies=replies,
         )
     except TrackingFileLocked:
         log.warning(
@@ -340,11 +435,13 @@ def _update_tracking(config: AppConfig, storage: Storage) -> None:
         return
     storage.mark_tracked(result.written_ids)
     storage.mark_verification_events_written(result.events_written or [])
+    storage.mark_replies_written([row["message_id"] for row in replies])
     if pending:
         log.info("Fichier de suivi : %d offre(s) retenue(s) et %d écartée(s) ajoutées.", result.kept, result.rejected)
     if events:
-        log.info("Fichier de suivi : %d changement(s) de vérification ajouté(s) à l'onglet « Vérifications ».",
-                 len(events))
+        log.info(
+            "Fichier de suivi : %d changement(s) de vérification ajouté(s) à l'onglet « Vérifications ».", len(events)
+        )
 
 
 def _notify(config: AppConfig, storage: Storage, silent: bool) -> Counter[str]:
@@ -388,8 +485,9 @@ def run(config: AppConfig, force: bool = False) -> int:
 
     if config.cloud.enabled and not in_cloud():
         # The cloud runs the agent: a second run here would notify the same offers twice.
-        log.info("Mode cloud activé (cloud.enabled) : l'agent tourne dans %s, passage local annulé.",
-                 config.cloud.repository)
+        log.info(
+            "Mode cloud activé (cloud.enabled) : l'agent tourne dans %s, passage local annulé.", config.cloud.repository
+        )
         return 0
     if not force and not in_schedule(config.schedule, now):
         log.info("Hors de la plage horaire de config.yaml (schedule) : aucun passage.")
@@ -404,14 +502,20 @@ def run(config: AppConfig, force: bool = False) -> int:
             try:
                 silent = config.notifications.silent_first_run and not storage.has_completed_run()
                 run_id = storage.start_run(silent)
-                log.info("Passage n°%d (profil %s)%s", run_id, config.profile_name,
-                         " : premier passage silencieux" if silent else "")
+                log.info(
+                    "Passage n°%d (profil %s)%s",
+                    run_id,
+                    config.profile_name,
+                    " : premier passage silencieux" if silent else "",
+                )
                 totals, unavailable, listings = _collect_and_process(config, storage, run_id, now)
                 if unavailable:
-                    log.info("Connecteur non disponible pour %d entreprise(s) : %s",
-                             len(unavailable), ", ".join(unavailable))
+                    log.info(
+                        "Connecteur non disponible pour %d entreprise(s) : %s", len(unavailable), ", ".join(unavailable)
+                    )
                 totals.update(_collect_email_alerts(config, storage, run_id, now))
                 _verify_at_source(config, storage, listings, now)
+                _read_application_replies(config, storage)
                 _watch_silent_sources(storage, run_id)
                 totals.update(_enrich_with_ai(config, storage))
                 totals.update(_score_offers(config, storage))
@@ -423,8 +527,13 @@ def run(config: AppConfig, force: bool = False) -> int:
                 log.info(
                     "Bilan : %d collectée(s), %d nouvelle(s) retenue(s), %d écartée(s), %d doublon(s), "
                     "%d déjà vue(s), %d notifiée(s), %d source(s) en erreur.",
-                    totals["collected"], totals["kept"], totals["rejected"], totals["duplicates"],
-                    totals["already_seen"], totals["notified"], totals["source_errors"],
+                    totals["collected"],
+                    totals["kept"],
+                    totals["rejected"],
+                    totals["duplicates"],
+                    totals["already_seen"],
+                    totals["notified"],
+                    totals["source_errors"],
                 )
             finally:
                 storage.close()

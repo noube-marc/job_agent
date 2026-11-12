@@ -82,7 +82,9 @@ def _daily_quota_delay(error: Exception) -> float | None:
 
 
 class GeminiExtractor:
-    def __init__(self, api_key: str, models: list[str], pause_seconds: float = DEFAULT_PAUSE_SECONDS, client=None) -> None:
+    def __init__(
+        self, api_key: str, models: list[str], pause_seconds: float = DEFAULT_PAUSE_SECONDS, client=None
+    ) -> None:
         if client is None:
             from google import genai
             from google.genai import types
@@ -100,7 +102,11 @@ class GeminiExtractor:
         key = os.environ.get(API_KEY_VARIABLE, "").strip()
         if not key:
             raise AIUnavailable(f"{API_KEY_VARIABLE} absente du fichier .env")
-        models = [preferred_model] + [m for m in DEFAULT_MODELS if m != preferred_model] if preferred_model else DEFAULT_MODELS
+        models = (
+            [preferred_model] + [m for m in DEFAULT_MODELS if m != preferred_model]
+            if preferred_model
+            else DEFAULT_MODELS
+        )
         return cls(key, models)
 
     def _wait_turn(self) -> None:
@@ -112,8 +118,9 @@ class GeminiExtractor:
 
     def extract(self, title: str, company: str | None, description: str) -> tuple[AIExtraction, str]:
         """Returns the extraction and the model that produced it."""
-        prompt = PROMPT.format(title=title, company=company or "non précisée",
-                               description=description[:MAX_DESCRIPTION_CHARS])
+        prompt = PROMPT.format(
+            title=title, company=company or "non précisée", description=description[:MAX_DESCRIPTION_CHARS]
+        )
         return self.generate(prompt, AIExtraction)
 
     def generate(self, prompt: str, schema: type[BaseModel], temperature: float = 0) -> tuple[BaseModel, str]:

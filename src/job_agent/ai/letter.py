@@ -17,7 +17,7 @@ new one is asked.
 """
 
 import re
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -35,8 +35,20 @@ HEADER_FIELDS = ["Prénom Nom", "Adresse", "Code postal et ville", "Téléphone"
 MAX_OFFER_CHARS = 9000
 MAX_CV_CHARS = 9000
 MAX_NOTES_CHARS = 4000
-MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre",
-          "novembre", "décembre"]
+MONTHS = [
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
+]
 POLITENESS = "Je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées."
 
 
@@ -161,9 +173,13 @@ def offer_text(storage: Storage, offer_id: int):
 
 def build_prompt(main, description: str, notes: str, cv: str, sector: str) -> str:
     return PROMPT.format(
-        company=main["company"] or main["company_key"], sector=sector or "non précisé", title=main["title"],
-        location=main["location"] or "non précisé", offer=description[:MAX_OFFER_CHARS] or "(texte non disponible)",
-        notes=notes or "(aucune)", cv=cv[:MAX_CV_CHARS],
+        company=main["company"] or main["company_key"],
+        sector=sector or "non précisé",
+        title=main["title"],
+        location=main["location"] or "non précisé",
+        offer=description[:MAX_OFFER_CHARS] or "(texte non disponible)",
+        notes=notes or "(aucune)",
+        cv=cv[:MAX_CV_CHARS],
     )
 
 
@@ -236,8 +252,14 @@ def write_document(path: Path, main, draft: LetterDraft, header: dict[str, str],
 # ---------------------------------------------------------------------
 # Command
 # ---------------------------------------------------------------------
-def letter_command(storage: Storage, config: AppConfig, offer_id: int, regenerate: bool = False,
-                   extractor: GeminiExtractor | None = None, today: date | None = None) -> int:
+def letter_command(
+    storage: Storage,
+    config: AppConfig,
+    offer_id: int,
+    regenerate: bool = False,
+    extractor: GeminiExtractor | None = None,
+    today: date | None = None,
+) -> int:
     from job_agent.ai.enrich import _load_quota, _save_quota, available_models
     from job_agent.tracking.excel import SECTOR_LABELS
 
@@ -260,13 +282,17 @@ def letter_command(storage: Storage, config: AppConfig, offer_id: int, regenerat
     cached = None if regenerate else storage.letter_result(main["id"])
     if cached is not None:
         draft = LetterDraft.model_validate_json(cached["result"])
-        print("Lettre déjà préparée pour cette offre : document réécrit sans nouvel appel à l'IA "
-              "(ajoutez --nouvelle pour en demander une autre).")
+        print(
+            "Lettre déjà préparée pour cette offre : document réécrit sans nouvel appel à l'IA "
+            "(ajoutez --nouvelle pour en demander une autre)."
+        )
     else:
         if not description:
-            print("Attention : cette offre n'a pas de texte complet (alerte e-mail) ; la lettre sera plus générale. "
-                  f"Ajoutez vos notes dans {NOTES_DIR}/{company}.md pour l'enrichir.")
-        now = datetime.now(timezone.utc)
+            print(
+                "Attention : cette offre n'a pas de texte complet (alerte e-mail) ; la lettre sera plus générale. "
+                f"Ajoutez vos notes dans {NOTES_DIR}/{company}.md pour l'enrichir."
+            )
+        now = datetime.now(UTC)
         try:
             extractor = extractor or GeminiExtractor.from_env(config.ai.model)
         except AIUnavailable as error:
@@ -276,8 +302,9 @@ def letter_command(storage: Storage, config: AppConfig, offer_id: int, regenerat
         if not extractor.models:
             print(f"Quota gratuit de Gemini épuisé pour aujourd'hui : réessayez après {reset.astimezone():%H:%M}.")
             return 1
-        prompt = build_prompt(main, description, company_notes(company), cv,
-                              SECTOR_LABELS.get(main["sector"] or "", main["sector"] or ""))
+        prompt = build_prompt(
+            main, description, company_notes(company), cv, SECTOR_LABELS.get(main["sector"] or "", main["sector"] or "")
+        )
         try:
             draft, model = extractor.generate(prompt, LetterDraft, temperature=0.4)
         except AIUnavailable as error:
@@ -298,6 +325,8 @@ def letter_command(storage: Storage, config: AppConfig, offer_id: int, regenerat
         print(f"{path} est ouvert dans Word : fermez-le, puis relancez la commande.")
         return 1
     print(f"Lettre écrite dans {path}")
-    print(f"{len(draft.adaptations_cv)} proposition(s) d'adaptation du CV et "
-          f"{len(draft.points_a_verifier)} point(s) à vérifier à la fin du document.")
+    print(
+        f"{len(draft.adaptations_cv)} proposition(s) d'adaptation du CV et "
+        f"{len(draft.points_a_verifier)} point(s) à vérifier à la fin du document."
+    )
     return 0

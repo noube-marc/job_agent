@@ -12,7 +12,7 @@ the element also holds a recruiter's e-mail address, never stored.
 """
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import unquote, urlsplit
 
 from bs4 import BeautifulSoup
@@ -33,8 +33,7 @@ def parse_site_map(xml: str) -> list[dict]:
     for url in _LOC.findall(xml):
         match = _JOB.search(urlsplit(url).path)
         if match:
-            offers.append({"id": match.group(2), "url": url,
-                           "words": unquote(match.group(1)).replace("-", " ")})
+            offers.append({"id": match.group(2), "url": url, "words": unquote(match.group(1)).replace("-", " ")})
     return offers
 
 
@@ -49,7 +48,7 @@ def parse_offer_page(html: str, offer_id: str) -> dict:
         "title": attributes.get("title") or "",
         "country": (attributes.get("country") or "").strip(),
         "city": attributes.get("city") or None,
-        "published": datetime.fromtimestamp(int(posted) / 1000, tz=timezone.utc) if posted.isdigit() else None,
+        "published": datetime.fromtimestamp(int(posted) / 1000, tz=UTC) if posted.isdigit() else None,
         "position_type": attributes.get("positiontype") or None,
         "work_mode": WORK_MODES.get((attributes.get("workfromhome") or "").strip().lower()),
         "description": html_to_text(attributes.get("description") or ""),
@@ -93,8 +92,11 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
                 published_at=published,
                 published_at_source="career_site" if published else None,
                 first_seen_at=context.now,
-                raw_payload={"address_words": item["words"], "country": details.get("country"),
-                             "position_type": details.get("position_type")},
+                raw_payload={
+                    "address_words": item["words"],
+                    "country": details.get("country"),
+                    "position_type": details.get("position_type"),
+                },
             )
         )
     return offers

@@ -28,8 +28,12 @@ WORKFLOW_TEMPLATE = Path("cloud/run.yml")
 STATE_BRANCH = "state"
 STATE_FILE = "state.bin"
 SECRET_VARIABLES = [
-    "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "GEMINI_API_KEY",
-    "GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN",
+    "TELEGRAM_BOT_TOKEN",
+    "TELEGRAM_CHAT_ID",
+    "GEMINI_API_KEY",
+    "GMAIL_CLIENT_ID",
+    "GMAIL_CLIENT_SECRET",
+    "GMAIL_REFRESH_TOKEN",
 ]
 
 
@@ -79,7 +83,9 @@ def import_state(source: Path, database: Path, key: str | None = None) -> bool:
     try:
         data = _fernet(key).decrypt(source.read_bytes())
     except InvalidToken:
-        raise CloudError("mémoire chiffrée illisible : clé JOB_AGENT_STATE_KEY différente de celle du chiffrement.") from None
+        raise CloudError(
+            "mémoire chiffrée illisible : clé JOB_AGENT_STATE_KEY différente de celle du chiffrement."
+        ) from None
     database.parent.mkdir(parents=True, exist_ok=True)
     if database.exists():
         shutil.copyfile(database, database.with_suffix(".bak"))
@@ -140,9 +146,15 @@ def ensure_branch(repository: str, branch: str) -> None:
 def download_state(repository: str) -> bytes:
     """The encrypted memory of the cloud (raw file of the state branch)."""
     result = subprocess.run(
-        ["gh", "api", "-H", "Accept: application/vnd.github.raw",
-         f"repos/{repository}/contents/{STATE_FILE}?ref={STATE_BRANCH}"],
-        capture_output=True, check=False,
+        [
+            "gh",
+            "api",
+            "-H",
+            "Accept: application/vnd.github.raw",
+            f"repos/{repository}/contents/{STATE_FILE}?ref={STATE_BRANCH}",
+        ],
+        capture_output=True,
+        check=False,
     )
     if result.returncode != 0:
         raise CloudError("mémoire du cloud introuvable (aucun passage encore ?)")
@@ -184,7 +196,9 @@ def cloud_setup(config, config_path: Path, env_path: Path = Path(".env")) -> int
         set_secret(repository, "CV_ANONYMIZED", cv_path.read_text(encoding="utf-8"))
         print(f"{len(SECRET_VARIABLES) + 3} secrets envoyés à {repository} (valeurs jamais affichées).")
 
-        put_file(repository, ".github/workflows/run.yml", WORKFLOW_TEMPLATE.read_bytes(), "Install the job-agent workflow")
+        put_file(
+            repository, ".github/workflows/run.yml", WORKFLOW_TEMPLATE.read_bytes(), "Install the job-agent workflow"
+        )
         print("Tâche installée : .github/workflows/run.yml")
 
         database = Path(config.storage.database_path)
