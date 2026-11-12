@@ -74,3 +74,28 @@ def test_errors_name_key_and_expected_value(tmp_path: Path) -> None:
     assert "inférieur ou égal à 23" in message
     assert "experience.keep_if_unspecified : valeur « peut-être » invalide : true ou false" in message
     assert "ai : clé obligatoire absente" in message
+
+
+CROSS_FIELD_CASES = [
+    (lambda d: d["schedule"].update(start_hour=20, end_hour=8), "schedule : start_hour (20) doit être inférieur à end_hour"),
+    (lambda d: d["schedule"].update(timezone="Europe/Pariss"), "fuseau horaire « Europe/Pariss » inconnu"),
+    (lambda d: d["source_verification"].update(match_threshold=0.6, probable_match_threshold=0.7),
+     "probable_match_threshold (0.7) doit être inférieur ou égal à match_threshold"),
+    (lambda d: d["technical_profile"].update(technical_gap_threshold=3, too_advanced_threshold=3),
+     "technical_gap_threshold (3) doit être inférieur à too_advanced_threshold"),
+    (lambda d: d["companies"]["watchlist"].append(dict(d["companies"]["watchlist"][0])), "apparaît deux fois dans watchlist"),
+    (lambda d: d["companies"]["watchlist"][0].update(careers_url="recrutement.exemple.fr"), "adresse complète attendue"),
+    (lambda d: (d["sources"]["email_alerts"].update(enabled=True),
+                [block.update(allowed_senders=[]) for block in d["sources"]["email_alerts"]["providers"].values()]),
+     "aucun site n'a d'expéditeur autorisé"),
+    (lambda d: (d["sources"]["email_alerts"].update(enabled=True),
+                d["sources"]["email_alerts"]["providers"]["linkedin"].update(enabled=True, allowed_senders=["linkedin"])),
+     "« linkedin » n'est pas une adresse e-mail complète"),
+]
+
+
+@pytest.mark.parametrize("modify, message", CROSS_FIELD_CASES)
+def test_cross_field_rules_have_clear_messages(tmp_path: Path, modify, message: str) -> None:
+    path = write_modified_copy(tmp_path, modify)
+    with pytest.raises(ConfigError, match=message.replace("(", r"\(").replace(")", r"\)")):
+        load_config(path)
