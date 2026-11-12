@@ -52,7 +52,22 @@ LABELS = {
 CAREER_SITE_LABEL = "site carrière"
 
 # Connectors that read every new offer at each run.
-CATCHES_EVERY_NEW_OFFER = {"ashby", "workday", "successfactors_search", "avature", "phenom", "credit_agricole_jobs", "cornerstone", "digitalrecruiters", "successfactors_sitemap", "jobposting", "danone", "heineken", "oracle", "creditmutuel"}
+CATCHES_EVERY_NEW_OFFER = {
+    "ashby",
+    "workday",
+    "successfactors_search",
+    "avature",
+    "phenom",
+    "credit_agricole_jobs",
+    "cornerstone",
+    "digitalrecruiters",
+    "successfactors_sitemap",
+    "jobposting",
+    "danone",
+    "heineken",
+    "oracle",
+    "creditmutuel",
+}
 # Title closeness (0 to 100) for a probable match on the title alone.
 LOOSE_TITLE_MATCH = 85
 RECHECK_STATE_KEY = "verification_last_recheck"
@@ -101,11 +116,13 @@ def initial_status(config: AppConfig, company_key: str) -> tuple[str | None, str
 
 def _loose_match(storage: Storage, main) -> str | None:
     """A career offer of the same company with a close title, if any."""
-    wanted = " ".join(sorted(signature(main["company_key"], main["title"], None, None, "", None,
-                                       main["location"]).title_words))
+    wanted = " ".join(
+        sorted(signature(main["company_key"], main["title"], None, None, "", None, main["location"]).title_words)
+    )
     for row in storage.career_offers_of_company(main["company_key"]):
-        words = " ".join(sorted(signature(row["company_key"], row["title"], None, None, "", None,
-                                          row["location"]).title_words))
+        words = " ".join(
+            sorted(signature(row["company_key"], row["title"], None, None, "", None, row["location"]).title_words)
+        )
         if wanted and words and fuzz.token_set_ratio(wanted, words) >= LOOSE_TITLE_MATCH:
             return row["title"]
     return None
@@ -218,4 +235,3 @@ def listing_from(ats: str, offers, stored_dates: dict[str, str | None]) -> Listi
         if value is not None:
             dates.append(value)
     return Listing(ats, True, min(dates) if dates else None, frozenset(o.source_offer_id for o in offers))
-

@@ -12,7 +12,7 @@ contract) is opened only for NEW offers whose title matches the search.
 """
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit
 
 from bs4 import BeautifulSoup
@@ -55,12 +55,15 @@ def parse_search_page(html: str, base_url: str) -> list[dict]:
         match = _OFFER_ID.search(urlsplit(url).path)
         offer_id = match.group(1) if match else urlsplit(url).path
         location = row.select_one("td.colLocation .jobLocation") or row.select_one(".jobLocation")
-        offers.setdefault(offer_id, {
-            "id": offer_id,
-            "title": link.get_text(" ", strip=True),
-            "location": location.get_text(" ", strip=True) if location else None,
-            "url": url,
-        })
+        offers.setdefault(
+            offer_id,
+            {
+                "id": offer_id,
+                "title": link.get_text(" ", strip=True),
+                "location": location.get_text(" ", strip=True) if location else None,
+                "url": url,
+            },
+        )
     return list(offers.values())
 
 
@@ -69,7 +72,7 @@ def _posted_date(value: str | None) -> datetime | None:
         return None
     for pattern in ("%a %b %d %H:%M:%S %Z %Y", "%Y-%m-%d"):
         try:
-            return datetime.strptime(value.strip(), pattern).replace(tzinfo=timezone.utc)
+            return datetime.strptime(value.strip(), pattern).replace(tzinfo=UTC)
         except ValueError:
             continue
     return None
@@ -85,8 +88,7 @@ def parse_offer_page(html: str) -> dict:
     description = soup.select_one("[itemprop=description]") or soup.select_one(".jobdescription")
     date = soup.select_one("meta[itemprop=datePosted]")
     contract = next(
-        (value for key, value in properties.items()
-         if key not in _IGNORED_PROPERTIES and detect_contract(value)),
+        (value for key, value in properties.items() if key not in _IGNORED_PROPERTIES and detect_contract(value)),
         None,
     )
     return {

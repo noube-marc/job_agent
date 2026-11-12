@@ -1,7 +1,7 @@
 """Tests for the time window and the run lock."""
 
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
@@ -13,13 +13,13 @@ PARIS_WINTER = timezone(timedelta(hours=1))
 @pytest.mark.parametrize(
     ("moment", "expected"),
     [
-        (datetime(2026, 11, 10, 8, 0, tzinfo=PARIS_WINTER), True),    # Tuesday 08:00
-        (datetime(2026, 11, 10, 20, 5, tzinfo=PARIS_WINTER), True),   # Tuesday 20:05
+        (datetime(2026, 11, 10, 8, 0, tzinfo=PARIS_WINTER), True),  # Tuesday 08:00
+        (datetime(2026, 11, 10, 20, 5, tzinfo=PARIS_WINTER), True),  # Tuesday 20:05
         (datetime(2026, 11, 10, 21, 0, tzinfo=PARIS_WINTER), False),  # Tuesday 21:00
         (datetime(2026, 11, 10, 7, 59, tzinfo=PARIS_WINTER), False),  # Tuesday 07:59
-        (datetime(2026, 11, 14, 10, 0, tzinfo=PARIS_WINTER), True),   # Saturday
+        (datetime(2026, 11, 14, 10, 0, tzinfo=PARIS_WINTER), True),  # Saturday
         (datetime(2026, 11, 15, 10, 0, tzinfo=PARIS_WINTER), False),  # Sunday
-        (datetime(2026, 11, 10, 7, 30, tzinfo=timezone.utc), True),   # 08:30 in Paris
+        (datetime(2026, 11, 10, 7, 30, tzinfo=UTC), True),  # 08:30 in Paris
     ],
 )
 def test_in_schedule(config, moment: datetime, expected: bool) -> None:
@@ -28,10 +28,8 @@ def test_in_schedule(config, moment: datetime, expected: bool) -> None:
 
 def test_lock_prevents_two_runs(tmp_path) -> None:
     lock = tmp_path / "agent.lock"
-    with run_lock(lock):
-        with pytest.raises(AlreadyRunning):
-            with run_lock(lock):
-                pass
+    with run_lock(lock), pytest.raises(AlreadyRunning), run_lock(lock):
+        pass
     assert not lock.exists()
 
 

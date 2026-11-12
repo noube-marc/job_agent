@@ -14,8 +14,10 @@ from job_agent.processing.pipeline import process_offers
 from job_agent.processing.sectors import SectorIndex
 from job_agent.storage import Storage
 
-DESCRIPTION = ("Vous construisez des tableaux de bord Power BI et des requêtes SQL pour les équipes métier. "
-               "Kafka serait un plus. Poste en CDI à Paris, 2 jours de télétravail. 2 ans d'expérience. ") * 3
+DESCRIPTION = (
+    "Vous construisez des tableaux de bord Power BI et des requêtes SQL pour les équipes métier. "
+    "Kafka serait un plus. Poste en CDI à Paris, 2 jours de télétravail. 2 ans d'expérience. "
+) * 3
 
 
 class ApiError(Exception):
@@ -42,8 +44,14 @@ def _extractor(answers: dict[str, object], models=("m1", "m2")) -> tuple[GeminiE
     return GeminiExtractor("key", list(models), pause_seconds=0, client=SimpleNamespace(models=fake)), fake
 
 
-GOOD = {"contract_type": "permanent", "min_experience_years": 2, "required_skills": ["SQL", "Power BI"],
-        "optional_skills": ["Kafka"], "work_mode": "hybrid", "seniority": "confirmed"}
+GOOD = {
+    "contract_type": "permanent",
+    "min_experience_years": 2,
+    "required_skills": ["SQL", "Power BI"],
+    "optional_skills": ["Kafka"],
+    "work_mode": "hybrid",
+    "seniority": "confirmed",
+}
 
 
 def test_overloaded_model_falls_back_to_the_next() -> None:
@@ -73,8 +81,12 @@ def _stored(config, tmp_path, *offers):
 
 
 def test_enrichment_is_cached_and_skips_notified_offers(config, tmp_path) -> None:
-    storage = _stored(config, tmp_path, make_offer(source_offer_id="1", description=DESCRIPTION),
-                      make_offer(source_offer_id="2", title="Data Engineer", description=DESCRIPTION))
+    storage = _stored(
+        config,
+        tmp_path,
+        make_offer(source_offer_id="1", description=DESCRIPTION),
+        make_offer(source_offer_id="2", title="Data Engineer", description=DESCRIPTION),
+    )
     notified = storage.pending_notifications()[1]["group_id"]
     storage.mark_notified([notified], "telegram")
     extractor, fake = _extractor({"m1": GOOD})
@@ -91,8 +103,9 @@ def test_ai_warnings(config, tmp_path) -> None:
     """The rules found a value (CDI, 2 years): the AI only adds warnings."""
     storage = _stored(config, tmp_path, make_offer(description="Stack Kafka. Expérience de 2 ans. " * 10))
     row = storage.pending_notifications()[0]
-    ai = AIExtraction(contract_type="internship", min_experience_years=6, required_skills=["SQL"],
-                      seniority="lead_or_manager")
+    ai = AIExtraction(
+        contract_type="internship", min_experience_years=6, required_skills=["SQL"], seniority="lead_or_manager"
+    )
     flags = compare_with_rules(row, ai, config)
     assert "IA : stage selon la description (à vérifier)" in flags
     assert "IA : 6 ans d'expérience minimum (à vérifier)" in flags
@@ -104,8 +117,12 @@ def test_ai_warnings(config, tmp_path) -> None:
 def test_annotation_sheet_and_evaluation(config, tmp_path) -> None:
     from job_agent.ai.evaluation import ai_answers_for, sheet_offer_ids
 
-    storage = _stored(config, tmp_path, make_offer(source_offer_id="1", description=DESCRIPTION),
-                      make_offer(source_offer_id="2", title="Data Engineer", description=DESCRIPTION))
+    storage = _stored(
+        config,
+        tmp_path,
+        make_offer(source_offer_id="1", description=DESCRIPTION),
+        make_offer(source_offer_id="2", title="Data Engineer", description=DESCRIPTION),
+    )
     path = tmp_path / "annotation.xlsx"
     assert write_sheet(storage, path, size=30) == 2  # no AI call needed
     with pytest.raises(FileExistsError):
@@ -135,13 +152,19 @@ class QuotaError(Exception):
     code = 429
 
     def __str__(self) -> str:
-        return ("429 RESOURCE_EXHAUSTED {'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', "
-                "'quotaValue': '20'}, {'retryDelay': '3600s'}")
+        return (
+            "429 RESOURCE_EXHAUSTED {'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', "
+            "'quotaValue': '20'}, {'retryDelay': '3600s'}"
+        )
 
 
 def test_daily_quota_pauses_the_model_until_reset(config, tmp_path) -> None:
-    storage = _stored(config, tmp_path, make_offer(source_offer_id="1", description=DESCRIPTION),
-                      make_offer(source_offer_id="2", title="Data Engineer", description=DESCRIPTION))
+    storage = _stored(
+        config,
+        tmp_path,
+        make_offer(source_offer_id="1", description=DESCRIPTION),
+        make_offer(source_offer_id="2", title="Data Engineer", description=DESCRIPTION),
+    )
     extractor, fake = _extractor({"m1": QuotaError(), "m2": GOOD})
     counts = enrich_new_offers(storage, config, extractor)
     assert counts["analysed"] == 2
@@ -173,7 +196,11 @@ def _enriched(config, tmp_path, answer: dict, **offer):
     storage = _stored(config, tmp_path, make_offer(description=NO_DETAILS, contract_type=None, **offer))
     extractor, _ = _extractor({"m1": answer})
     counts = enrich_new_offers(storage, config, extractor)
-    return storage, storage.get_offer(storage.pending_notifications()[0]["group_id"]) if storage.pending_notifications() else None, counts
+    return (
+        storage,
+        storage.get_offer(storage.pending_notifications()[0]["group_id"]) if storage.pending_notifications() else None,
+        counts,
+    )
 
 
 def test_ai_fills_what_the_rules_did_not_find(config, tmp_path) -> None:

@@ -12,6 +12,7 @@ requests are kept to a minimum:
 """
 
 import re
+from contextlib import suppress
 from datetime import datetime, time, timedelta
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
@@ -27,8 +28,14 @@ MAX_PAGES = 25
 FRANCE_FACET = ("locationCountry", "54c5b6971ffb4bf0b116fe7651ec789a")
 _LOCALE = re.compile(r"^[a-z]{2}-[A-Z]{2}$")
 _REFERENCE = re.compile(r"^[A-Z]{1,6}[-_]?\d{3,}")
-_REMOTE_TYPES = {"hybrid": "hybrid", "hybride": "hybrid", "remote": "full_remote",
-                 "teletravail": "full_remote", "onsite": "onsite", "sur site": "onsite"}
+_REMOTE_TYPES = {
+    "hybrid": "hybrid",
+    "hybride": "hybrid",
+    "remote": "full_remote",
+    "teletravail": "full_remote",
+    "onsite": "onsite",
+    "sur site": "onsite",
+}
 
 
 class Site:
@@ -64,10 +71,8 @@ def _published_at(day_text: str | None, days_ago: int | None, context: CollectCo
     today = context.now.astimezone(zone).date()
     candidates = []
     if day_text:
-        try:
+        with suppress(ValueError):
             candidates.append(datetime.fromisoformat(day_text[:10]).date())
-        except ValueError:
-            pass
     if days_ago is not None:
         candidates.append(today - timedelta(days=days_ago))
     if not candidates:
@@ -78,8 +83,12 @@ def _published_at(day_text: str | None, days_ago: int | None, context: CollectCo
 
 
 def _list_page(site: Site, context: CollectContext, offset: int, facet: tuple[str, str] | None) -> dict:
-    body = {"appliedFacets": {facet[0]: [facet[1]]} if facet else {}, "limit": PAGE_SIZE,
-            "offset": offset, "searchText": ""}
+    body = {
+        "appliedFacets": {facet[0]: [facet[1]]} if facet else {},
+        "limit": PAGE_SIZE,
+        "offset": offset,
+        "searchText": "",
+    }
     response = context.client.post(f"{site.api}/jobs", json=body, headers={"Accept": "application/json"})
     try:
         return response.json()

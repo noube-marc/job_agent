@@ -17,15 +17,15 @@ from pydantic import BaseModel, ConfigDict, Field
 # ---------------------------------------------------------------------
 # Closed lists of allowed values
 # ---------------------------------------------------------------------
-ContractType = Literal[
-    "permanent", "fixed_term", "internship", "apprenticeship", "freelance"
-]
+ContractType = Literal["permanent", "fixed_term", "internship", "apprenticeship", "freelance"]
 WorkMode = Literal["onsite", "hybrid", "full_remote"]
-PrioritySector = Literal[
-    "insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail"
-]
+PrioritySector = Literal["insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail"]
 CompanySector = Literal[
-    "insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail",
+    "insurance",
+    "banking",
+    "agriculture_agrifood",
+    "consumer_goods",
+    "retail",
     "other",
 ]
 DateSource = Literal["career_site", "job_board", "first_seen"]
@@ -33,8 +33,16 @@ Weekday = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 TrackingBackend = Literal["google_sheets", "excel", "csv"]
 NotificationChannel = Literal["telegram", "email", "none"]
 NotificationField = Literal[
-    "title", "company", "location", "contract", "publication_date", "url",
-    "experience_flag", "priority_flag", "verification_status", "match_score",
+    "title",
+    "company",
+    "location",
+    "contract",
+    "publication_date",
+    "url",
+    "experience_flag",
+    "priority_flag",
+    "verification_status",
+    "match_score",
 ]
 AIProvider = Literal["gemini"]
 

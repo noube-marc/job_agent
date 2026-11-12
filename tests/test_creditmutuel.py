@@ -15,21 +15,34 @@ SITE_MAP_URL = "https://recrutement.exemple.fr/fr/sitemap_offres.aspx"
 def _site_map() -> str:
     recent, old = NOW.date() - timedelta(days=2), NOW.date() - timedelta(days=40)
     entries = [("101", recent), ("102", recent), ("103", old), ("104", recent)]
-    return "<urlset>" + "".join(
-        f"<url><loc>https://recrutement.exemple.fr/fr/offre.html?annonce={i}</loc><lastmod>{d.isoformat()}</lastmod></url>"
-        for i, d in entries) + "</urlset>"
+    return (
+        "<urlset>"
+        + "".join(
+            f"<url><loc>https://recrutement.exemple.fr/fr/offre.html?annonce={i}</loc><lastmod>{d.isoformat()}</lastmod></url>"
+            for i, d in entries
+        )
+        + "</urlset>"
+    )
 
 
 def _row(label: str, value: str) -> str:
-    return (f'<tr><td><span class="ei_root_icon" title="{label}"><span class="invisible">{label}</span></span></td>'
-            f"<td></td><td><em>{value}</em></td></tr>")
+    return (
+        f'<tr><td><span class="ei_root_icon" title="{label}"><span class="invisible">{label}</span></span></td>'
+        f"<td></td><td><em>{value}</em></td></tr>"
+    )
 
 
-PAGE = ("<html><h1>Data Scientist (F/H)</h1><div class='ei_card_body'><table>"
-        + _row("Type de contrat", "CDI <span> ()</span>") + _row("Localisation", "PARIS (75)")
-        + _row("Date de publication", "10/11/2026") + _row("Référence", "A1")
-        + "</table></div><div><h2>Votre mission</h2><p>" + "Modèles de risque en Python. " * 20 + "</p></div>"
-        + "<div class='rhec_offres'>Ces autres offres peuvent vous intéresser</div></html>")
+PAGE = (
+    "<html><h1>Data Scientist (F/H)</h1><div class='ei_card_body'><table>"
+    + _row("Type de contrat", "CDI <span> ()</span>")
+    + _row("Localisation", "PARIS (75)")
+    + _row("Date de publication", "10/11/2026")
+    + _row("Référence", "A1")
+    + "</table></div><div><h2>Votre mission</h2><p>"
+    + "Modèles de risque en Python. " * 20
+    + "</p></div>"
+    + "<div class='rhec_offres'>Ces autres offres peuvent vous intéresser</div></html>"
+)
 
 
 class Fake:

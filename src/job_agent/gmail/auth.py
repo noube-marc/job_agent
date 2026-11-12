@@ -39,14 +39,19 @@ def load_credentials() -> Credentials:
     if not refresh_token:
         raise GmailAuthError(f"{REFRESH_TOKEN} absent du fichier .env : lancez « uv run job-agent gmail-setup ».")
     credentials = Credentials(
-        token=None, refresh_token=refresh_token, token_uri=TOKEN_URI,
-        client_id=client_id, client_secret=client_secret, scopes=SCOPES,
+        token=None,
+        refresh_token=refresh_token,
+        token_uri=TOKEN_URI,
+        client_id=client_id,
+        client_secret=client_secret,
+        scopes=SCOPES,
     )
     try:
         credentials.refresh(Request())
     except Exception as error:  # the token text must never reach the logs
         raise GmailAuthError(
-            f"autorisation Gmail refusée ou expirée ({type(error).__name__}) : relancez « uv run job-agent gmail-setup »."
+            f"autorisation Gmail refusée ou expirée ({type(error).__name__}) : "
+            "relancez « uv run job-agent gmail-setup »."
         ) from None
     return credentials
 
@@ -61,11 +66,15 @@ def gmail_setup(env_path: str | Path = ".env") -> int:
         print(error)
         return 1
     flow = InstalledAppFlow.from_client_config(
-        {"installed": {
-            "client_id": client_id, "client_secret": client_secret,
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth", "token_uri": TOKEN_URI,
-            "redirect_uris": ["http://localhost"],
-        }},
+        {
+            "installed": {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": TOKEN_URI,
+                "redirect_uris": ["http://localhost"],
+            }
+        },
         SCOPES,
     )
     print("Une page Google va s'ouvrir : connectez-vous avec la boîte qui reçoit les alertes,")

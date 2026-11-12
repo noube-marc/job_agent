@@ -135,9 +135,7 @@ class PoliteClient:
         except httpx.HTTPError as error:
             raise SourceError(f"site injoignable ({urlsplit(url).netloc}, {type(error).__name__})") from None
         if response.status_code >= 400:
-            raise SourceError(
-                f"réponse HTTP {response.status_code} ({urlsplit(url).netloc})", response.status_code
-            )
+            raise SourceError(f"réponse HTTP {response.status_code} ({urlsplit(url).netloc})", response.status_code)
         return response
 
     def get(self, url: str, **kwargs: Any) -> httpx.Response:

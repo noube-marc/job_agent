@@ -26,7 +26,7 @@ from job_agent.text import contains_phrase, tokens
 MODEL_NAME = "intfloat/multilingual-e5-small"
 SEMANTIC_WEIGHT = 0.7
 MAX_SKILLS = 5
-CV_CHARS = 2500        # the model reads about 512 tokens
+CV_CHARS = 2500  # the model reads about 512 tokens
 OFFER_CHARS = 1500
 # Raw closeness bounds (lowest, highest), with a description or title only.
 BOUNDS_WITH_DESCRIPTION = (0.84, 0.92)
@@ -103,8 +103,10 @@ class CVMatcher:
         """(closeness of meaning from 0 to 1, number of mastered skills named)."""
         if not offers:
             return []
-        texts = [title if is_excerpt(description) else f"{title}. {without_experience(description)[:OFFER_CHARS]}"
-                 for title, description in offers]
+        texts = [
+            title if is_excerpt(description) else f"{title}. {without_experience(description)[:OFFER_CHARS]}"
+            for title, description in offers
+        ]
         closeness = self._encode(texts) @ self._cv
         results = []
         for (title, description), value in zip(offers, closeness):

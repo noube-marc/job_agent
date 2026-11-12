@@ -7,7 +7,7 @@ with their full description, which is enough for a run every 2 hours.
 
 import re
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from urllib.parse import parse_qs, urlsplit
 
@@ -58,7 +58,7 @@ def parse_feed(xml_text: str, company: WatchedCompany, now: datetime) -> list[Of
         except (TypeError, ValueError):
             published_at = None
         if published_at is not None and published_at.tzinfo is None:
-            published_at = published_at.replace(tzinfo=timezone.utc)
+            published_at = published_at.replace(tzinfo=UTC)
 
         offers.append(
             Offer(
@@ -77,8 +77,11 @@ def parse_feed(xml_text: str, company: WatchedCompany, now: datetime) -> list[Of
                 published_at_source="career_site" if published_at else None,
                 first_seen_at=now,
                 raw_payload={
-                    "title": raw_title, "link": link, "categories": categories,
-                    "pubDate": published, "description": description_html,
+                    "title": raw_title,
+                    "link": link,
+                    "categories": categories,
+                    "pubDate": published,
+                    "description": description_html,
                 },
             )
         )

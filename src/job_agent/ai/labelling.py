@@ -35,9 +35,18 @@ SHEET_NAME = "Étiquetage"
 OFF_TARGET_EVERY = 10
 MAX_VALIDATED_ROWS = 3000
 COLUMNS = [
-    ("Identifiant", 11), ("Date de publication", 14), ("Entreprise", 22), ("Intitulé", 40), ("Lieu", 18),
-    ("Contrat", 9), ("Score CV", 9), ("Décision de l'agent", 40), ("Extrait", 60), ("Lien", 30),
-    ("Pertinente pour moi ?", 14), ("Commentaire", 30),
+    ("Identifiant", 11),
+    ("Date de publication", 14),
+    ("Entreprise", 22),
+    ("Intitulé", 40),
+    ("Lieu", 18),
+    ("Contrat", 9),
+    ("Score CV", 9),
+    ("Décision de l'agent", 40),
+    ("Extrait", 60),
+    ("Lien", 30),
+    ("Pertinente pour moi ?", 14),
+    ("Commentaire", 30),
 ]
 ANSWER_COLUMN = 11
 COMMENT_COLUMN = 12
@@ -132,8 +141,9 @@ def _new_workbook() -> Workbook:
         sheet.column_dimensions[cell.column_letter].width = width
     sheet.freeze_panes = "E2"
     answer = sheet.cell(row=1, column=ANSWER_COLUMN).column_letter
-    validation = DataValidation(type="list", formula1='"oui,non"', allow_blank=True,
-                                errorTitle="Réponse", error="Choisissez oui ou non.")
+    validation = DataValidation(
+        type="list", formula1='"oui,non"', allow_blank=True, errorTitle="Réponse", error="Choisissez oui ou non."
+    )
     sheet.add_data_validation(validation)
     validation.add(f"{answer}2:{answer}{MAX_VALIDATED_ROWS}")
     sheet.auto_filter.ref = f"A1:{sheet.cell(row=1, column=len(COLUMNS)).column_letter}1"
@@ -153,11 +163,20 @@ def update_sheet(
     added = 0
     for row in _candidates(storage, known):
         score = row["match_score"] if "match_score" in row.keys() else None
-        sheet.append([
-            row["id"], _date(row["published_at"] or row["effective_date"]), row["company"] or row["company_key"],
-            row["title"], row["location"], CONTRACT_LABELS.get(row["contract_type"] or "", ""), score,
-            _decision(row), (row["description"] or "")[:EXCERPT_CHARS], row["apply_url"] or row["url"],
-        ])
+        sheet.append(
+            [
+                row["id"],
+                _date(row["published_at"] or row["effective_date"]),
+                row["company"] or row["company_key"],
+                row["title"],
+                row["location"],
+                CONTRACT_LABELS.get(row["contract_type"] or "", ""),
+                score,
+                _decision(row),
+                (row["description"] or "")[:EXCERPT_CHARS],
+                row["apply_url"] or row["url"],
+            ]
+        )
         sheet.cell(row=sheet.max_row, column=9).alignment = Alignment(wrap_text=True, vertical="top")
         added += 1
     prefilled = _prefill(sheet, storage, list(not_relevant_companies))
@@ -165,7 +184,8 @@ def update_sheet(
     path.parent.mkdir(parents=True, exist_ok=True)
     workbook.save(path)
     labelled = sum(
-        1 for (answer,) in sheet.iter_rows(min_row=2, min_col=ANSWER_COLUMN, max_col=ANSWER_COLUMN, values_only=True)
+        1
+        for (answer,) in sheet.iter_rows(min_row=2, min_col=ANSWER_COLUMN, max_col=ANSWER_COLUMN, values_only=True)
         if answer in ("oui", "non")
     )
     return added, sheet.max_row - 1, labelled, prefilled

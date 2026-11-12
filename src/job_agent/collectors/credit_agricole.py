@@ -53,15 +53,17 @@ def parse_list_page(html: str) -> list[dict]:
         match = _REFERENCE.search(url)
         reference = favorite["data-reference"] if favorite else (match.group(1) if match else url)
         city = card.get("data-gtm-jobcity") or ""
-        offers.append({
-            "id": reference,
-            "title": card.get("data-gtm-jobtitle") or link.get_text(" ", strip=True),
-            "url": url,
-            "contract": card.get("data-gtm-jobcontract") or None,
-            "country": card.get("data-gtm-jobcountry") or "",
-            "city": re.sub(r"\s*-\s*[^-]+$", "", city).strip() or None,
-            "entity": card.get("data-gtm-jobentity") or None,
-        })
+        offers.append(
+            {
+                "id": reference,
+                "title": card.get("data-gtm-jobtitle") or link.get_text(" ", strip=True),
+                "url": url,
+                "contract": card.get("data-gtm-jobcontract") or None,
+                "country": card.get("data-gtm-jobcountry") or "",
+                "city": re.sub(r"\s*-\s*[^-]+$", "", city).strip() or None,
+                "entity": card.get("data-gtm-jobentity") or None,
+            }
+        )
     return offers
 
 
@@ -91,8 +93,11 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
     listed: list[dict] = []
     seen: set[str] = set()
     for page in range(1, MAX_PAGES + 1):
-        items = [item for item in parse_list_page(context.client.get(page_url(company.careers_url, page)).text)
-                 if item["id"] not in seen]
+        items = [
+            item
+            for item in parse_list_page(context.client.get(page_url(company.careers_url, page)).text)
+            if item["id"] not in seen
+        ]
         if page == 1 and not items:
             raise SourceError("aucune offre lisible sur la page des offres (structure changée ?)")
         if not items:
@@ -102,8 +107,11 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
 
     offers: list[Offer] = []
     # Brands watched on their own with this connector are not read twice.
-    others = {plain(other.name) for other in context.config.companies.watchlist
-              if other.ats == "credit_agricole_jobs" and other.name != company.name}
+    others = {
+        plain(other.name)
+        for other in context.config.companies.watchlist
+        if other.ats == "credit_agricole_jobs" and other.name != company.name
+    }
     for item in listed:
         if item["entity"] and plain(item["entity"]) in others:
             continue

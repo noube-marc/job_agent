@@ -16,7 +16,13 @@ from job_agent.text import plain
 # Order matters: the first family found wins ("CDI" before "stage" so
 # that "CDI après stage" stays a CDI only if nothing more specific is set).
 _CONTRACT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("apprenticeship", re.compile(r"\b(alternance|alternant|apprenti|apprentissage|apprenticeship|apprentice|contrat de professionnalisation|work study)\b")),
+    (
+        "apprenticeship",
+        re.compile(
+            r"\b(alternance|alternant|apprenti|apprentissage|apprenticeship|apprentice"
+            r"|contrat de professionnalisation|work study)\b"
+        ),
+    ),
     ("internship", re.compile(r"\b(stage|stagiaire|internship|intern)\b")),
     ("interim", re.compile(r"\b(interim|interimaire|travail temporaire|temporary)\b")),
     ("freelance", re.compile(r"\b(freelance|independant|portage salarial|contractor)\b")),
@@ -44,7 +50,7 @@ _CDD_IN_TEXT = re.compile(r"\b(cdd|contrat a duree determinee)\b")
 
 
 def contract_from_description(description: str | None) -> str | None:
-    """"permanent" or "fixed_term" when the text names only one of them."""
+    """ "permanent" or "fixed_term" when the text names only one of them."""
     if not description:
         return None
     text = plain(description)
@@ -58,9 +64,7 @@ def contract_from_description(description: str | None) -> str | None:
 
 # Phrases showing that an offer is really an internship or a work-study
 # position, whatever contract type its source announces.
-_TRAINING_IN_TITLE = re.compile(
-    r"\b(stage|stagiaire|internship|intern|alternance|alternant|apprenti|apprentissage)\b"
-)
+_TRAINING_IN_TITLE = re.compile(r"\b(stage|stagiaire|internship|intern|alternance|alternant|apprenti|apprentissage)\b")
 _TRAINING_IN_DESCRIPTION = re.compile(
     r"\b(stage de \d|stage d une duree|offre de stage|convention de stage|"
     r"contrat d apprentissage|contrat de professionnalisation|rythme d alternance|"
@@ -69,7 +73,7 @@ _TRAINING_IN_DESCRIPTION = re.compile(
 
 
 def training_contract_hint(title: str, description: str) -> str | None:
-    """"stage" or "alternance" if the texts reveal a training contract."""
+    """ "stage" or "alternance" if the texts reveal a training contract."""
     for text, pattern in ((plain(title), _TRAINING_IN_TITLE), (plain(description), _TRAINING_IN_DESCRIPTION)):
         match = pattern.search(text)
         if match:
@@ -82,24 +86,88 @@ def training_contract_hint(title: str, description: str) -> str | None:
 # Department
 # ---------------------------------------------------------------------
 _CITY_DEPARTMENTS = {
-    "paris": "75", "la defense": "92", "puteaux": "92", "courbevoie": "92", "nanterre": "92",
-    "boulogne billancourt": "92", "issy les moulineaux": "92", "levallois perret": "92",
-    "neuilly sur seine": "92", "rueil malmaison": "92", "montrouge": "92", "clichy": "92",
-    "saint denis": "93", "montreuil": "93", "saint ouen": "93", "noisy le grand": "93",
-    "creteil": "94", "ivry sur seine": "94", "charenton le pont": "94", "vincennes": "94",
-    "massy": "91", "evry": "91", "saclay": "91", "versailles": "78", "guyancourt": "78",
-    "saint quentin en yvelines": "78", "cergy": "95", "lyon": "69", "villeurbanne": "69",
-    "marseille": "13", "aix en provence": "13", "toulouse": "31", "nice": "06",
-    "sophia antipolis": "06", "nantes": "44", "saint herblain": "44", "strasbourg": "67",
-    "montpellier": "34", "bordeaux": "33", "merignac": "33", "lille": "59", "roubaix": "59",
-    "villeneuve d ascq": "59", "rennes": "35", "reims": "51", "le havre": "76", "rouen": "76",
-    "saint etienne": "42", "toulon": "83", "grenoble": "38", "dijon": "21", "angers": "49",
-    "nimes": "30", "clermont ferrand": "63", "le mans": "72", "tours": "37", "amiens": "80",
-    "limoges": "87", "metz": "57", "nancy": "54", "besancon": "25", "orleans": "45",
-    "caen": "14", "mulhouse": "68", "brest": "29", "perpignan": "66", "pau": "64",
-    "niort": "79", "la rochelle": "17", "poitiers": "86", "annecy": "74", "valence": "26",
-    "chartres": "28", "arras": "62", "lens": "62", "laval": "53", "vannes": "56",
-    "lorient": "56", "quimper": "29", "saint malo": "35", "bayonne": "64", "avignon": "84",
+    "paris": "75",
+    "la defense": "92",
+    "puteaux": "92",
+    "courbevoie": "92",
+    "nanterre": "92",
+    "boulogne billancourt": "92",
+    "issy les moulineaux": "92",
+    "levallois perret": "92",
+    "neuilly sur seine": "92",
+    "rueil malmaison": "92",
+    "montrouge": "92",
+    "clichy": "92",
+    "saint denis": "93",
+    "montreuil": "93",
+    "saint ouen": "93",
+    "noisy le grand": "93",
+    "creteil": "94",
+    "ivry sur seine": "94",
+    "charenton le pont": "94",
+    "vincennes": "94",
+    "massy": "91",
+    "evry": "91",
+    "saclay": "91",
+    "versailles": "78",
+    "guyancourt": "78",
+    "saint quentin en yvelines": "78",
+    "cergy": "95",
+    "lyon": "69",
+    "villeurbanne": "69",
+    "marseille": "13",
+    "aix en provence": "13",
+    "toulouse": "31",
+    "nice": "06",
+    "sophia antipolis": "06",
+    "nantes": "44",
+    "saint herblain": "44",
+    "strasbourg": "67",
+    "montpellier": "34",
+    "bordeaux": "33",
+    "merignac": "33",
+    "lille": "59",
+    "roubaix": "59",
+    "villeneuve d ascq": "59",
+    "rennes": "35",
+    "reims": "51",
+    "le havre": "76",
+    "rouen": "76",
+    "saint etienne": "42",
+    "toulon": "83",
+    "grenoble": "38",
+    "dijon": "21",
+    "angers": "49",
+    "nimes": "30",
+    "clermont ferrand": "63",
+    "le mans": "72",
+    "tours": "37",
+    "amiens": "80",
+    "limoges": "87",
+    "metz": "57",
+    "nancy": "54",
+    "besancon": "25",
+    "orleans": "45",
+    "caen": "14",
+    "mulhouse": "68",
+    "brest": "29",
+    "perpignan": "66",
+    "pau": "64",
+    "niort": "79",
+    "la rochelle": "17",
+    "poitiers": "86",
+    "annecy": "74",
+    "valence": "26",
+    "chartres": "28",
+    "arras": "62",
+    "lens": "62",
+    "laval": "53",
+    "vannes": "56",
+    "lorient": "56",
+    "quimper": "29",
+    "saint malo": "35",
+    "bayonne": "64",
+    "avignon": "84",
 }
 _PARENTHESIS_CODE = re.compile(r"\((\d{2,3}|2a|2b)\)", re.IGNORECASE)
 _POSTAL_CODE = re.compile(r"\b(\d{5})\b")
@@ -147,7 +215,7 @@ _HYBRID = re.compile(
 
 
 def detect_work_mode(*texts: str | None) -> str | None:
-    """"full_remote", "hybrid" or None (unknown, usually on site)."""
+    """ "full_remote", "hybrid" or None (unknown, usually on site)."""
     text = plain(" ".join(t for t in texts if t))
     if _FULL_REMOTE.search(text):
         return "full_remote"
@@ -160,9 +228,23 @@ def detect_work_mode(*texts: str | None) -> str | None:
 # Experience
 # ---------------------------------------------------------------------
 _NUMBER_WORDS = {
-    "un": 1, "une": 1, "deux": 2, "trois": 3, "quatre": 4, "cinq": 5, "six": 6,
-    "sept": 7, "huit": 8, "neuf": 9, "dix": 10, "one": 1, "two": 2, "three": 3,
-    "four": 4, "five": 5, "ten": 10,
+    "un": 1,
+    "une": 1,
+    "deux": 2,
+    "trois": 3,
+    "quatre": 4,
+    "cinq": 5,
+    "six": 6,
+    "sept": 7,
+    "huit": 8,
+    "neuf": 9,
+    "dix": 10,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "ten": 10,
 }
 _NUM = r"(\d{1,2}|" + "|".join(_NUMBER_WORDS) + r")"
 _YEARS = r"(ans?|annees?|years?|yrs?)"
@@ -177,7 +259,9 @@ _EXPERIENCE_PATTERNS = [
     # "5 ans minimum", "5 ans et plus", "5+ ans", "5 ans d'expérience"
     re.compile(rf"(?P<min>{_NUM}) ?\+? {_YEARS}"),
 ]
-_JUNIOR = re.compile(r"\b(debutant accepte|debutants acceptes|premiere experience|sans experience|jeune diplome|junior)\b")
+_JUNIOR = re.compile(
+    r"\b(debutant accepte|debutants acceptes|premiere experience|sans experience|jeune diplome|junior)\b"
+)
 
 
 def _prepare(text: str) -> str:

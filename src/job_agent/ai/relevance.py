@@ -15,7 +15,6 @@ measured by repeated stratified cross-validation, with two baselines:
 random order and the CV match score alone.
 """
 
-import json
 import re
 from dataclasses import dataclass
 from datetime import date
@@ -71,9 +70,18 @@ def build_dataset(storage: Storage, labels: dict[int, int], matcher) -> Dataset:
     rows = [row for row in rows if row is not None]
     parts = matcher.parts([(row["title"], row["description"] or "") for row in rows])
     names = [
-        "Proximité de sens avec le CV", "Compétences maîtrisées citées", "Expérience demandée (années)",
-        "Expérience non précisée", "Secteur prioritaire", "CDI", "CDD", "Contrat non précisé", "Poste junior",
-        "Alerte e-mail (sinon site carrière)", "Description complète disponible", *TITLE_FAMILIES,
+        "Proximité de sens avec le CV",
+        "Compétences maîtrisées citées",
+        "Expérience demandée (années)",
+        "Expérience non précisée",
+        "Secteur prioritaire",
+        "CDI",
+        "CDD",
+        "Contrat non précisé",
+        "Poste junior",
+        "Alerte e-mail (sinon site carrière)",
+        "Description complète disponible",
+        *TITLE_FAMILIES,
         "Retenue par les filtres",
     ]
     features, scores = [], []
@@ -81,17 +89,30 @@ def build_dataset(storage: Storage, labels: dict[int, int], matcher) -> Dataset:
         title = plain(row["title"])
         years = row["min_experience_years"]
         contract = row["contract_type"]
-        features.append([
-            meaning, min(skills, MAX_SKILLS), years if years is not None else 0, years is None,
-            bool(row["priority_sector"]), contract == "permanent", contract == "fixed_term", contract is None,
-            bool(row["junior"]), row["source"] == "email_alert", not is_excerpt(row["description"] or ""),
-            *(bool(re.search(pattern, title)) for pattern in TITLE_FAMILIES.values()),
-            bool(row["kept"]),
-        ])
+        features.append(
+            [
+                meaning,
+                min(skills, MAX_SKILLS),
+                years if years is not None else 0,
+                years is None,
+                bool(row["priority_sector"]),
+                contract == "permanent",
+                contract == "fixed_term",
+                contract is None,
+                bool(row["junior"]),
+                row["source"] == "email_alert",
+                not is_excerpt(row["description"] or ""),
+                *(bool(re.search(pattern, title)) for pattern in TITLE_FAMILIES.values()),
+                bool(row["kept"]),
+            ]
+        )
         scores.append(SEMANTIC_WEIGHT * meaning + (1 - SEMANTIC_WEIGHT) * min(skills, MAX_SKILLS) / MAX_SKILLS)
     return Dataset(
-        names, np.array(features, dtype=float), np.array([labels[row["id"]] for row in rows]),
-        np.array(scores), np.array([bool(row["kept"]) for row in rows]),
+        names,
+        np.array(features, dtype=float),
+        np.array([labels[row["id"]] for row in rows]),
+        np.array(scores),
+        np.array([bool(row["kept"]) for row in rows]),
     )
 
 
@@ -162,7 +183,8 @@ def importances(dataset: Dataset, columns: list[int]) -> dict[str, list[tuple[st
     coefficients = logistic[-1].coef_[0]
     return {
         "Régression logistique (coefficient, signe = sens de l'effet)": sorted(
-            zip(names, coefficients), key=lambda item: -abs(item[1])),
+            zip(names, coefficients), key=lambda item: -abs(item[1])
+        ),
         "Forêt aléatoire (importance)": sorted(zip(names, forest.feature_importances_), key=lambda item: -item[1]),
     }
 
@@ -173,10 +195,12 @@ def run_study(dataset: Dataset) -> dict:
     study = {"all": evaluate(dataset.features[:, every], dataset.labels, dataset.match_scores)}
     kept = dataset.kept
     if dataset.labels[kept].sum() >= MIN_POSITIVES and (1 - dataset.labels[kept]).sum() >= MIN_POSITIVES:
-        study["kept"] = evaluate(dataset.features[kept][:, without_kept], dataset.labels[kept],
-                                 dataset.match_scores[kept])
-        kept_dataset = Dataset(dataset.names, dataset.features[kept], dataset.labels[kept],
-                               dataset.match_scores[kept], dataset.kept[kept])
+        study["kept"] = evaluate(
+            dataset.features[kept][:, without_kept], dataset.labels[kept], dataset.match_scores[kept]
+        )
+        kept_dataset = Dataset(
+            dataset.names, dataset.features[kept], dataset.labels[kept], dataset.match_scores[kept], dataset.kept[kept]
+        )
         study["importances"] = importances(kept_dataset, without_kept)
     else:
         study["importances"] = importances(dataset, every)
@@ -194,8 +218,9 @@ def _table(summary: dict) -> list[str]:
     for name, values in summary.items():
         if name == "_":
             continue
-        lines.append(f"| {name} | {values['auc']:.2f} (± {values['auc_std']:.2f}) | {values['ap']:.2f} "
-                     f"| {values['top']:.0%} |")
+        lines.append(
+            f"| {name} | {values['auc']:.2f} (± {values['auc_std']:.2f}) | {values['ap']:.2f} | {values['top']:.0%} |"
+        )
     return lines
 
 

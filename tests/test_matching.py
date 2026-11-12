@@ -31,17 +31,20 @@ class FakeCVModel(FakeModel):
 
 
 def _matcher() -> CVMatcher:
-    return CVMatcher("CV : data analyst, SQL, Python, Power BI", ["SQL", "Python", "Power BI", "DAX", "dbt"],
-                     model=FakeCVModel())
+    return CVMatcher(
+        "CV : data analyst, SQL, Python, Power BI", ["SQL", "Python", "Power BI", "DAX", "dbt"], model=FakeCVModel()
+    )
 
 
 def test_scores_reward_meaning_and_skills() -> None:
     padding = " Vous rejoignez une équipe dynamique." * 15  # a full description, not an excerpt
-    scores = _matcher().scores([
-        ("Data Analyst", "Requêtes SQL, Python, Power BI, DAX et dbt." + padding),
-        ("Data Analyst", "Analyse de données." + padding),
-        ("Comptable", "Saisie des factures." + padding),
-    ])
+    scores = _matcher().scores(
+        [
+            ("Data Analyst", "Requêtes SQL, Python, Power BI, DAX et dbt." + padding),
+            ("Data Analyst", "Analyse de données." + padding),
+            ("Comptable", "Saisie des factures." + padding),
+        ]
+    )
     assert scores[0] == 100
     assert 60 <= scores[1] < scores[0]
     assert scores[2] == 0
@@ -62,8 +65,13 @@ def test_score_reaches_excel_and_telegram(config, tmp_path, monkeypatch) -> None
     from job_agent import runner
 
     storage = Storage(tmp_path / "t.db")
-    process_offers([make_offer(description="Data : SQL, Python et Power BI.")], config, storage,
-                   SectorIndex.build(config, ROOT / "sectors.yaml"), NOW)
+    process_offers(
+        [make_offer(description="Data : SQL, Python et Power BI.")],
+        config,
+        storage,
+        SectorIndex.build(config, ROOT / "sectors.yaml"),
+        NOW,
+    )
     monkeypatch.setattr("job_agent.ai.matching.CVMatcher.from_files", classmethod(lambda cls, *a: _matcher()))
     assert runner._score_offers(config, storage)["scored"] == 1
 
@@ -94,8 +102,16 @@ def test_excerpt_is_scored_on_the_title() -> None:
 def test_only_kept_offers_get_a_score(config, tmp_path) -> None:
     storage = Storage(tmp_path / "t.db")
     process_offers(
-        [make_offer(), make_offer(source_offer_id="2", title="Data Analyst", description="Stage de 6 mois.", contract_type="internship")],
-        config, storage, SectorIndex.build(config, ROOT / "sectors.yaml"), NOW,
+        [
+            make_offer(),
+            make_offer(
+                source_offer_id="2", title="Data Analyst", description="Stage de 6 mois.", contract_type="internship"
+            ),
+        ],
+        config,
+        storage,
+        SectorIndex.build(config, ROOT / "sectors.yaml"),
+        NOW,
     )
     needing = storage.offers_needing_score()
     assert [row["kept"] for row in needing] == [1]

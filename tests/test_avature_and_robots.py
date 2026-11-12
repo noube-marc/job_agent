@@ -58,22 +58,29 @@ def _article(job_id: str, title: str, day: date, country: str = "France", contra
 </div>"""
 
 
-DETAIL = """
+DETAIL = (
+    """
 <div class="article__content__view__field"><div class="article__content__view__field__label">Pays</div>
   <div class="article__content__view__field__value">France</div></div>
 <div class="article__content__view__field"><div class="article__content__view__field__label">Ville</div>
   <div class="article__content__view__field__value">COURBEVOIE</div></div>
-<div class="article__content__view__field"><div class="article__content__view__field__value">Area 92 - Hauts-de-Seine</div></div>
+<div class="article__content__view__field">
+  <div class="article__content__view__field__value">Area 92 - Hauts-de-Seine</div></div>
 <div class="article__content__view__field"><div class="article__content__view__field__label">Type de contrat</div>
   <div class="article__content__view__field__value">CDI</div></div>
 <div class="article__content__view__field"><div class="article__content__view__field__label">Expérience</div>
   <div class="article__content__view__field__value">Minimum 2 ans</div></div>
 <div class="article__content__view__field"><div class="article__content__view__field__value">
   <p>Vous construisez les tableaux de bord Power BI et les requêtes SQL de la direction financière.</p>
-  <p>""" + "Missions détaillées. " * 15 + """</p></div></div>
+  <p>"""
+    + "Missions détaillées. " * 15
+    + """</p></div></div>
 <div class="article__content__view__field"><div class="article__content__view__field__value">
-  <p>""" + "Présentation du groupe et de ses engagements. " * 10 + """</p></div></div>
+  <p>"""
+    + "Présentation du groupe et de ses engagements. " * 10
+    + """</p></div></div>
 """
+)
 
 
 class AvatureFake:
@@ -95,12 +102,20 @@ class AvatureFake:
 
 def test_avature_collect(config) -> None:
     today = NOW.date()
-    fake = AvatureFake([
-        [_article("1", "Data Analyst H/F", today), _article("2", "Data Engineer", today, country="Royaume-Uni")],
-        [_article("3", "Comptable H/F", today - timedelta(days=2)), _article("4", "Data Scientist", today - timedelta(days=3))],
-        [_article("5", "Data Analyst", today - timedelta(days=20)), _article("6", "BI Analyst", today - timedelta(days=21))],
-        [_article("7", "jamais lue", today - timedelta(days=30))],
-    ])
+    fake = AvatureFake(
+        [
+            [_article("1", "Data Analyst H/F", today), _article("2", "Data Engineer", today, country="Royaume-Uni")],
+            [
+                _article("3", "Comptable H/F", today - timedelta(days=2)),
+                _article("4", "Data Scientist", today - timedelta(days=3)),
+            ],
+            [
+                _article("5", "Data Analyst", today - timedelta(days=20)),
+                _article("6", "BI Analyst", today - timedelta(days=21)),
+            ],
+            [_article("7", "jamais lue", today - timedelta(days=30))],
+        ]
+    )
     client = PoliteClient(0, 5, transport=httpx.MockTransport(fake), sleep=lambda s: None)
     company = WatchedCompany(name="Exemple", sector="other", careers_url=SITE, ats="avature")
     context = CollectContext(client, config, NOW, lambda source, offer_id: offer_id == "4")
