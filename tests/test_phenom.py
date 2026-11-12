@@ -68,3 +68,19 @@ def test_phenom_collect(config, monkeypatch) -> None:
 
 def test_site_parts() -> None:
     assert phenom.site_parts(SITE) == ("https://careers.exemple.com", "global", "en")
+
+
+def test_reposted_offer_keeps_the_older_jobposting_date(config) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/robots.txt":
+            return httpx.Response(404)
+        if request.url.path == "/widgets":
+            return httpx.Response(200, json={"refineSearch": {"totalHits": 1, "data": {"jobs": [
+                _job(1, "Data Analyst H/F", posted="2026-11-10T11:21:42.000+0000")]}}})
+        posting = '<script type="application/ld+json">{"@type": "JobPosting", "datePosted": "2026-11-02"}</script>'
+        return httpx.Response(200, text=_detail_page("Permanent") + posting)
+
+    client = PoliteClient(0, 5, transport=httpx.MockTransport(handler), sleep=lambda s: None)
+    company = WatchedCompany(name="Exemple", sector="insurance", careers_url=SITE, ats="phenom")
+    [offer] = phenom.collect(company, CollectContext(client, config, NOW))
+    assert offer.published_at.date().isoformat() == "2026-11-02"

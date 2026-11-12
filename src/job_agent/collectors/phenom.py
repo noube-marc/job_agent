@@ -21,7 +21,10 @@ import re
 from datetime import datetime
 from urllib.parse import urlsplit
 
+from zoneinfo import ZoneInfo
+
 from job_agent.collectors.base import CollectContext, SourceError, html_to_text
+from job_agent.collectors.jobposting import _date, earliest, job_posting
 from job_agent.config.models import WatchedCompany
 from job_agent.offer import Offer
 from job_agent.processing.extract import detect_contract
@@ -98,16 +101,20 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         seen.add(job_id)
         title = job.get("title") or ""
         url = f"{host}/{site_country}/{language}/job/{job_id}"
-        description, contract = "", None
+        description, contract, page = "", None, ""
         if not context.is_known(source_name, job_id) and title_is_candidate(title, context.config):
-            detail = (page_data(context.client.get(url).text).get("jobDetail") or {}).get("data", {}).get("job", {})
+            page = context.client.get(url).text
+            detail = (page_data(page).get("jobDetail") or {}).get("data", {}).get("job", {})
             description = html_to_text(detail.get("description") or "")
             contract = detail.get("employmentType")
             # "Temporary" covers internships and fixed-term jobs alike: the
             # contract is then read from the title, the description or the AI.
             if detect_contract(contract) == "interim":
                 contract = None
-        published = _utc(job.get("postedDate"))
+        # "postedDate" is the LAST posting (a reposted offer looks new): the JobPosting date
+        # of the offer page is older in that case, and the oldest one is kept.
+        posting_date = (job_posting(page).get("datePosted") or "") if page else ""
+        published = earliest(_utc(job.get("postedDate")), _date(posting_date, ZoneInfo(context.config.schedule.timezone)))
         offers.append(
             Offer(
                 source="career_page",
