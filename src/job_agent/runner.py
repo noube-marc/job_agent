@@ -3,6 +3,7 @@
 import html
 import logging
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -67,16 +68,39 @@ def _collect_and_process(
     sectors = SectorIndex.build(config)
     settings = config.sources.career_pages
     client = PoliteClient(settings.request_delay_seconds, settings.timeout_seconds)
-    context = CollectContext(client, config, now, storage.has_offer, storage.is_skipped, storage.mark_skipped)
+    # The sites are read at the same time, in threads that never touch the
+    # database: they use the memory read here, and the offers are then
+    # processed one site after the other, in the order of the watchlist.
+    known = storage.known_offer_keys()
+    skipped = storage.skipped_offer_keys()
+    newly_skipped: list[tuple[str, str]] = []
+
+    def mark_skipped(source_name: str, offer_id: str) -> None:
+        skipped.add((source_name, offer_id))
+        newly_skipped.append((source_name, offer_id))
+
+    context = CollectContext(
+        client,
+        config,
+        now,
+        lambda source_name, offer_id: (source_name, offer_id) in known,
+        lambda source_name, offer_id: (source_name, offer_id) in skipped,
+        mark_skipped,
+    )
+    companies = []
+    for company in config.companies.watchlist:
+        connector = CONNECTORS.get(company.ats)
+        if connector is None or not company.careers_url:
+            unavailable.append(company.name)
+        else:
+            companies.append((company, connector))
+    pool = ThreadPoolExecutor(max_workers=settings.parallel_sites, thread_name_prefix="site")
     try:
-        for company in config.companies.watchlist:
-            connector = CONNECTORS.get(company.ats)
-            if connector is None or not company.careers_url:
-                unavailable.append(company.name)
-                continue
+        futures = [pool.submit(connector, company, context) for company, connector in companies]
+        for (company, _), future in zip(companies, futures):
             source_name = f"{company.ats}:{company.name}"
             try:
-                offers = connector(company, context)
+                offers = future.result()
             except Exception as error:  # one source never stops the others
                 log.warning("  %s : erreur, %s", source_name, error)
                 storage.record_source(run_id, source_name, 0, str(error))
@@ -99,7 +123,10 @@ def _collect_and_process(
             if streak >= ZERO_STREAK_ALERT:
                 log.warning("  Attention : %s ne renvoie aucune offre depuis %d passages.", source_name, streak)
     finally:
+        pool.shutdown(wait=True, cancel_futures=True)
         client.close()
+        for source_name, offer_id in newly_skipped:
+            storage.mark_skipped(source_name, offer_id)
     return totals, unavailable, listings
 
 

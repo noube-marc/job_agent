@@ -425,6 +425,14 @@ class Storage:
             db.executemany("UPDATE replies SET written = 1 WHERE message_id = ?", [(i,) for i in message_ids])
 
     # --- offers of other countries, opened once ---------------------------
+    def known_offer_keys(self) -> set[tuple[str, str]]:
+        """(source, offer reference) of every stored offer, read once before
+        the career sites are read in parallel."""
+        return {tuple(row) for row in self.connection.execute("SELECT source_name, source_offer_id FROM offers")}
+
+    def skipped_offer_keys(self) -> set[tuple[str, str]]:
+        return {tuple(row) for row in self.connection.execute("SELECT * FROM skipped_offers")}
+
     def is_skipped(self, source_name: str, source_offer_id: str) -> bool:
         row = self.connection.execute(
             "SELECT 1 FROM skipped_offers WHERE source_name = ? AND source_offer_id = ?",

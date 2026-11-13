@@ -9,10 +9,14 @@ Rules applied to every request (CLAUDE.md, section 5):
   "too many requests" / "unavailable" (429, 5xx), after 5 then 20 s (or the
   pause the site asks in Retry-After, up to 60 s);
 - a generic User-Agent without any personal data.
+
+Several sites may be read at the same time (one thread per site): a lock per
+host keeps the requests to one host one after the other, with the pause.
 """
 
 import html
 import re
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -85,16 +89,25 @@ class PoliteClient:
         self._clock = clock
         self._last_request: dict[str, float] = {}
         self._robots: dict[str, RobotRules | None] = {}
+        self._host_locks: dict[str, threading.RLock] = {}
+        self._locks_guard = threading.Lock()
         self.requests_made = 0
 
     def close(self) -> None:
         self._client.close()
 
+    def _lock(self, url: str) -> threading.RLock:
+        host = urlsplit(url).netloc
+        with self._locks_guard:
+            return self._host_locks.setdefault(host, threading.RLock())
+
     # --- robots.txt ---------------------------------------------------
     def _robots_for(self, url: str) -> RobotRules | None:
         parts = urlsplit(url)
         host = f"{parts.scheme}://{parts.netloc}"
-        if host not in self._robots:
+        with self._lock(url):
+            if host in self._robots:
+                return self._robots[host]
             parser: RobotRules | None = None
             try:
                 response = self._raw("GET", f"{host}/robots.txt")
@@ -104,12 +117,10 @@ class PoliteClient:
                     parser = RobotRules(response.text)
                 elif response.status_code >= 500:
                     parser = RobotRules(disallow_all=True)
-                else:
-                    parser = None
             except httpx.HTTPError:
                 parser = None
             self._robots[host] = parser
-        return self._robots[host]
+            return parser
 
     def allowed(self, url: str) -> bool:
         robots = self._robots_for(url)
@@ -123,18 +134,23 @@ class PoliteClient:
     # --- requests -----------------------------------------------------
     def _raw(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         host = urlsplit(url).netloc
-        last = self._last_request.get(host)
-        if last is not None:
-            wait = self._delay - (self._clock() - last)
-            if wait > 0:
-                self._sleep(wait)
-        try:
-            return self._client.request(method, url, **kwargs)
-        finally:
-            self._last_request[host] = self._clock()
-            self.requests_made += 1
+        with self._lock(url):
+            last = self._last_request.get(host)
+            if last is not None:
+                wait = self._delay - (self._clock() - last)
+                if wait > 0:
+                    self._sleep(wait)
+            try:
+                return self._client.request(method, url, **kwargs)
+            finally:
+                self._last_request[host] = self._clock()
+                self.requests_made += 1
 
     def request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        with self._lock(url):
+            return self._request(method, url, **kwargs)
+
+    def _request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         if not self.allowed(url):
             raise SourceError(f"accès interdit par robots.txt : {url}")
         delay = self._delay_for(url)
