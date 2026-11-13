@@ -140,3 +140,9 @@ def test_every_step_after_the_gate_waits_for_it() -> None:
     steps = workflow.split("\n      - ")[1:]
     assert steps[0].startswith("name: Faut-il lancer un passage ?")
     assert all("steps.gate.outputs.go == 'true'" in step for step in steps[1:])
+
+
+def test_external_scheduled_starts_go_through_the_gate() -> None:
+    workflow = (Path(__file__).resolve().parents[1] / "cloud" / "run.yml").read_text(encoding="utf-8")
+    assert "scheduled:" in workflow
+    assert '[ "${{ inputs.scheduled }}" != "true" ]' in workflow  # only a manual start skips the checks

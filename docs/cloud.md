@@ -48,6 +48,17 @@ Gratuit : un dépôt privé dispose de 2 000 minutes d'exécution par mois. Les 
 
 GitHub ne garantit pas l'heure des tâches programmées : aux heures chargées, il retarde ou saute des démarrages. La tâche est donc démarrée **toutes les heures**, à la 41e minute (moins chargée que le début de l'heure). Sa première étape, qui dure quelques secondes, arrête tout si l'heure est hors de votre plage (`schedule`) ou si le dernier passage date de moins de `interval_hours` (moins 45 minutes de marge). Un démarrage sauté est ainsi rattrapé l'heure suivante. Ces réglages sont inscrits dans la tâche par `cloud-setup` : relancez-le après une modification de `schedule`.
 
+En pratique, GitHub peut sauter la plupart des démarrages (constaté : 1 sur 10 en une journée). Pour des passages à l'heure, confiez le démarrage à un service gratuit, **cron-job.org** :
+
+1. Sur GitHub : **Settings > Developer settings > Personal access tokens > Fine-grained tokens > Generate new token**. Nom : `job-agent-trigger` ; expiration : 1 an ; **Only select repositories** : votre dépôt privé ; permissions : **Actions : Read and write** et rien d'autre. Ce jeton peut seulement démarrer les tâches de ce dépôt : il ne donne accès ni au code, ni aux secrets.
+2. Sur https://cron-job.org, créez un compte gratuit, puis **Create cronjob** :
+   - URL : `https://api.github.com/repos/<votre-compte>/<dépôt-privé>/actions/workflows/run.yml/dispatches` ;
+   - planning : toutes les heures, à la minute 5, fuseau Europe/Paris ;
+   - onglet **Advanced** : méthode **POST** ; en-têtes `Authorization: Bearer <jeton>`, `Accept: application/vnd.github+json`, `Content-Type: application/json` ; corps `{"ref":"main","inputs":{"scheduled":"true"}}`.
+3. **Test run** : la réponse attendue est 204, et une tâche apparaît dans l'onglet « Actions » du dépôt privé.
+
+Ces démarrages passent par le même contrôle (plage horaire, délai depuis le dernier passage) ; les démarrages de GitHub restent en secours, sans risque de passage en double.
+
 ## Revenir sur l'ordinateur
 
 `uv run job-agent cloud-pull`, puis `cloud.enabled: false` dans `config.yaml`, puis réinstallez la tâche Windows (`scripts\install_task.ps1`) et désactivez la tâche du dépôt privé (onglet « Actions », « Disable workflow »).
