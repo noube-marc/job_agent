@@ -4,6 +4,9 @@
 # démarrages aux heures chargées : la première étape, très courte, arrête la
 # tâche hors de la plage horaire ou si le dernier passage est trop récent.
 # Un démarrage sauté est ainsi rattrapé l'heure suivante.
+# Un service externe (par exemple cron-job.org) peut aussi la démarrer chaque
+# heure par l'API GitHub, avec l'entrée « scheduled » à true : ces démarrages
+# passent par le même contrôle. Un lancement manuel, lui, part tout de suite.
 # Le code vient du dépôt public ; la mémoire de l'agent est gardée CHIFFRÉE
 # dans la branche « state ».
 name: job-agent
@@ -12,6 +15,11 @@ on:
   schedule:
     - cron: "__CRON__"
   workflow_dispatch:
+    inputs:
+      scheduled:
+        description: "Démarrage programmé (contrôle de la plage horaire)"
+        required: false
+        default: "false"
 
 concurrency:
   group: job-agent
@@ -39,7 +47,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TZ: __TIMEZONE__
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.scheduled }}" != "true" ]; then
             echo "Lancement manuel."; echo "go=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           day=$(date +%u); hour=$(date +%-H)
