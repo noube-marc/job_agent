@@ -8,6 +8,10 @@
   secrets), installs the workflow, and uploads the current memory of the
   agent, encrypted, so that the cloud goes on exactly where the computer
   stopped (no duplicates).
+- The workflow is started every hour by GitHub (which drops some scheduled
+  starts at busy times), at an off-peak minute. A first short step stops
+  the job when outside the schedule of config.yaml or when the last pass is
+  too recent, so that a dropped start is made up one hour later.
 - `cloud-unpack` (in the workflow): decrypts config.yaml and the CV.
 - `cloud-state export|import` (in the workflow): the database, encrypted with
   the key JOB_AGENT_STATE_KEY (Fernet: AES with integrity check), kept in
@@ -181,6 +185,46 @@ def _check(config) -> str:
     return cloud.repository
 
 
+CRON_MINUTE = 41  # GitHub drops more scheduled starts near the top of the hour
+CRON_DAYS = {"sun": 0, "mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6}
+ISO_DAYS = {"mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6, "sun": 7}
+
+
+def render_workflow(schedule, template: str) -> str:
+    """Fill the workflow template with the schedule of config.yaml: hourly
+    starts covering the window in UTC (winter and summer time), and the
+    values used by the first step to keep only the useful passes."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    zone = ZoneInfo(schedule.timezone)
+    offsets = [int(datetime(2026, month, 1, 12, tzinfo=zone).utcoffset().total_seconds() // 3600) for month in (1, 7)]
+    first, last = schedule.start_hour - max(offsets), schedule.end_hour - min(offsets)
+    if 0 <= first <= last <= 23:
+        hours = f"{first}-{last}"
+        days = ",".join(str(CRON_DAYS[day]) for day in schedule.days)
+    else:  # the window crosses midnight in UTC: the first step filters
+        hours, days = "*", "*"
+    values = {
+        "__CRON__": f"{CRON_MINUTE} {hours} * * {days}",
+        "__TIMEZONE__": schedule.timezone,
+        "__DAYS__": " ".join(str(ISO_DAYS[day]) for day in schedule.days),
+        "__START_HOUR__": str(schedule.start_hour),
+        "__END_HOUR__": str(schedule.end_hour),
+        # Hourly starts: a pass runs when the last one is at least this old
+        # (margin for a start that GitHub delayed).
+        "__MIN_GAP_MINUTES__": str(max(30, schedule.interval_hours * 60 - 45)),
+    }
+    for placeholder, value in values.items():
+        template = template.replace(placeholder, value)
+    return template
+
+
+def install_workflow(config, repository: str) -> None:
+    workflow = render_workflow(config.schedule, WORKFLOW_TEMPLATE.read_text(encoding="utf-8"))
+    put_file(repository, ".github/workflows/run.yml", workflow.encode("utf-8"), "Install the job-agent workflow")
+
+
 def cloud_setup(config, config_path: Path, env_path: Path = Path(".env")) -> int:
     from cryptography.fernet import Fernet
     from dotenv import get_key, set_key
@@ -211,9 +255,7 @@ def cloud_setup(config, config_path: Path, env_path: Path = Path(".env")) -> int
         put_file(repository, f"{SECURE_FOLDER}/{CV_FILE}", fernet.encrypt(cv_path.read_bytes()), "Encrypted CV")
         print("Configuration et CV anonymisé déposés, chiffrés, dans le dépôt privé.")
 
-        put_file(
-            repository, ".github/workflows/run.yml", WORKFLOW_TEMPLATE.read_bytes(), "Install the job-agent workflow"
-        )
+        install_workflow(config, repository)
         print("Tâche installée : .github/workflows/run.yml")
 
         database = Path(config.storage.database_path)
