@@ -585,6 +585,11 @@ notifications:
   # Nombre maximum de notifications par passage. Au-delà, un seul
   # message récapitulatif est envoyé (évite les envois en masse).
   max_per_run: 20
+  # Notifier seulement les offres dont le score de correspondance avec votre
+  # CV (0 à 100) est SUPÉRIEUR à cette valeur. Les autres restent dans le
+  # suivi, sans message. Une offre sans score (pas de CV) est notifiée.
+  # Laisser vide (ou supprimer la ligne) pour tout notifier.
+  notify_above_score:
   # Informations affichées dans chaque message :
   #   title, company, location, contract, publication_date, url,
   #   experience_flag     (expérience non précisée),

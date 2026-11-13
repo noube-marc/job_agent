@@ -304,6 +304,9 @@ class NotificationsConfig(StrictModel):
     channel: NotificationChannel
     silent_first_run: bool = True
     max_per_run: int = Field(ge=1, le=100)
+    # Only offers whose CV match score is above this value are notified
+    # (None: every kept offer). Offers without a score are still notified.
+    notify_above_score: int | None = Field(default=None, ge=0, le=99)
     fields: list[NotificationField] = Field(min_length=1)
 
 
