@@ -42,7 +42,11 @@ Pendant que le mode cloud est activé (`cloud.enabled: true`), un passage lancé
 
 ## Coût
 
-Gratuit : un dépôt privé dispose de 2 000 minutes d'exécution par mois. Un passage dure environ 6 minutes, soit environ 1 300 minutes par mois. Sans moyen de paiement enregistré sur GitHub, aucun dépassement ne peut être facturé : les passages seraient simplement suspendus jusqu'au mois suivant.
+Gratuit : un dépôt privé dispose de 2 000 minutes d'exécution par mois. Les sites carrière sont lus plusieurs à la fois (`parallel_sites`, jamais deux requêtes simultanées vers un même site) : un passage dure environ 4 minutes. Avec les démarrages de contrôle (voir ci-dessous), comptez environ 1 000 minutes par mois. Sans moyen de paiement enregistré sur GitHub, aucun dépassement ne peut être facturé : les passages seraient simplement suspendus jusqu'au mois suivant.
+
+## Régularité des passages
+
+GitHub ne garantit pas l'heure des tâches programmées : aux heures chargées, il retarde ou saute des démarrages. La tâche est donc démarrée **toutes les heures**, à la 41e minute (moins chargée que le début de l'heure). Sa première étape, qui dure quelques secondes, arrête tout si l'heure est hors de votre plage (`schedule`) ou si le dernier passage date de moins de `interval_hours` (moins 45 minutes de marge). Un démarrage sauté est ainsi rattrapé l'heure suivante. Ces réglages sont inscrits dans la tâche par `cloud-setup` : relancez-le après une modification de `schedule`.
 
 ## Revenir sur l'ordinateur
 

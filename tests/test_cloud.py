@@ -119,3 +119,24 @@ def test_unpack_restores_config_and_cv(tmp_path, monkeypatch) -> None:
     cloud.unpack(secure, key)
     assert (work / "config.yaml").read_text(encoding="utf-8").startswith("ai:")
     assert (work / "private" / "cv.md").read_text(encoding="utf-8") == "CV anonymisé"
+
+
+def test_workflow_is_rendered_from_the_schedule(config) -> None:
+    template = (Path(__file__).resolve().parents[1] / "cloud" / "run.yml").read_text(encoding="utf-8")
+    schedule = config.schedule.model_copy(
+        update={"timezone": "Europe/Paris", "start_hour": 8, "end_hour": 20, "interval_hours": 2}
+    )
+    schedule = schedule.model_copy(update={"days": ["mon", "tue", "wed", "thu", "fri", "sat"]})
+    workflow = cloud.render_workflow(schedule, template)
+    assert "__" not in workflow
+    # Hourly, off the top of the hour, 8 h to 20 h in Paris in winter and summer (UTC).
+    assert 'cron: "41 6-19 * * 1,2,3,4,5,6"' in workflow
+    assert '" 1 2 3 4 5 6 "' in workflow and "-lt 8 ]" in workflow and "-gt 20 ]" in workflow
+    assert "-lt 75 ]" in workflow  # a pass at most every 2 hours, with a margin
+
+
+def test_every_step_after_the_gate_waits_for_it() -> None:
+    workflow = (Path(__file__).resolve().parents[1] / "cloud" / "run.yml").read_text(encoding="utf-8")
+    steps = workflow.split("\n      - ")[1:]
+    assert steps[0].startswith("name: Faut-il lancer un passage ?")
+    assert all("steps.gate.outputs.go == 'true'" in step for step in steps[1:])

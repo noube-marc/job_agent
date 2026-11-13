@@ -444,6 +444,9 @@ sources:
     request_delay_seconds: 2
     # Délai maximum d'attente d'une réponse, en secondes.
     timeout_seconds: 30
+    # Nombre de sites lus en même temps (jamais deux requêtes simultanées
+    # vers un même site). 1 = un site après l'autre.
+    parallel_sites: 6
 
   # Alertes e-mail des sites d'emploi, lues dans une boîte Gmail
   # (accès en lecture seule, identifiants dans .env).

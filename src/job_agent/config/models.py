@@ -182,6 +182,8 @@ class ToggleSource(StrictModel):
 class CareerPagesSource(ToggleSource):
     request_delay_seconds: float = Field(default=2, ge=1)
     timeout_seconds: float = Field(default=30, ge=1, le=120)
+    # Sites read at the same time (never two requests at once to one site).
+    parallel_sites: int = Field(default=6, ge=1, le=12)
 
 
 class EmailProvider(StrictModel):

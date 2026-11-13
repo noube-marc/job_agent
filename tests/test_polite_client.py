@@ -114,3 +114,31 @@ def test_page_not_found_is_not_retried() -> None:
     with pytest.raises(SourceError):
         client.get("https://site.example/absente")
     assert len(calls) == 1
+
+
+def test_sites_read_in_parallel_keep_the_pause_per_site() -> None:
+    """Two threads on the same site wait for each other; two sites do not."""
+    import threading
+    import time
+
+    times: dict[str, list[float]] = {"a.exemple.fr": [], "b.exemple.fr": []}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/robots.txt":
+            return httpx.Response(404)
+        times[request.url.host].append(time.monotonic())
+        return httpx.Response(200, text="ok")
+
+    client = PoliteClient(0.3, 5, transport=httpx.MockTransport(handler))
+    start = time.monotonic()
+    threads = [
+        threading.Thread(target=client.get, args=(f"https://{host}/page{i}",)) for host in times for i in range(2)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    for host_times in times.values():
+        first, second = sorted(host_times)
+        assert second - first >= 0.29  # the pause between two requests to one site
+    assert time.monotonic() - start < 0.9  # the two sites were read at the same time
