@@ -76,7 +76,7 @@ def process_offers(
         company = sectors.find(offer.company)
         company_key = company.name if company else plain(offer.company or "")
         sector = company.sector if company else None
-        result = evaluate(offer, config, now)
+        result = evaluate(offer, config, now, sector)
 
         new_signature = signature(
             company_key,

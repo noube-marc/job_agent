@@ -19,6 +19,7 @@ def _communication_profile(tmp_path: Path):
     data["profile_name"] = "communication-alternance-lyon"
     data["search"]["job_titles"] = {"core": ["Chargé de communication"], "data_science": []}
     data["search"]["excluded_title_keywords"] = []
+    data["search"]["title_match"] = {}  # only the searched title counts
     data["contracts"]["accepted"] = ["apprenticeship"]
     data["location"]["regions"] = ["Auvergne-Rhône-Alpes"]
     data["sources"]["email_alerts"]["enabled"] = False

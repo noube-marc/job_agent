@@ -115,13 +115,54 @@ def test_target_titles_are_kept(config, title: str) -> None:
         ("Comptable H/F", "intitulé hors cible"),
         ("Consultante Data Analyst", "intitulé exclu"),
         ("Lead Data Engineer", "poste trop avancé"),
-        ("Architecte Data", "intitulé hors cible"),
+        ("Architecte Data", "poste trop avancé"),
+        ("Technicien de maintenance", "intitulé hors cible"),
     ],
 )
 def test_rejected_titles(config, title: str, reason: str) -> None:
     result = evaluate(make_offer(title=title), config, NOW)
     assert not result.kept
     assert any(reason in r for r in result.reasons)
+
+
+@pytest.mark.parametrize(
+    ("title", "trigger"),
+    [
+        ("Data Analyst H/F", "intitulé recherché « Data Analyst »"),
+        ("Assistant data & reporting finance débutant H/F", "terme de base « data »"),
+        ("Analyste de données", "terme de base « donnée »"),
+        ("Chargé de reporting", "terme de base « reporting »"),
+        ("Chargée d'études statistiques marketing", "intitulé recherché « Chargé d'études statistiques »"),
+        ("Responsable pilotage de la performance", "mot-clé « pilotage »"),
+        ("Ingénieur Databricks", "outil « Databricks »"),
+    ],
+)
+def test_wider_title_search_tells_what_selected_the_offer(config, title: str, trigger: str) -> None:
+    result = evaluate(make_offer(title=title), config, NOW)
+    assert result.kept, result.reasons
+    assert f"sélection : {trigger}" in result.flags
+
+
+def test_sector_base_term_counts_only_for_that_sector(config) -> None:
+    offer = make_offer(title="Contrôleur de gestion H/F")
+    bank = evaluate(offer, config, NOW, "banking")
+    assert bank.kept and "sélection : terme de base « contrôleur de gestion »" in bank.flags
+    assert not evaluate(offer, config, NOW, "insurance").kept
+    assert not evaluate(offer, config, NOW).kept
+
+
+@pytest.mark.parametrize("title", ["Chef de projet data H/F", "Chargé d'études juridiques"])
+def test_project_manager_and_other_studies_are_rejected(config, title: str) -> None:
+    assert not evaluate(make_offer(title=title), config, NOW).kept
+
+
+def test_without_title_match_only_searched_titles_count(config) -> None:
+    from job_agent.config.models import TitleMatchConfig
+
+    search = config.search.model_copy(update={"title_match": TitleMatchConfig()})
+    narrow = config.model_copy(update={"search": search})
+    assert not evaluate(make_offer(title="Chargé de reporting"), narrow, NOW).kept
+    assert evaluate(make_offer(title="Data Analyst H/F"), narrow, NOW).kept
 
 
 def test_business_analyst_needs_technical_skills(config) -> None:

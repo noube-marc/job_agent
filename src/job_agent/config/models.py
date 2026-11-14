@@ -68,8 +68,22 @@ class BusinessAnalystRule(StrictModel):
     min_technical_skills: int = Field(ge=0)
 
 
+class TitleMatchConfig(StrictModel):
+    """Wider title search: an offer is a candidate when its title holds a
+    searched job title or a base term, else an extended keyword, else a tool
+    of the CV. Empty lists: only the searched job titles count."""
+
+    base_terms: list[str] = Field(default_factory=list)
+    # Base terms that count only for the companies of a sector
+    # ({"banking": ["contrôleur de gestion"]}).
+    base_terms_by_sector: dict[CompanySector, list[str]] = Field(default_factory=dict)
+    extended_keywords: list[str] = Field(default_factory=list)
+    tools: list[str] = Field(default_factory=list)
+
+
 class SearchConfig(StrictModel):
     job_titles: JobTitles
+    title_match: TitleMatchConfig = Field(default_factory=TitleMatchConfig)
     excluded_title_keywords: list[str] = Field(default_factory=list)
     # Employers excluded (ESN, recruitment agencies, job sites): a name or
     # a word of the company name ("consulting", "interim").

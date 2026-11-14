@@ -58,8 +58,74 @@ search:
       - "Chargé d'études data science"
 
   # Une offre dont l'intitulé contient l'un de ces mots est écartée.
+  # Recherche élargie dans l'INTITULÉ des offres (majuscules, accents,
+  # pluriels et féminins ignorés). Une offre est candidate si son intitulé
+  # contient un poste recherché ci-dessus ou un terme de base ; sinon un
+  # mot-clé élargi ; sinon un outil de votre CV. Ce qui a déclenché la
+  # sélection est indiqué sur Telegram et dans le suivi (« sélection : »).
+  # Listes vides : seuls les postes recherchés comptent.
+  title_match:
+    base_terms: ["data", "donnée", "reporting", "analyste", "analyst"]
+    # Termes de base valables seulement pour les entreprises d'un secteur
+    # (secteur de companies.watchlist ou de sectors.yaml).
+    base_terms_by_sector:
+      banking: ["contrôleur de gestion", "contrôle de gestion"]
+    extended_keywords:
+      # Analyse et BI
+      - "BI"
+      - "business intelligence"
+      - "décisionnel"
+      - "analytics"
+      - "analytique"
+      - "dashboard"
+      - "tableau de bord"
+      - "dataviz"
+      - "data visualisation"
+      - "KPI"
+      - "indicateurs"
+      - "pilotage"
+      - "performance"
+      - "insights"
+      # Statistiques et études
+      - "statistique"
+      - "statisticien"
+      - "chargé d'études statistiques"
+      # Data engineering
+      - "ETL"
+      - "ELT"
+      - "pipeline de données"
+      - "data warehouse"
+      - "entrepôt de données"
+      - "data lake"
+      - "lakehouse"
+      - "modélisation de données"
+      - "data modeling"
+      - "DataOps"
+      # Qualité et gouvernance
+      - "qualité des données"
+      - "data quality"
+      - "gouvernance des données"
+      - "data governance"
+      - "data management"
+      - "MDM"
+      # Data science
+      - "data science"
+      - "machine learning"
+      - "apprentissage automatique"
+      - "intelligence artificielle"
+      - "IA"
+      - "AI"
+      - "modèle prédictif"
+      - "prévision"
+      - "forecasting"
+      # Analyse métier
+      - "business analyst"
+    # Outils de votre CV (les outils trop génériques, comme Excel, sont exclus).
+    tools: ["Python", "SQL", "Power BI", "Power Query", "DAX", "Microsoft Fabric", "Databricks", "Azure", "dbt", "Airflow", "GCP", "Google Cloud", "SPSS"]
+
   excluded_title_keywords:
     - "consultant"
+    - "chef de projet"
 
   # Employeurs écartés : ESN, cabinets de recrutement, agences d'intérim
   # et sites d'emploi qui republient des offres. Un nom ou un mot du nom
