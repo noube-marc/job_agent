@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
-from job_agent.config.models import AppConfig
+from job_agent.config.models import AppConfig, ConditionalTerms
 from job_agent.offer import Offer
 from job_agent.processing.extract import (
     detect_contract,
@@ -48,6 +48,8 @@ class Evaluation:
     effective_date: datetime | None = None
     min_experience_years: int | None = None
     junior: bool = False
+    # Conditional title terms that selected the offer, if any.
+    condition: ConditionalTerms | None = None
 
     def reject(self, reason: str) -> None:
         self.kept = False
@@ -83,9 +85,48 @@ def _check_title(offer: Offer, config: AppConfig, result: Evaluation, sector: st
 
     trigger = title_trigger(title_tokens, config, sector)
     if trigger is None:
-        result.reject("intitulé hors cible")
-    else:
-        result.flags.append(f"{FLAG_SELECTED_BY} {trigger}")
+        condition, term = _conditional_match(title_tokens, config)
+        if condition is None:
+            result.reject("intitulé hors cible")
+            return
+        result.condition = condition
+        trigger = f"terme sous condition « {term} » (débutant)"
+    result.flags.append(f"{FLAG_SELECTED_BY} {trigger}")
+
+
+def _conditional_match(title_tokens: list[str], config: AppConfig) -> tuple[ConditionalTerms | None, str]:
+    for condition in config.search.title_match.conditional_terms:
+        for term in condition.terms:
+            if contains_phrase(title_tokens, term):
+                return condition, term
+    return None, ""
+
+
+def _check_condition(offer: Offer, result: Evaluation) -> None:
+    """Beginner-only rule of a conditional title term."""
+    condition = result.condition
+    if condition is None:
+        return
+    title_tokens = tokens(offer.title)
+    for word in condition.excluded_title_words:
+        if contains_phrase(title_tokens, word):
+            result.reject(f"poste non débutant (« {word} » dans l'intitulé)")
+            return
+    if condition.accepted_contracts:
+        contract = offer.contract_type or detect_contract(offer.contract_type_raw)
+        hint = training_contract_hint(offer.title, offer.description)
+        if hint:  # the real contract revealed by the texts wins
+            contract = HINT_CONTRACTS[hint]
+        if contract and contract not in condition.accepted_contracts:
+            result.reject(f"contrat non accepté pour ce poste ({CONTRACT_LABELS.get(contract, contract)})")
+            return
+    minimum = result.min_experience_years
+    if minimum is None:
+        text_tokens = tokens(f"{offer.title} {offer.description}")
+        if not any(contains_phrase(text_tokens, p) for p in condition.beginner_phrases):
+            result.reject("expérience non précisée et poste non signalé comme débutant")
+    elif minimum > condition.max_experience_years:
+        result.reject(f"expérience trop élevée pour ce poste ({minimum} ans, maximum {condition.max_experience_years})")
 
 
 def title_trigger(title_tokens: list[str], config: AppConfig, sector: str | None = "*") -> str | None:
@@ -131,7 +172,10 @@ def title_is_candidate(title: str, config: AppConfig) -> bool:
         return False
     if any(contains_phrase(title_tokens, k) for k in search.business_analyst.title_keywords):
         return True
-    return title_trigger(title_tokens, config) is not None
+    if title_trigger(title_tokens, config) is not None:
+        return True
+    condition, _ = _conditional_match(title_tokens, config)
+    return condition is not None and not any(contains_phrase(title_tokens, w) for w in condition.excluded_title_words)
 
 
 _CLAUSE_SPLIT = re.compile(r"[.;\n!?•·()]+|, (?:et |ou )?")
@@ -294,9 +338,11 @@ def evaluate(offer: Offer, config: AppConfig, now: datetime, sector: str | None 
     `sector`: sector of the offer's company, if known."""
     result = Evaluation()
     _check_title(offer, config, result, sector)
-    _check_employer(offer, config, result)
+    if not (result.condition and result.condition.allow_excluded_employers):
+        _check_employer(offer, config, result)
     _check_seniority(offer, config, result)
     _check_experience(offer, config, result)
+    _check_condition(offer, result)
     _check_contract(offer, config, result)
     _check_location(offer, config, result)
     _check_freshness(offer, config, now, result)
