@@ -194,8 +194,9 @@ contracts:
   #   fixed_term     = CDD
   #   internship     = stage
   #   apprenticeship = alternance (contrat d'apprentissage)
-  #   professionalisation = contrat de professionnalisation (une offre
-  #                    d'alternance qui le mentionne est acceptée)
+  #   professionalisation = contrat de professionnalisation à temps plein,
+  #                    pour jeune diplômé, sans école (une offre d'alternance
+  #                    reste « apprenticeship »)
   #   freelance      = freelance / indépendant
   accepted:
     - permanent

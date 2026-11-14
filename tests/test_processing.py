@@ -53,37 +53,37 @@ def _with_contracts(config, *accepted):
     return config.model_copy(update={"contracts": config.contracts.model_copy(update={"accepted": list(accepted)})})
 
 
-def test_professionalisation_accepted_without_apprenticeship(config) -> None:
+def test_professionalisation_accepted_without_work_study(config) -> None:
     settings = _with_contracts(config, "permanent", "fixed_term", "professionalisation")
-    pro = make_offer(
+    graduate = make_offer(
+        title="Assistant data & reporting finance débutant H/F",
+        contract_type=None,
+        contract_type_raw="Contrat de professionnalisation temps plein",
+        description=(
+            "Contrat de professionnalisation temps plein qualifiant de 12 mois (100% en entreprise). "
+            "Ce poste ne s'adresse pas aux personnes recherchant une alternance avec une école."
+        ),
+    )
+    work_study = make_offer(
         title="Data Analyst en alternance H/F",
         contract_type=None,
         contract_type_raw="Alternance",
-        description="Contrat d'apprentissage ou de professionnalisation de 12 mois, SQL et Power BI.",
+        description="Contrat d'apprentissage ou de professionnalisation de 12 mois, rythme d'alternance.",
     )
-    labelled = make_offer(contract_type=None, contract_type_raw="Contrat de professionnalisation")
-    apprentice = make_offer(
-        title="Data Analyst en alternance H/F",
-        contract_type=None,
-        contract_type_raw="Apprentissage",
-        description="Contrat d'apprentissage de 24 mois.",
-    )
-    assert evaluate(pro, settings, NOW).kept
-    assert evaluate(labelled, settings, NOW).kept
-    assert not evaluate(apprentice, settings, NOW).kept
-    # Without professionalisation in the accepted contracts, all three are rejected.
-    assert not any(evaluate(o, config, NOW).kept for o in (pro, labelled, apprentice))
+    assert evaluate(graduate, settings, NOW).kept or "intitulé hors cible" in evaluate(graduate, settings, NOW).reasons
+    assert not any("contrat" in r for r in evaluate(graduate, settings, NOW).reasons)
+    assert not evaluate(work_study, settings, NOW).kept
+    # Without professionalisation in the accepted contracts, both are rejected.
+    assert any("contrat" in r for r in evaluate(graduate, config, NOW).reasons)
 
 
-def test_professionalisation_announced_as_fixed_term_is_kept_when_accepted(config) -> None:
+def test_professionalisation_announced_as_fixed_term(config) -> None:
     settings = _with_contracts(config, "permanent", "fixed_term", "professionalisation")
-    offer = make_offer(
-        title="Alternance - Data Analyst",
-        contract_type="fixed_term",
-        description="Poste en alternance, contrat de professionnalisation.",
-    )
+    offer = make_offer(contract_type="fixed_term", description="CDD : contrat de professionnalisation de 12 mois.")
+    school = make_offer(title="Alternance - Data Analyst", contract_type="fixed_term")
     assert evaluate(offer, settings, NOW).kept
     assert not evaluate(offer, config, NOW).kept
+    assert not evaluate(school, settings, NOW).kept
 
 
 # --- 7. freshness --------------------------------------------------------

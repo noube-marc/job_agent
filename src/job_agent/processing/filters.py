@@ -186,8 +186,6 @@ def _check_contract(offer: Offer, config: AppConfig, result: Evaluation) -> None
     accepted = set(config.contracts.accepted)
 
     hint = training_contract_hint(offer.title, offer.description)
-    if contract == "apprenticeship" and hint == "professionnalisation":
-        contract = "professionalisation"  # "Alternance" open to a contrat de professionnalisation
     if hint and contract in {"permanent", "fixed_term"}:
         hint_type = HINT_CONTRACTS[hint]
         if hint_type not in accepted:
