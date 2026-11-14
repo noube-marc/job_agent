@@ -49,6 +49,43 @@ def test_internship_and_interim_contracts_are_rejected(config) -> None:
     assert not evaluate(interim, config, NOW).kept
 
 
+def _with_contracts(config, *accepted):
+    return config.model_copy(update={"contracts": config.contracts.model_copy(update={"accepted": list(accepted)})})
+
+
+def test_professionalisation_accepted_without_apprenticeship(config) -> None:
+    settings = _with_contracts(config, "permanent", "fixed_term", "professionalisation")
+    pro = make_offer(
+        title="Data Analyst en alternance H/F",
+        contract_type=None,
+        contract_type_raw="Alternance",
+        description="Contrat d'apprentissage ou de professionnalisation de 12 mois, SQL et Power BI.",
+    )
+    labelled = make_offer(contract_type=None, contract_type_raw="Contrat de professionnalisation")
+    apprentice = make_offer(
+        title="Data Analyst en alternance H/F",
+        contract_type=None,
+        contract_type_raw="Apprentissage",
+        description="Contrat d'apprentissage de 24 mois.",
+    )
+    assert evaluate(pro, settings, NOW).kept
+    assert evaluate(labelled, settings, NOW).kept
+    assert not evaluate(apprentice, settings, NOW).kept
+    # Without professionalisation in the accepted contracts, all three are rejected.
+    assert not any(evaluate(o, config, NOW).kept for o in (pro, labelled, apprentice))
+
+
+def test_professionalisation_announced_as_fixed_term_is_kept_when_accepted(config) -> None:
+    settings = _with_contracts(config, "permanent", "fixed_term", "professionalisation")
+    offer = make_offer(
+        title="Alternance - Data Analyst",
+        contract_type="fixed_term",
+        description="Poste en alternance, contrat de professionnalisation.",
+    )
+    assert evaluate(offer, settings, NOW).kept
+    assert not evaluate(offer, config, NOW).kept
+
+
 # --- 7. freshness --------------------------------------------------------
 def test_freshness_limit(config) -> None:
     old = make_offer(published_at=NOW - timedelta(days=8))

@@ -15,13 +15,14 @@ from job_agent.text import plain
 # ---------------------------------------------------------------------
 # Order matters: the first family found wins ("CDI" before "stage" so
 # that "CDI après stage" stays a CDI only if nothing more specific is set).
+# The contrat de professionnalisation is a work-study contract of its own: it
+# can be accepted without accepting apprenticeships.
+_PROFESSIONALISATION = re.compile(r"\b(professionnalisation|contrat pro)\b")
 _CONTRACT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
+    ("professionalisation", _PROFESSIONALISATION),
     (
         "apprenticeship",
-        re.compile(
-            r"\b(alternance|alternant|apprenti|apprentissage|apprenticeship|apprentice"
-            r"|contrat de professionnalisation|work study)\b"
-        ),
+        re.compile(r"\b(alternance|alternant|apprenti|apprentissage|apprenticeship|apprentice|work study)\b"),
     ),
     ("internship", re.compile(r"\b(stage|stagiaire|internship|intern)\b")),
     ("interim", re.compile(r"\b(interim|interimaire|travail temporaire|temporary)\b")),
@@ -73,7 +74,17 @@ _TRAINING_IN_DESCRIPTION = re.compile(
 
 
 def training_contract_hint(title: str, description: str) -> str | None:
-    """ "stage" or "alternance" if the texts reveal a training contract."""
+    """ "stage", "alternance" or "professionnalisation" if the texts reveal a
+    training contract. A work-study offer that names the contrat de
+    professionnalisation (alone or with the apprenticeship) gives
+    "professionnalisation"."""
+    hint = _training_hint(title, description)
+    if hint == "alternance" and _PROFESSIONALISATION.search(plain(f"{title} {description}")):
+        return "professionnalisation"
+    return hint
+
+
+def _training_hint(title: str, description: str) -> str | None:
     for text, pattern in ((plain(title), _TRAINING_IN_TITLE), (plain(description), _TRAINING_IN_DESCRIPTION)):
         match = pattern.search(text)
         if match:

@@ -21,7 +21,9 @@ DEFAULT_PAUSE_SECONDS = 7.0
 API_KEY_VARIABLE = "GEMINI_API_KEY"
 MAX_DESCRIPTION_CHARS = 8000
 
-AIContract = Literal["permanent", "fixed_term", "internship", "apprenticeship", "freelance", "interim", "unknown"]
+AIContract = Literal[
+    "permanent", "fixed_term", "internship", "apprenticeship", "professionalisation", "freelance", "interim", "unknown"
+]
 AIWorkMode = Literal["onsite", "hybrid", "full_remote", "unknown"]
 AISeniority = Literal["junior", "confirmed", "senior", "lead_or_manager", "unknown"]
 
@@ -38,7 +40,8 @@ class AIExtraction(BaseModel):
 PROMPT = """Tu analyses une offre d'emploi française. Réponds uniquement à partir du texte, sans rien inventer.
 
 - contract_type : le VRAI type de contrat. Un stage ou une alternance reste "internship" ou
-  "apprenticeship" même si l'offre l'annonce comme CDD. "unknown" si le texte ne le dit pas.
+  "apprenticeship" même si l'offre l'annonce comme CDD ; une alternance qui propose un contrat
+  de professionnalisation est "professionalisation". "unknown" si le texte ne le dit pas.
 - min_experience_years : le MINIMUM d'années d'expérience demandé ("3 à 5 ans" donne 3,
   "5 ans minimum" donne 5, "débutant accepté" donne 0). null si rien n'est précisé.
   N'utilise pas l'âge de l'entreprise ni la durée du contrat.

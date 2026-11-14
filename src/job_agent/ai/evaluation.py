@@ -29,6 +29,7 @@ CONTRACTS = {
     "fixed_term": "CDD",
     "internship": "stage",
     "apprenticeship": "alternance",
+    "professionalisation": "contrat de professionnalisation",
     "freelance": "freelance",
     "interim": "intérim",
 }
