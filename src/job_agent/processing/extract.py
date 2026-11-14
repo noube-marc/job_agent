@@ -15,14 +15,16 @@ from job_agent.text import plain
 # ---------------------------------------------------------------------
 # Order matters: the first family found wins ("CDI" before "stage" so
 # that "CDI après stage" stays a CDI only if nothing more specific is set).
+# The contrat de professionnalisation is a contract of its own: a full-time
+# qualifying contract for recent graduates, without school (TotalEnergies,
+# for example). It can be accepted without accepting work-study: a label that
+# also says "alternance" or "apprentissage" stays a work-study contract.
 _CONTRACT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "apprenticeship",
-        re.compile(
-            r"\b(alternance|alternant|apprenti|apprentissage|apprenticeship|apprentice"
-            r"|contrat de professionnalisation|work study)\b"
-        ),
+        re.compile(r"\b(alternance|alternant|apprenti|apprentissage|apprenticeship|apprentice|work study)\b"),
     ),
+    ("professionalisation", re.compile(r"\b(professionnalisation|contrat pro)\b")),
     ("internship", re.compile(r"\b(stage|stagiaire|internship|intern)\b")),
     ("interim", re.compile(r"\b(interim|interimaire|travail temporaire|temporary)\b")),
     ("freelance", re.compile(r"\b(freelance|independant|portage salarial|contractor)\b")),
@@ -67,18 +69,23 @@ def contract_from_description(description: str | None) -> str | None:
 _TRAINING_IN_TITLE = re.compile(r"\b(stage|stagiaire|internship|intern|alternance|alternant|apprenti|apprentissage)\b")
 _TRAINING_IN_DESCRIPTION = re.compile(
     r"\b(stage de \d|stage d une duree|offre de stage|convention de stage|"
-    r"contrat d apprentissage|contrat de professionnalisation|rythme d alternance|"
-    r"en alternance|poste en alternance)\b"
+    r"contrat d apprentissage|rythme d alternance|en alternance|poste en alternance)\b"
 )
+_PROFESSIONALISATION_IN_DESCRIPTION = re.compile(r"\bcontrat de professionnalisation\b")
 
 
 def training_contract_hint(title: str, description: str) -> str | None:
-    """ "stage" or "alternance" if the texts reveal a training contract."""
+    """ "stage", "alternance" or "professionnalisation" if the texts reveal a
+    contract other than the announced one. Internship and work-study words win:
+    "professionnalisation" only when the description names that contract and
+    nothing shows an internship or a work-study with a school."""
     for text, pattern in ((plain(title), _TRAINING_IN_TITLE), (plain(description), _TRAINING_IN_DESCRIPTION)):
         match = pattern.search(text)
         if match:
             word = match.group(0)
             return "stage" if ("stag" in word or "intern" in word) else "alternance"
+    if _PROFESSIONALISATION_IN_DESCRIPTION.search(plain(description)):
+        return "professionnalisation"
     return None
 
 

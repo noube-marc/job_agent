@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # ---------------------------------------------------------------------
 # Closed lists of allowed values
 # ---------------------------------------------------------------------
-ContractType = Literal["permanent", "fixed_term", "internship", "apprenticeship", "freelance"]
+ContractType = Literal["permanent", "fixed_term", "internship", "apprenticeship", "professionalisation", "freelance"]
 WorkMode = Literal["onsite", "hybrid", "full_remote"]
 PrioritySector = Literal["insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail"]
 CompanySector = Literal[

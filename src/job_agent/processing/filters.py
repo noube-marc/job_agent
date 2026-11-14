@@ -24,6 +24,7 @@ CONTRACT_LABELS = {
     "fixed_term": "CDD",
     "internship": "stage",
     "apprenticeship": "alternance",
+    "professionalisation": "contrat de professionnalisation",
     "freelance": "freelance",
     "interim": "intérim",
 }
@@ -31,6 +32,11 @@ FLAG_EXPERIENCE_UNSPECIFIED = "expérience non précisée"
 FLAG_DATE_ESTIMATED = "date estimée"
 FLAG_CONTRACT_UNSPECIFIED = "contrat non précisé"
 FLAG_JUNIOR = "poste junior"
+HINT_CONTRACTS = {
+    "stage": "internship",
+    "alternance": "apprenticeship",
+    "professionnalisation": "professionalisation",
+}
 
 
 @dataclass
@@ -181,13 +187,13 @@ def _check_contract(offer: Offer, config: AppConfig, result: Evaluation) -> None
 
     hint = training_contract_hint(offer.title, offer.description)
     if hint and contract in {"permanent", "fixed_term"}:
-        hint_type = "internship" if hint == "stage" else "apprenticeship"
+        hint_type = HINT_CONTRACTS[hint]
         if hint_type not in accepted:
             result.reject(f"contrat incohérent : {hint} annoncé(e) en {CONTRACT_LABELS[contract]}")
             return
     if contract is None:
         if hint:
-            contract = "internship" if hint == "stage" else "apprenticeship"
+            contract = HINT_CONTRACTS[hint]
         else:
             result.flags.append(FLAG_CONTRACT_UNSPECIFIED)
             return

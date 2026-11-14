@@ -49,6 +49,43 @@ def test_internship_and_interim_contracts_are_rejected(config) -> None:
     assert not evaluate(interim, config, NOW).kept
 
 
+def _with_contracts(config, *accepted):
+    return config.model_copy(update={"contracts": config.contracts.model_copy(update={"accepted": list(accepted)})})
+
+
+def test_professionalisation_accepted_without_work_study(config) -> None:
+    settings = _with_contracts(config, "permanent", "fixed_term", "professionalisation")
+    graduate = make_offer(
+        title="Assistant data & reporting finance débutant H/F",
+        contract_type=None,
+        contract_type_raw="Contrat de professionnalisation temps plein",
+        description=(
+            "Contrat de professionnalisation temps plein qualifiant de 12 mois (100% en entreprise). "
+            "Ce poste ne s'adresse pas aux personnes recherchant une alternance avec une école."
+        ),
+    )
+    work_study = make_offer(
+        title="Data Analyst en alternance H/F",
+        contract_type=None,
+        contract_type_raw="Alternance",
+        description="Contrat d'apprentissage ou de professionnalisation de 12 mois, rythme d'alternance.",
+    )
+    assert evaluate(graduate, settings, NOW).kept or "intitulé hors cible" in evaluate(graduate, settings, NOW).reasons
+    assert not any("contrat" in r for r in evaluate(graduate, settings, NOW).reasons)
+    assert not evaluate(work_study, settings, NOW).kept
+    # Without professionalisation in the accepted contracts, both are rejected.
+    assert any("contrat" in r for r in evaluate(graduate, config, NOW).reasons)
+
+
+def test_professionalisation_announced_as_fixed_term(config) -> None:
+    settings = _with_contracts(config, "permanent", "fixed_term", "professionalisation")
+    offer = make_offer(contract_type="fixed_term", description="CDD : contrat de professionnalisation de 12 mois.")
+    school = make_offer(title="Alternance - Data Analyst", contract_type="fixed_term")
+    assert evaluate(offer, settings, NOW).kept
+    assert not evaluate(offer, config, NOW).kept
+    assert not evaluate(school, settings, NOW).kept
+
+
 # --- 7. freshness --------------------------------------------------------
 def test_freshness_limit(config) -> None:
     old = make_offer(published_at=NOW - timedelta(days=8))
