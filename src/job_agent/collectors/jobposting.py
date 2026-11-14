@@ -137,6 +137,21 @@ def visible_date(html: str, zone: ZoneInfo) -> datetime | None:
         return None
 
 
+_PHENOM_CREATED = re.compile(r'"dateCreated"\s*:\s*"([^"]+)"')
+
+
+def phenom_created(html: str, zone: ZoneInfo) -> datetime | None:
+    """Creation date of the offer in the data of a Phenom page (Orange,
+    Allianz, Mars...). Phenom puts the date of the LAST posting in
+    "datePosted": an offer reposted every few weeks looks new, while
+    "dateCreated" keeps the date the offer was created, never after its first
+    publication. Read only on Phenom pages, where it belongs to the offer."""
+    if "phApp" not in html:
+        return None
+    match = _PHENOM_CREATED.search(html)
+    return _date(match.group(1), zone) if match else None
+
+
 def earliest(*dates: datetime | None) -> datetime | None:
     """The oldest known date: a republished offer must never look new."""
     known = [value for value in dates if value is not None]
@@ -198,7 +213,9 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
         place = " ".join(str(address.get(key) or "") for key in ("postalCode", "addressLocality")).strip()
         zone = ZoneInfo(context.config.schedule.timezone)
         # "datePosted" may be a republication date: the date written on the page wins if older.
-        published = earliest(_date(posting.get("datePosted"), zone), visible_date(page, zone))
+        published = earliest(
+            _date(posting.get("datePosted"), zone), visible_date(page, zone), phenom_created(page, zone)
+        )
         description = html_to_text(posting.get("description") or "")
         offers.append(
             Offer(
