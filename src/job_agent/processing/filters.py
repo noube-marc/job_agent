@@ -31,6 +31,7 @@ FLAG_EXPERIENCE_UNSPECIFIED = "expérience non précisée"
 FLAG_DATE_ESTIMATED = "date estimée"
 FLAG_CONTRACT_UNSPECIFIED = "contrat non précisé"
 FLAG_JUNIOR = "poste junior"
+FLAG_SELECTED_BY = "sélection :"
 
 
 @dataclass
@@ -74,9 +75,33 @@ def _check_title(offer: Offer, config: AppConfig, result: Evaluation) -> None:
             )
         return
 
-    wanted = [*search.job_titles.core, *search.job_titles.data_science]
-    if not any(set(tokens(title)) <= set(title_tokens) for title in wanted if tokens(title)):
+    trigger = title_trigger(title_tokens, config)
+    if trigger is None:
         result.reject("intitulé hors cible")
+    else:
+        result.flags.append(f"{FLAG_SELECTED_BY} {trigger}")
+
+
+def title_trigger(title_tokens: list[str], config: AppConfig) -> str | None:
+    """What makes a title match the search, checked in this order: a searched
+    job title, a base term, then (only if none) an extended keyword, then a
+    tool of the CV. None when nothing matches. Case, accents, plural and
+    feminine forms are ignored."""
+    search = config.search
+    for title in [*search.job_titles.core, *search.job_titles.data_science]:
+        wanted = set(tokens(title))
+        if wanted and wanted <= set(title_tokens):
+            return f"intitulé recherché « {title} »"
+    match = search.title_match
+    for label, phrases in (
+        ("terme de base", match.base_terms),
+        ("mot-clé", match.extended_keywords),
+        ("outil", match.tools),
+    ):
+        for phrase in phrases:
+            if contains_phrase(title_tokens, phrase):
+                return f"{label} « {phrase} »"
+    return None
 
 
 def title_is_candidate(title: str, config: AppConfig) -> bool:
@@ -94,8 +119,7 @@ def title_is_candidate(title: str, config: AppConfig) -> bool:
         return False
     if any(contains_phrase(title_tokens, k) for k in search.business_analyst.title_keywords):
         return True
-    wanted = [*search.job_titles.core, *search.job_titles.data_science]
-    return any(set(tokens(t)) <= set(title_tokens) for t in wanted if tokens(t))
+    return title_trigger(title_tokens, config) is not None
 
 
 _CLAUSE_SPLIT = re.compile(r"[.;\n!?•·()]+|, (?:et |ou )?")
