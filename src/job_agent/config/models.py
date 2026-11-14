@@ -85,6 +85,8 @@ class ConditionalTerms(StrictModel):
     # true: ESN, consulting firms and agencies (excluded_companies,
     # intermediary_phrases) are accepted for these offers.
     allow_excluded_employers: bool = False
+    # Contracts accepted for these offers (empty: contracts.accepted).
+    accepted_contracts: list[ContractType] = Field(default_factory=list)
 
 
 class TitleMatchConfig(StrictModel):

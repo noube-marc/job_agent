@@ -112,6 +112,14 @@ def _check_condition(offer: Offer, result: Evaluation) -> None:
         if contains_phrase(title_tokens, word):
             result.reject(f"poste non débutant (« {word} » dans l'intitulé)")
             return
+    if condition.accepted_contracts:
+        contract = offer.contract_type or detect_contract(offer.contract_type_raw)
+        hint = training_contract_hint(offer.title, offer.description)
+        if hint:  # the real contract revealed by the texts wins
+            contract = HINT_CONTRACTS[hint]
+        if contract and contract not in condition.accepted_contracts:
+            result.reject(f"contrat non accepté pour ce poste ({CONTRACT_LABELS.get(contract, contract)})")
+            return
     minimum = result.min_experience_years
     if minimum is None:
         text_tokens = tokens(f"{offer.title} {offer.description}")

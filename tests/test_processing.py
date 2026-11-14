@@ -354,7 +354,12 @@ def test_existing_database_gets_the_junior_column(tmp_path) -> None:
 def _beginner_controller(config):
     from job_agent.config.models import ConditionalTerms
 
-    rule = ConditionalTerms(terms=["contrôleur de gestion"], max_experience_years=2, allow_excluded_employers=True)
+    rule = ConditionalTerms(
+        terms=["contrôleur de gestion"],
+        max_experience_years=2,
+        allow_excluded_employers=True,
+        accepted_contracts=["permanent", "fixed_term"],
+    )
     title_match = config.search.title_match.model_copy(update={"conditional_terms": [rule]})
     search = config.search.model_copy(update={"title_match": title_match})
     return config.model_copy(update={"search": search})
@@ -391,3 +396,31 @@ def test_bank_controller_keeps_the_usual_rules(config) -> None:
     offer = make_offer(title="Contrôleur de gestion", description="Expérience de 4 ans.")
     assert evaluate(offer, settings, NOW, "banking").kept  # base term of the banking sector
     assert not evaluate(offer, settings, NOW, "insurance").kept
+
+
+def test_conditional_terms_have_their_own_contracts(config) -> None:
+    settings = _beginner_controller(config)
+    contracts = settings.contracts.model_copy(update={"accepted": ["permanent", "fixed_term", "professionalisation"]})
+    settings = settings.model_copy(update={"contracts": contracts})
+    pro = make_offer(
+        title="Contrôleur de gestion débutant",
+        contract_type=None,
+        contract_type_raw="Contrat de professionnalisation temps plein",
+        description="Contrat de professionnalisation de 12 mois pour jeune diplômé.",
+    )
+    labelled_cdd = make_offer(
+        title="Contrôleur de gestion débutant",
+        contract_type="fixed_term",
+        description="CDD de 12 mois en contrat de professionnalisation, jeune diplômé.",
+    )
+    cdd = make_offer(title="Contrôleur de gestion débutant", contract_type="fixed_term", description="Jeune diplômé.")
+    assert not evaluate(pro, settings, NOW).kept
+    assert not evaluate(labelled_cdd, settings, NOW).kept
+    assert evaluate(cdd, settings, NOW).kept
+    data_pro = make_offer(
+        title="Assistant data",
+        contract_type=None,
+        contract_type_raw="Contrat de professionnalisation",
+        description="Contrat de professionnalisation.",
+    )
+    assert evaluate(data_pro, settings, NOW).kept  # the data offers keep contracts.accepted
