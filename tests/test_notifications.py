@@ -150,3 +150,20 @@ def test_message_tells_where_the_date_comes_from(config, tmp_path) -> None:
     assert "(date estimée : réception de l'alerte)" in messages["Data Analyst"]
     assert "(date du site d'emploi)" in messages["Data Engineer"]
     storage.close()
+
+
+def test_only_offers_above_the_score_are_notified(env) -> None:
+    config, storage, collect = env
+    settings = config.model_copy(
+        update={"notifications": config.notifications.model_copy(update={"notify_above_score": 50})}
+    )
+    collect(*_offers(4))
+    ids = [row["id"] for row in storage.pending_notifications()]
+    for offer_id, score in zip(ids, [80, 50, 30]):  # the fourth offer has no score
+        storage.set_match_score(offer_id, score)
+    sender = FakeSender()
+    result = notify_pending(storage, settings, sender, silent=False)
+    assert result.sent == 2 and result.below_score == 2  # 80 and the unscored offer; 50 and 30 are not
+    assert storage.pending_notifications() == []  # low scores are never notified later
+    notify_pending(storage, settings, sender, silent=False)
+    assert len(sender.messages) == 2
