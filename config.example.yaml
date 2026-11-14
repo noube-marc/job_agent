@@ -535,6 +535,9 @@ schedule:
   # Heure du premier passage et heure limite (de 0 à 23).
   start_hour: 8
   end_hour: 20
+  # Heure limite différente certains jours (exemple : arrêt à midi le samedi).
+  # Supprimez la ligne pour garder end_hour tous les jours.
+  end_hour_by_day: { sat: 12 }
   # Intervalle entre deux passages, en heures.
   interval_hours: 2
 

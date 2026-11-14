@@ -43,7 +43,7 @@ def in_schedule(schedule: ScheduleConfig, now: datetime) -> bool:
     if WEEKDAYS[local.weekday()] not in schedule.days:
         return False
     # The end hour is included: with 8 to 20, a run starting at 20:05 runs.
-    return schedule.start_hour <= local.hour <= schedule.end_hour
+    return schedule.start_hour <= local.hour <= schedule.end_hour_of(WEEKDAYS[local.weekday()])
 
 
 @contextmanager

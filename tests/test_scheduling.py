@@ -59,3 +59,23 @@ def test_internet_available(monkeypatch) -> None:
     # A Wi-Fi login page answers with a redirect: not a working internet.
     monkeypatch.setattr(scheduling.httpx, "get", lambda url, **kw: httpx.Response(302))
     assert not scheduling.internet_available()
+
+
+def test_saturday_ends_at_noon(config) -> None:
+    from datetime import UTC
+
+    schedule = config.schedule.model_copy(update={"end_hour_by_day": {"sat": 12}})
+    # 14/11/2026 is a Saturday, 13/11/2026 a Friday (Paris = UTC + 1 in November).
+    assert in_schedule(schedule, datetime(2026, 11, 14, 11, 5, tzinfo=UTC))  # 12:05 Paris
+    assert not in_schedule(schedule, datetime(2026, 11, 14, 13, 5, tzinfo=UTC))  # 14:05 Paris
+    assert in_schedule(schedule, datetime(2026, 11, 13, 13, 5, tzinfo=UTC))  # Friday 14:05
+
+
+def test_day_end_hour_before_start_is_refused(config) -> None:
+    import pytest
+    from pydantic import ValidationError
+
+    from job_agent.config.models import ScheduleConfig
+
+    with pytest.raises(ValidationError):
+        ScheduleConfig(**{**config.schedule.model_dump(), "end_hour_by_day": {"sat": 7}})

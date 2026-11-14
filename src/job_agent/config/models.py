@@ -259,7 +259,12 @@ class ScheduleConfig(StrictModel):
     days: list[Weekday] = Field(min_length=1)
     start_hour: int = Field(ge=0, le=23)
     end_hour: int = Field(ge=0, le=23)
+    # Earlier (or later) end hour for some days: {"sat": 12}.
+    end_hour_by_day: dict[Weekday, int] = Field(default_factory=dict)
     interval_hours: int = Field(ge=1, le=24)
+
+    def end_hour_of(self, day: str) -> int:
+        return self.end_hour_by_day.get(day, self.end_hour)
 
     @field_validator("timezone")
     @classmethod
@@ -277,6 +282,12 @@ class ScheduleConfig(StrictModel):
                 f"start_hour ({self.start_hour}) doit être inférieur à end_hour ({self.end_hour}) : "
                 "l'agent tourne de start_hour à end_hour."
             )
+        for day, hour in self.end_hour_by_day.items():
+            if not self.start_hour < hour <= 23:
+                raise ValueError(
+                    f"end_hour_by_day.{day} ({hour}) doit être compris entre start_hour + 1 "
+                    f"({self.start_hour + 1}) et 23."
+                )
         return self
 
 
