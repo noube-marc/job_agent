@@ -349,3 +349,45 @@ def test_existing_database_gets_the_junior_column(tmp_path) -> None:
     columns = {row[1] for row in storage.connection.execute("PRAGMA table_info(offers)")}
     storage.close()
     assert "junior" in columns
+
+
+def _beginner_controller(config):
+    from job_agent.config.models import ConditionalTerms
+
+    rule = ConditionalTerms(terms=["contrôleur de gestion"], max_experience_years=2, allow_excluded_employers=True)
+    title_match = config.search.title_match.model_copy(update={"conditional_terms": [rule]})
+    search = config.search.model_copy(update={"title_match": title_match})
+    return config.model_copy(update={"search": search})
+
+
+@pytest.mark.parametrize(
+    ("title", "description", "kept"),
+    [
+        ("Contrôleur de gestion junior", "Première expérience appréciée.", True),
+        ("Contrôleur de gestion", "Expérience de 2 ans en contrôle de gestion.", True),
+        ("Contrôleur de gestion", "Expérience de 3 ans minimum.", False),
+        ("Contrôleur de gestion confirmé", "Expérience de 1 an.", False),
+        ("Contrôleur de gestion", "Rattaché au directeur financier.", False),  # experience unknown, not for beginners
+        ("Contrôleur de gestion", "Poste ouvert aux jeunes diplômés.", True),
+    ],
+)
+def test_conditional_terms_only_for_beginners(config, title: str, description: str, kept: bool) -> None:
+    settings = _beginner_controller(config)
+    result = evaluate(make_offer(title=title, description=description), settings, NOW, "insurance")
+    assert result.kept is kept, result.reasons
+
+
+def test_conditional_terms_accept_consulting_firms(config) -> None:
+    settings = _beginner_controller(config)
+    excluded = settings.search.excluded_companies[0]
+    offer = make_offer(title="Contrôleur de gestion junior", company=f"Cabinet {excluded}")
+    assert evaluate(offer, settings, NOW).kept
+    data = make_offer(title="Data Analyst", company=f"Cabinet {excluded}")
+    assert not evaluate(data, settings, NOW).kept  # the usual rule still applies elsewhere
+
+
+def test_bank_controller_keeps_the_usual_rules(config) -> None:
+    settings = _beginner_controller(config)
+    offer = make_offer(title="Contrôleur de gestion", description="Expérience de 4 ans.")
+    assert evaluate(offer, settings, NOW, "banking").kept  # base term of the banking sector
+    assert not evaluate(offer, settings, NOW, "insurance").kept
