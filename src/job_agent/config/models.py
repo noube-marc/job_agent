@@ -74,6 +74,9 @@ class TitleMatchConfig(StrictModel):
     of the CV. Empty lists: only the searched job titles count."""
 
     base_terms: list[str] = Field(default_factory=list)
+    # Base terms that count only for the companies of a sector
+    # ({"banking": ["contrôleur de gestion"]}).
+    base_terms_by_sector: dict[CompanySector, list[str]] = Field(default_factory=dict)
     extended_keywords: list[str] = Field(default_factory=list)
     tools: list[str] = Field(default_factory=list)
 

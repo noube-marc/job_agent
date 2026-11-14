@@ -66,6 +66,10 @@ search:
   # Listes vides : seuls les postes recherchés comptent.
   title_match:
     base_terms: ["data", "donnée", "reporting", "analyste", "analyst"]
+    # Termes de base valables seulement pour les entreprises d'un secteur
+    # (secteur de companies.watchlist ou de sectors.yaml).
+    base_terms_by_sector:
+      banking: ["contrôleur de gestion", "contrôle de gestion"]
     extended_keywords:
       # Analyse et BI
       - "BI"
@@ -81,13 +85,11 @@ search:
       - "indicateurs"
       - "pilotage"
       - "performance"
-      - "contrôle de gestion"
-      - "contrôleur de gestion"
       - "insights"
       # Statistiques et études
       - "statistique"
       - "statisticien"
-      - "chargé d'études"
+      - "chargé d'études statistiques"
       # Data engineering
       - "ETL"
       - "ELT"
@@ -123,6 +125,7 @@ search:
 
   excluded_title_keywords:
     - "consultant"
+    - "chef de projet"
 
   # Employeurs écartés : ESN, cabinets de recrutement, agences d'intérim
   # et sites d'emploi qui republient des offres. Un nom ou un mot du nom

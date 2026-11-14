@@ -95,7 +95,7 @@ def test_rejected_titles(config, title: str, reason: str) -> None:
         ("Assistant data & reporting finance débutant H/F", "terme de base « data »"),
         ("Analyste de données", "terme de base « donnée »"),
         ("Chargé de reporting", "terme de base « reporting »"),
-        ("Contrôleur de gestion industriel", "mot-clé « contrôleur de gestion »"),
+        ("Chargée d'études statistiques marketing", "intitulé recherché « Chargé d'études statistiques »"),
         ("Responsable pilotage de la performance", "mot-clé « pilotage »"),
         ("Ingénieur Databricks", "outil « Databricks »"),
     ],
@@ -104,6 +104,19 @@ def test_wider_title_search_tells_what_selected_the_offer(config, title: str, tr
     result = evaluate(make_offer(title=title), config, NOW)
     assert result.kept, result.reasons
     assert f"sélection : {trigger}" in result.flags
+
+
+def test_sector_base_term_counts_only_for_that_sector(config) -> None:
+    offer = make_offer(title="Contrôleur de gestion H/F")
+    bank = evaluate(offer, config, NOW, "banking")
+    assert bank.kept and "sélection : terme de base « contrôleur de gestion »" in bank.flags
+    assert not evaluate(offer, config, NOW, "insurance").kept
+    assert not evaluate(offer, config, NOW).kept
+
+
+@pytest.mark.parametrize("title", ["Chef de projet data H/F", "Chargé d'études juridiques"])
+def test_project_manager_and_other_studies_are_rejected(config, title: str) -> None:
+    assert not evaluate(make_offer(title=title), config, NOW).kept
 
 
 def test_without_title_match_only_searched_titles_count(config) -> None:

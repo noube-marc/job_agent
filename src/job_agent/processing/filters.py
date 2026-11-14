@@ -51,7 +51,7 @@ class Evaluation:
 # ---------------------------------------------------------------------
 # Individual rules
 # ---------------------------------------------------------------------
-def _check_title(offer: Offer, config: AppConfig, result: Evaluation) -> None:
+def _check_title(offer: Offer, config: AppConfig, result: Evaluation, sector: str | None = None) -> None:
     title_tokens = tokens(offer.title)
     search = config.search
 
@@ -75,26 +75,32 @@ def _check_title(offer: Offer, config: AppConfig, result: Evaluation) -> None:
             )
         return
 
-    trigger = title_trigger(title_tokens, config)
+    trigger = title_trigger(title_tokens, config, sector)
     if trigger is None:
         result.reject("intitulé hors cible")
     else:
         result.flags.append(f"{FLAG_SELECTED_BY} {trigger}")
 
 
-def title_trigger(title_tokens: list[str], config: AppConfig) -> str | None:
+def title_trigger(title_tokens: list[str], config: AppConfig, sector: str | None = "*") -> str | None:
     """What makes a title match the search, checked in this order: a searched
-    job title, a base term, then (only if none) an extended keyword, then a
-    tool of the CV. None when nothing matches. Case, accents, plural and
-    feminine forms are ignored."""
+    job title, a base term (or a base term of the company's sector), then
+    (only if none) an extended keyword, then a tool of the CV. None when
+    nothing matches. Case, accents, plural and feminine forms are ignored.
+    sector "*" (company unknown yet, before opening an offer): the base terms
+    of every sector count; the final check knows the sector."""
     search = config.search
     for title in [*search.job_titles.core, *search.job_titles.data_science]:
         wanted = set(tokens(title))
         if wanted and wanted <= set(title_tokens):
             return f"intitulé recherché « {title} »"
     match = search.title_match
+    if sector == "*":
+        sector_terms = [t for terms in match.base_terms_by_sector.values() for t in terms]
+    else:
+        sector_terms = match.base_terms_by_sector.get(sector, []) if sector else []
     for label, phrases in (
-        ("terme de base", match.base_terms),
+        ("terme de base", [*match.base_terms, *sector_terms]),
         ("mot-clé", match.extended_keywords),
         ("outil", match.tools),
     ):
@@ -277,10 +283,11 @@ def _check_employer(offer: Offer, config: AppConfig, result: Evaluation) -> None
             return
 
 
-def evaluate(offer: Offer, config: AppConfig, now: datetime) -> Evaluation:
-    """Apply every rule. All reasons are collected, not only the first."""
+def evaluate(offer: Offer, config: AppConfig, now: datetime, sector: str | None = None) -> Evaluation:
+    """Apply every rule. All reasons are collected, not only the first.
+    `sector`: sector of the offer's company, if known."""
     result = Evaluation()
-    _check_title(offer, config, result)
+    _check_title(offer, config, result, sector)
     _check_employer(offer, config, result)
     _check_seniority(offer, config, result)
     _check_experience(offer, config, result)
