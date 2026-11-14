@@ -259,7 +259,10 @@ contracts:
   #   permanent      = CDI
   #   fixed_term     = CDD
   #   internship     = stage
-  #   apprenticeship = alternance
+  #   apprenticeship = alternance (contrat d'apprentissage)
+  #   professionalisation = contrat de professionnalisation à temps plein,
+  #                    pour jeune diplômé, sans école (une offre d'alternance
+  #                    reste « apprenticeship »)
   #   freelance      = freelance / indépendant
   accepted:
     - permanent
@@ -464,6 +467,33 @@ companies:
     - { name: "Système U", sector: retail, careers_url: "https://u-emploi.com/offres-emploi", ats: "protected" }  # site protégé contre les robots (Cloudflare) : pas de connecteur, couvert par les alertes
     # Autres
     - { name: "TotalEnergies", sector: other, careers_url: "https://jobs.totalenergies.com/fr_FR/careers/SearchJobs/", ats: "avature" }  # page de recherche HTML (toutes les offres du groupe, filtrées sur la France)
+    # Ajouts du 14/11/2026 : assurance
+    - { name: "Harmonie Mutuelle", sector: insurance, careers_url: "https://recrutement.harmonie-mutuelle.fr/fr/annonces", ats: "digitalrecruiters" }  # service public Digital Recruiters (pause de 10 s demandée)
+    - { name: "SCOR", sector: insurance, careers_url: "https://fa-errt-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/fr/sites/CX_2001/jobs", ats: "oracle" }  # service public Oracle Recruiting Cloud
+    - { name: "Swiss Life France", sector: insurance, careers_url: "https://swisslife.wd3.myworkdayjobs.com/Swiss_Life_Division_France_Career_Site", ats: "workday" }  # liste et fiches Workday
+    - { name: "MACSF", sector: insurance, careers_url: "https://www.recrutement.macsf.fr", ats: "talentsoft_rss" }  # flux RSS public
+    - { name: "Klesia", sector: insurance, careers_url: "https://recrutement.klesia.fr/fr/annonces", ats: "digitalrecruiters" }  # service public Digital Recruiters (pause de 10 s demandée)
+    - { name: "April", sector: insurance, careers_url: "https://recrutement.april.com/fr/annonces", ats: "digitalrecruiters" }  # service public Digital Recruiters (pause de 10 s demandée)
+    - { name: "PRO BTP", sector: insurance, careers_url: "https://recrute-probtp.talent-soft.com", ats: "talentsoft_rss" }  # flux RSS public
+    - { name: "La Mutuelle Générale", sector: insurance, careers_url: "https://lmg.wd3.myworkdayjobs.com/LMG", ats: "workday" }  # liste et fiches Workday
+    # Ajouts du 14/11/2026 : agroalimentaire et grande consommation
+    - { name: "Sodiaal", sector: agriculture_agrifood, careers_url: "https://fa-epmr-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/fr/sites/CX_1/jobs", ats: "oracle" }  # service public Oracle Recruiting Cloud
+    - { name: "LDC", sector: agriculture_agrifood, careers_url: "https://recrutement.ldc.fr/fr/annonces", ats: "digitalrecruiters" }  # service public Digital Recruiters (pause de 10 s demandée)
+    - { name: "Andros", sector: agriculture_agrifood, careers_url: "https://carrieres.andros.fr/fr/annonces", ats: "digitalrecruiters" }  # service public Digital Recruiters (pause de 10 s demandée)
+    - { name: "Bigard", sector: agriculture_agrifood, careers_url: "https://groupebigardrecrute.fr/offre-sitemap.xml", ats: "jobposting" }  # plan du site + données JobPosting
+    - { name: "Mondelez France", sector: consumer_goods, careers_url: "https://mdlz.wd3.myworkdayjobs.com/External", ats: "workday" }  # liste et fiches Workday, offres en France
+    - { name: "Mars France", sector: consumer_goods, careers_url: "https://careers.mars.com/fr/fr/search-results?qcountry=France", ats: "phenom" }  # site Phenom : service JSON de la page de recherche
+    - { name: "Lindt France", sector: consumer_goods, careers_url: "https://lindtspruengli.wd103.myworkdayjobs.com/LindtSpruengliGroupCareers", ats: "workday" }  # liste et fiches Workday, offres en France
+    - { name: "L'Oréal", sector: consumer_goods, careers_url: "https://careers.loreal.com/sitemap.xml", ats: "jobposting" }  # plan du site mondial + données JobPosting (offres hors France mémorisées)
+    - { name: "Sanofi", sector: other, careers_url: "https://sanofi.wd3.myworkdayjobs.com/SanofiCareers", ats: "workday" }  # liste et fiches Workday, offres en France
+    # Ajouts du 14/11/2026 : distribution et grands employeurs
+    - { name: "Decathlon", sector: retail, careers_url: "https://joinus.decathlon.fr/fr/annonces", ats: "digitalrecruiters" }  # service public Digital Recruiters
+    - { name: "Leroy Merlin", sector: retail, careers_url: "https://recrute.leroymerlin.fr/sitemap-jobs.xml", ats: "jobposting" }  # plan du site + données JobPosting
+    - { name: "Orange", sector: other, careers_url: "https://orange.jobs/fr/fr/sitemap_index.xml", ats: "jobposting" }  # plan du site + données JobPosting
+    - { name: "Michelin", sector: other, careers_url: "https://michelinhr.wd3.myworkdayjobs.com/Michelin", ats: "workday" }  # liste et fiches Workday
+    - { name: "Renault Group", sector: other, careers_url: "https://alliancewd.wd3.myworkdayjobs.com/renault-group-careers", ats: "workday" }  # liste et fiches Workday, offres en France
+    - { name: "Air France", sector: other, careers_url: "https://recrutement.airfrance.com", ats: "talentsoft_rss" }  # flux RSS public
+    - { name: "Veolia", sector: other, careers_url: "https://jobs.veolia.com/fr/sitemap.xml", ats: "jobposting" }  # plan du site mondial + données JobPosting (offres hors France mémorisées)
 
 
 # ---------------------------------------------------------------------
@@ -651,6 +681,11 @@ notifications:
   # Nombre maximum de notifications par passage. Au-delà, un seul
   # message récapitulatif est envoyé (évite les envois en masse).
   max_per_run: 20
+  # Notifier seulement les offres dont le score de correspondance avec votre
+  # CV (0 à 100) est SUPÉRIEUR à cette valeur. Les autres restent dans le
+  # suivi, sans message. Une offre sans score (pas de CV) est notifiée.
+  # Laisser vide (ou supprimer la ligne) pour tout notifier.
+  notify_above_score:
   # Informations affichées dans chaque message :
   #   title, company, location, contract, publication_date, url,
   #   experience_flag     (expérience non précisée),

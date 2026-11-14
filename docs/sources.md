@@ -13,21 +13,21 @@ Un connecteur par **outil de recrutement** (valeur `ats` d'une entreprise dans `
 
 | `ats` | Accès | Entreprises de la configuration d'exemple |
 |---|---|---|
-| `talentsoft_rss` | Flux RSS public (20 dernières offres) | MAIF, Matmut, CNP Assurances, Malakoff Humanis, InVivo |
+| `talentsoft_rss` | Flux RSS public (20 dernières offres) | MAIF, Matmut, CNP Assurances, Malakoff Humanis, InVivo, MACSF, PRO BTP, Air France |
 | `ashby` | API publique documentée | Alan, Qonto |
-| `workday` | Service de la page carrière Workday, offres en France | Aéma Groupe, AG2R La Mondiale, Pernod Ricard, Unilever |
+| `workday` | Service de la page carrière Workday, offres en France | Aéma Groupe, AG2R La Mondiale, Pernod Ricard, Unilever, Swiss Life France, La Mutuelle Générale, Mondelez, Lindt, Sanofi, Michelin, Renault Group |
 | `successfactors_search` | Page de recherche publique SAP SuccessFactors | Generali, Lactalis, Bonduelle, Suntory Beverage & Food France, Nestlé France |
 | `successfactors_sitemap` | Plan du site public SAP SuccessFactors (recherche interdite par `robots.txt`) ; pays lu sur la fiche | Limagrain, Bel |
 | `avature` | Page de recherche publique Avature, filtrée sur la France | TotalEnergies |
-| `phenom` | Service de la page de recherche Phenom, offres du pays | Allianz |
+| `phenom` | Service de la page de recherche Phenom, offres du pays | Allianz, Mars |
 | `cornerstone` | Service de recherche Cornerstone, avec le jeton anonyme que la page donne à chaque visiteur (pause de 10 s demandée par le site) | Avril, Tereos, Agrial |
 | `credit_agricole_jobs` | Pages du site emploi du groupe Crédit Agricole ; vraie date de publication lue sur la fiche | Crédit Agricole Assurances, groupe Crédit Agricole (LCL, CIB...) |
 | `creditmutuel` | Plan du site des offres déclaré dans `robots.txt` | Crédit Mutuel |
-| `digitalrecruiters` | Service public Digital Recruiters ; lien vers le site de l'enseigne | Groupe Casino (Monoprix, Franprix...) |
-| `oracle` | Service public Oracle Recruiting Cloud | Savencia |
+| `digitalrecruiters` | Service public Digital Recruiters ; lien vers le site de l'enseigne | Groupe Casino (Monoprix, Franprix...), Harmonie Mutuelle, Klesia, April, LDC, Andros, Decathlon |
+| `oracle` | Service public Oracle Recruiting Cloud | Savencia, SCOR, Sodiaal |
 | `danone` | Plan du site de careers.danone.com ; pays lu sur la fiche | Danone |
 | `heineken` | Liste publique des offres d'une société HEINEKEN (recherche interdite, non utilisée), pause de 5 s | Heineken France |
-| `jobposting` | Générique : plan du site des offres + données standard JobPosting de chaque page ; `careers_url` est l'adresse du plan du site | AXA, Coca-Cola Europacific Partners, Isagri, Lidl France, Carrefour |
+| `jobposting` | Générique : plan du site des offres + données standard JobPosting de chaque page ; `careers_url` est l'adresse du plan du site | AXA, Coca-Cola Europacific Partners, Isagri, Lidl France, Carrefour, Bigard, L'Oréal, Leroy Merlin, Orange, Veolia |
 
 Les offres d'un autre pays ouvertes une fois sont mémorisées et ne sont plus jamais rouvertes.
 

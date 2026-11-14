@@ -59,7 +59,7 @@ Si le fichier Excel est ouvert pendant un passage, rien n'est perdu : les offres
 
 ## 8. Notifications
 
-Un message Telegram par nouvelle offre retenue, de la plus récente à la plus ancienne (à date égale : postes junior, puis secteurs prioritaires) : poste, entreprise, lieu, contrat, date de publication **et son origine**, mentions, score, lien, et la commande pour préparer une lettre. Au-delà de `max_per_run`, un seul récapitulatif. La mémoire d'une offre notifiée n'est mise à jour qu'**après** un envoi réussi : un envoi raté est refait au passage suivant, sans doublon.
+Un message Telegram par nouvelle offre retenue, de la plus récente à la plus ancienne (à date égale : postes junior, puis secteurs prioritaires) : poste, entreprise, lieu, contrat, date de publication **et son origine**, mentions, score, lien, et la commande pour préparer une lettre. Avec `notify_above_score`, seules les offres dont le score de correspondance dépasse cette valeur sont notifiées (les autres restent dans le suivi ; une offre sans score est notifiée). Au-delà de `max_per_run`, un seul récapitulatif. La mémoire d'une offre notifiée n'est mise à jour qu'**après** un envoi réussi : un envoi raté est refait au passage suivant, sans doublon.
 
 ## Commandes d'aide à la candidature
 

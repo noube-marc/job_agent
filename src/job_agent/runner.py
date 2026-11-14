@@ -492,6 +492,12 @@ def _notify(config: AppConfig, storage: Storage, silent: bool) -> Counter[str]:
         return counts
     result = notify_pending(storage, config, sender, silent=False)
     counts["notified"] = result.sent
+    if result.below_score:
+        log.info(
+            "Telegram : %d offre(s) non notifiée(s), score inférieur ou égal à %d (elles restent dans le suivi).",
+            result.below_score,
+            config.notifications.notify_above_score,
+        )
     if result.summary:
         log.info("Telegram : un message récapitulatif pour %d offres.", result.sent)
     elif result.sent:

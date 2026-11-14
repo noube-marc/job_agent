@@ -163,6 +163,7 @@ class NotifyResult:
     sent: int = 0
     silenced: int = 0
     summary: bool = False
+    below_score: int = 0
     error: str | None = None
 
 
@@ -178,6 +179,14 @@ def notify_pending(
         # Offers waiting for the career site check are notified once it is done.
         pending = [row for row in pending if row["verification"] != "pending"]
     result = NotifyResult()
+    threshold = config.notifications.notify_above_score
+    if threshold is not None:
+        # Never notified, now or later: the score of an offer does not change.
+        low = [row for row in pending if row["match_score"] is not None and row["match_score"] <= threshold]
+        if low:
+            storage.mark_notified([row["group_id"] for row in low], "below_score")
+            result.below_score = len(low)
+            pending = [row for row in pending if row not in low]
     if not pending:
         return result
 

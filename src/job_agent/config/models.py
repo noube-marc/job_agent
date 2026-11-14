@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # ---------------------------------------------------------------------
 # Closed lists of allowed values
 # ---------------------------------------------------------------------
-ContractType = Literal["permanent", "fixed_term", "internship", "apprenticeship", "freelance"]
+ContractType = Literal["permanent", "fixed_term", "internship", "apprenticeship", "professionalisation", "freelance"]
 WorkMode = Literal["onsite", "hybrid", "full_remote"]
 PrioritySector = Literal["insurance", "banking", "agriculture_agrifood", "consumer_goods", "retail"]
 CompanySector = Literal[
@@ -318,6 +318,9 @@ class NotificationsConfig(StrictModel):
     channel: NotificationChannel
     silent_first_run: bool = True
     max_per_run: int = Field(ge=1, le=100)
+    # Only offers whose CV match score is above this value are notified
+    # (None: every kept offer). Offers without a score are still notified.
+    notify_above_score: int | None = Field(default=None, ge=0, le=99)
     fields: list[NotificationField] = Field(min_length=1)
 
 
