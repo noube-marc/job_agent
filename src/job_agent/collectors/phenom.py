@@ -23,7 +23,7 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from job_agent.collectors.base import CollectContext, SourceError, html_to_text
-from job_agent.collectors.jobposting import _date, earliest, job_posting
+from job_agent.collectors.jobposting import _date, earliest, job_posting, phenom_created
 from job_agent.config.models import WatchedCompany
 from job_agent.offer import Offer
 from job_agent.processing.extract import detect_contract
@@ -137,9 +137,14 @@ def collect(company: WatchedCompany, context: CollectContext) -> list[Offer]:
                 contract = None
         # "postedDate" is the LAST posting (a reposted offer looks new): the JobPosting date
         # of the offer page is older in that case, and the oldest one is kept.
+        # "dateCreated" (creation of the offer) is older still when it was reposted.
+        zone = ZoneInfo(context.config.schedule.timezone)
         posting_date = (job_posting(page).get("datePosted") or "") if page else ""
         published = earliest(
-            _utc(job.get("postedDate")), _date(posting_date, ZoneInfo(context.config.schedule.timezone))
+            _utc(job.get("postedDate")),
+            _date(posting_date, zone),
+            _date(job.get("dateCreated"), zone),
+            phenom_created(page, zone) if page else None,
         )
         offers.append(
             Offer(

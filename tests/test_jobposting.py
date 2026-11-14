@@ -126,3 +126,17 @@ def test_older_date_written_on_the_page_wins() -> None:
     assert published.date().isoformat() == "2026-10-16"
     assert jobposting.visible_date("<p>Date de publication : 03/11/2026</p>", zone).day == 3
     assert jobposting.visible_date("<p>aucune date</p>", zone) is None
+
+
+def test_phenom_creation_date_wins_over_a_repost() -> None:
+    from zoneinfo import ZoneInfo
+
+    from job_agent.collectors.jobposting import phenom_created
+
+    zone = ZoneInfo("Europe/Paris")
+    page = (
+        '<script>var phApp = {"ddo":{"jobDetail":{"data":{"job":{"title":"Data Engineer",'
+        '"dateCreated":"2026-01-26T09:24:26.551+0000"}}}}};</script>'
+    )
+    assert phenom_created(page, zone).date().isoformat() == "2026-01-26"
+    assert phenom_created('{"dateCreated":"2015-01-01"}', zone) is None  # not a Phenom page
