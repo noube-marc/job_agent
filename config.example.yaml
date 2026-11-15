@@ -121,7 +121,8 @@ search:
       # Analyse métier
       - "business analyst"
     # Outils de votre CV (les outils trop génériques, comme Excel, sont exclus).
-    # Intitulés acceptés seulement pour des postes débutants (exemple désactivé) :
+    # Intitulés acceptés seulement pour des postes débutants, dès qu'ils sont
+    # dans l'intitulé, quel que soit le secteur (exemple désactivé) :
     # conditional_terms:
     #   - terms: ["contrôleur de gestion", "contrôle de gestion"]
     #     max_experience_years: 2          # moins de 3 ans demandés
