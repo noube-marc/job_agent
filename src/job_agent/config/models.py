@@ -69,8 +69,8 @@ class BusinessAnalystRule(StrictModel):
 
 
 class ConditionalTerms(StrictModel):
-    """Title terms accepted only for beginner positions (checked after the
-    other lists, so a title that matches them otherwise is not concerned)."""
+    """Title terms accepted only for beginner positions. The rule applies as
+    soon as a term is in the title, whatever the other lists or the sector."""
 
     terms: list[str] = Field(min_length=1)
     # Highest minimum experience accepted, in years (2 = "less than 3 years").

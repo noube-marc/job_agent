@@ -391,11 +391,14 @@ def test_conditional_terms_accept_consulting_firms(config) -> None:
     assert not evaluate(data, settings, NOW).kept  # the usual rule still applies elsewhere
 
 
-def test_bank_controller_keeps_the_usual_rules(config) -> None:
+def test_conditional_term_wins_over_sector_and_other_words(config) -> None:
     settings = _beginner_controller(config)
-    offer = make_offer(title="Contrôleur de gestion", description="Expérience de 4 ans.")
-    assert evaluate(offer, settings, NOW, "banking").kept  # base term of the banking sector
-    assert not evaluate(offer, settings, NOW, "insurance").kept
+    senior = make_offer(title="Contrôleur de gestion", description="Expérience de 4 ans.")
+    assert not evaluate(senior, settings, NOW, "banking").kept  # even with the banking base term
+    data = make_offer(title="Contrôleur de gestion data", description="Expérience de 4 ans.")
+    assert not evaluate(data, settings, NOW).kept  # "data" does not bypass the rule
+    it = make_offer(title="Contrôleur de gestion IT", description="Expérience de 2 ans.")
+    assert evaluate(it, settings, NOW, "banking").kept
 
 
 def test_conditional_terms_have_their_own_contracts(config) -> None:

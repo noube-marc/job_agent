@@ -83,14 +83,17 @@ def _check_title(offer: Offer, config: AppConfig, result: Evaluation, sector: st
             )
         return
 
-    trigger = title_trigger(title_tokens, config, sector)
-    if trigger is None:
-        condition, term = _conditional_match(title_tokens, config)
-        if condition is None:
-            result.reject("intitulé hors cible")
-            return
+    # A conditional term applies as soon as it is in the title, even when
+    # another word ("data", "reporting") would also select the offer.
+    condition, term = _conditional_match(title_tokens, config)
+    if condition is not None:
         result.condition = condition
         trigger = f"terme sous condition « {term} » (débutant)"
+    else:
+        trigger = title_trigger(title_tokens, config, sector)
+        if trigger is None:
+            result.reject("intitulé hors cible")
+            return
     result.flags.append(f"{FLAG_SELECTED_BY} {trigger}")
 
 
@@ -172,10 +175,10 @@ def title_is_candidate(title: str, config: AppConfig) -> bool:
         return False
     if any(contains_phrase(title_tokens, k) for k in search.business_analyst.title_keywords):
         return True
-    if title_trigger(title_tokens, config) is not None:
-        return True
     condition, _ = _conditional_match(title_tokens, config)
-    return condition is not None and not any(contains_phrase(title_tokens, w) for w in condition.excluded_title_words)
+    if condition is not None:
+        return not any(contains_phrase(title_tokens, w) for w in condition.excluded_title_words)
+    return title_trigger(title_tokens, config) is not None
 
 
 _CLAUSE_SPLIT = re.compile(r"[.;\n!?•·()]+|, (?:et |ou )?")
