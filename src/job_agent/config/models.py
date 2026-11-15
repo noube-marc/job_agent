@@ -68,6 +68,27 @@ class BusinessAnalystRule(StrictModel):
     min_technical_skills: int = Field(ge=0)
 
 
+class ConditionalTerms(StrictModel):
+    """Title terms accepted only for beginner positions (checked after the
+    other lists, so a title that matches them otherwise is not concerned)."""
+
+    terms: list[str] = Field(min_length=1)
+    # Highest minimum experience accepted, in years (2 = "less than 3 years").
+    max_experience_years: int = Field(ge=0, le=30)
+    # Title words that reveal an experienced position.
+    excluded_title_words: list[str] = Field(default_factory=lambda: ["confirmé", "expérimenté", "senior"])
+    # Experience not given: kept only if the offer is open to beginners
+    # (these words in the title or the description).
+    beginner_phrases: list[str] = Field(
+        default_factory=lambda: ["junior", "débutant", "jeune diplômé", "première expérience"]
+    )
+    # true: ESN, consulting firms and agencies (excluded_companies,
+    # intermediary_phrases) are accepted for these offers.
+    allow_excluded_employers: bool = False
+    # Contracts accepted for these offers (empty: contracts.accepted).
+    accepted_contracts: list[ContractType] = Field(default_factory=list)
+
+
 class TitleMatchConfig(StrictModel):
     """Wider title search: an offer is a candidate when its title holds a
     searched job title or a base term, else an extended keyword, else a tool
@@ -79,6 +100,7 @@ class TitleMatchConfig(StrictModel):
     base_terms_by_sector: dict[CompanySector, list[str]] = Field(default_factory=dict)
     extended_keywords: list[str] = Field(default_factory=list)
     tools: list[str] = Field(default_factory=list)
+    conditional_terms: list[ConditionalTerms] = Field(default_factory=list)
 
 
 class SearchConfig(StrictModel):

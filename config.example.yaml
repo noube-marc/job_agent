@@ -121,6 +121,15 @@ search:
       # Analyse métier
       - "business analyst"
     # Outils de votre CV (les outils trop génériques, comme Excel, sont exclus).
+    # Intitulés acceptés seulement pour des postes débutants (exemple désactivé) :
+    # conditional_terms:
+    #   - terms: ["contrôleur de gestion", "contrôle de gestion"]
+    #     max_experience_years: 2          # moins de 3 ans demandés
+    #     excluded_title_words: ["confirmé", "expérimenté", "senior"]
+    #     allow_excluded_employers: true   # ESN et cabinets acceptés pour ces offres
+    #     accepted_contracts: [permanent, fixed_term]   # CDI et CDD seulement
+    # Une offre sans expérience précisée n'est gardée que si elle se dit
+    # ouverte aux débutants (junior, débutant, jeune diplômé...).
     tools: ["Python", "SQL", "Power BI", "Power Query", "DAX", "Microsoft Fabric", "Databricks", "Azure", "dbt", "Airflow", "GCP", "Google Cloud", "SPSS"]
 
   excluded_title_keywords:
